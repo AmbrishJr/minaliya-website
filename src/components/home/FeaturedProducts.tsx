@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import { Star, ShoppingBag, Heart, Eye } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
 
 interface Product {
   name: string;
@@ -60,6 +63,8 @@ const products: Product[] = [
 ];
 
 function ProductCard({ product }: { product: Product }) {
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.slug);
   const discount = Math.round(
     ((product.originalPrice - product.price) / product.originalPrice) * 100
   );
@@ -86,8 +91,8 @@ function ProductCard({ product }: { product: Product }) {
               background: product.badge === "Bestseller"
                 ? "var(--color-forest-600)"
                 : product.badge === "Popular"
-                ? "var(--color-amber-500)"
-                : "var(--color-terra-400)",
+                  ? "var(--color-amber-500)"
+                  : "var(--color-terra-400)",
               color: "white",
             }}
           >
@@ -114,11 +119,21 @@ function ProductCard({ product }: { product: Product }) {
             className="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors"
             style={{
               background: "white",
-              color: "var(--color-stone-600)",
+              color: isWishlisted ? "var(--color-terra-500)" : "var(--color-stone-600)",
             }}
-            aria-label="Add to wishlist"
+            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            onClick={(e) => {
+              e.preventDefault();
+              toggleWishlist({
+                slug: product.slug,
+                name: product.name,
+                image: product.image,
+                price: product.price,
+                originalPrice: product.originalPrice,
+              });
+            }}
           >
-            <Heart size={18} />
+            <Heart size={18} fill={isWishlisted ? "currentColor" : "none"} />
           </button>
           <button
             className="w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors"

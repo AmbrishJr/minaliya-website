@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -11,14 +13,15 @@ import {
   X,
   Heart,
   ChevronRight,
+  Phone,
 } from "lucide-react";
 
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Shop", href: "/shop" },
   { name: "About", href: "/about" },
-  { name: "Benefits", href: "#benefits" },
-  { name: "Our Process", href: "#process" },
+  { name: "Benefits", href: "/benefits" },
+  { name: "Our Process", href: "/about#process" },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
 ];
@@ -27,6 +30,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { totalItems, openCart } = useCart();
+  const { totalItems: wishlistTotal } = useWishlist();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -101,10 +106,18 @@ export default function Navbar() {
               </button>
               <Link
                 href="/wishlist"
-                className="hidden sm:flex p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
+                className="hidden sm:flex relative p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
                 aria-label="Wishlist"
               >
                 <Heart size={20} />
+                {wishlistTotal > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-5 h-5 text-[10px] font-bold rounded-full flex items-center justify-center"
+                    style={{ background: "white", color: "#8B1C1C" }}
+                  >
+                    {wishlistTotal}
+                  </span>
+                )}
               </Link>
               <Link
                 href="/account"
@@ -114,6 +127,7 @@ export default function Navbar() {
                 <User size={20} />
               </Link>
               <button
+                onClick={openCart}
                 className="relative p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
                 aria-label="Cart"
               >
@@ -122,7 +136,7 @@ export default function Navbar() {
                   className="absolute -top-0.5 -right-0.5 w-5 h-5 text-[10px] font-bold rounded-full flex items-center justify-center"
                   style={{ background: "white", color: "#8B1C1C" }}
                 >
-                  0
+                  {totalItems}
                 </span>
               </button>
               <button
