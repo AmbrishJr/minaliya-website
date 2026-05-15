@@ -5,6 +5,7 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import Link from "next/link";
 import Image from "next/image";
+import { allProducts } from "@/data/products";
 import {
   Search,
   ShoppingBag,
@@ -30,8 +31,16 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { totalItems, openCart } = useCart();
   const { totalItems: wishlistTotal } = useWishlist();
+
+  const filteredProducts = searchQuery.trim() === ""
+    ? []
+    : allProducts.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -46,6 +55,18 @@ export default function Navbar() {
       document.body.style.overflow = "";
     }
   }, [mobileOpen]);
+
+  // Close search on escape
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   return (
     <>
@@ -98,7 +119,10 @@ export default function Navbar() {
             {/* Actions */}
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setSearchOpen(!searchOpen)}
+                onClick={() => {
+                  setSearchOpen(!searchOpen);
+                  if (!searchOpen) setSearchQuery("");
+                }}
                 className="p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
                 aria-label="Search"
               >
@@ -150,32 +174,111 @@ export default function Navbar() {
           </div>
         </nav>
 
-        {/* Search Bar */}
+        {/* Search Bar Overlay */}
         {searchOpen && (
           <div
-            className="border-t px-4 py-3"
+            className="border-t px-4 py-6 animate-fade-in"
             style={{
-              borderColor: "var(--color-stone-200)",
-              background: "var(--color-cream-50)",
+              borderColor: "rgba(255, 255, 255, 0.1)",
+              background: "rgba(219, 86, 86, 0.98)",
             }}
           >
-            <div className="max-w-2xl mx-auto relative">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2"
-                style={{ color: "var(--color-stone-400)" }}
-              />
-              <input
-                type="search"
-                placeholder="Search for cold pressed oils..."
-                className="w-full pl-12 pr-4 py-3 rounded-full border text-sm outline-none focus:ring-2"
-                style={{
-                  background: "white",
-                  borderColor: "var(--color-stone-200)",
-                  color: "var(--color-stone-800)",
-                }}
-                autoFocus
-              />
+            <div className="max-w-3xl mx-auto relative">
+              <div className="relative mb-4">
+                <Search
+                  size={20}
+                  className="absolute left-5 top-1/2 -translate-y-1/2 text-white/60"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for cold pressed oils (e.g. coconut, groundnut)..."
+                  className="w-full pl-14 pr-12 py-4 rounded-2xl border-0 text-base outline-none focus:ring-2 focus:ring-white/20 transition-all placeholder:text-white/50"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                    color: "white",
+                  }}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              {/* Search Results */}
+              {searchQuery && (
+                <div 
+                  className="rounded-2xl overflow-hidden shadow-2xl border animate-fade-in-up"
+                  style={{ 
+                    background: "white",
+                    borderColor: "var(--color-stone-200)"
+                  }}
+                >
+                  {filteredProducts.length > 0 ? (
+                    <div className="divide-y" style={{ borderColor: "var(--color-stone-100)" }}>
+                      {filteredProducts.map((product) => (
+                        <Link
+                          key={product.slug}
+                          href={`/shop/${product.slug}`}
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearchQuery("");
+                          }}
+                          className="flex items-center gap-4 p-4 hover:bg-stone-50 transition-colors group"
+                        >
+                          <div 
+                            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: "var(--color-cream-100)" }}
+                          >
+                            <Image 
+                              src={product.image} 
+                              alt={product.name} 
+                              width={40} 
+                              height={40} 
+                              className="object-contain"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-bold text-stone-800 group-hover:text-forest-700 transition-colors">
+                              {product.name}
+                            </h4>
+                            <p className="text-xs text-stone-400">{product.category} • {product.sizes[0]}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-stone-900">₹{product.price}</p>
+                            <ChevronRight size={14} className="ml-auto text-stone-300" />
+                          </div>
+                        </Link>
+                      ))}
+                      <Link
+                        href={`/shop?q=${searchQuery}`}
+                        onClick={() => setSearchOpen(false)}
+                        className="block p-4 text-center text-sm font-bold text-forest-600 hover:bg-forest-50 transition-colors"
+                      >
+                        View all results for "{searchQuery}"
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <p className="text-sm text-stone-500">
+                        No products found for "<span className="font-bold text-stone-800">{searchQuery}</span>"
+                      </p>
+                      <button 
+                        onClick={() => setSearchQuery("")}
+                        className="text-xs text-forest-600 font-bold mt-2 hover:underline"
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

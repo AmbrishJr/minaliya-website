@@ -265,10 +265,14 @@ export default function CartDrawer() {
             )}
 
             {/* Checkout Button */}
-            <button className="btn-primary w-full justify-center text-base py-4">
+            <Link
+              href="/checkout"
+              onClick={closeCart}
+              className="btn-primary w-full justify-center text-base py-4"
+            >
               Proceed to Checkout
               <ArrowRight size={18} />
-            </button>
+            </Link>
 
             {/* Continue Shopping */}
             <button

@@ -3,6 +3,7 @@ import { Playfair_Display, Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import { OrderProvider } from "@/context/OrderContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 
 const playfair = Playfair_Display({
@@ -105,12 +106,14 @@ export default function RootLayout({
         <meta name="geo.placename" content="Chennai" />
       </head>
       <body className="min-h-screen antialiased">
-        <WishlistProvider>
-          <CartProvider>
-            {children}
-            <CartDrawer />
-          </CartProvider>
-        </WishlistProvider>
+        <OrderProvider>
+          <WishlistProvider>
+            <CartProvider>
+              {children}
+              <CartDrawer />
+            </CartProvider>
+          </WishlistProvider>
+        </OrderProvider>
       </body>
     </html>
   );

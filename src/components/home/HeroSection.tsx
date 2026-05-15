@@ -165,7 +165,6 @@ export default function HeroSection() {
             top: "-15%",
             right: "-10%",
             background: `radial-gradient(circle, ${slide.bg.primary} 0%, ${slide.bg.secondary}80 50%, transparent 70%)`,
-            filter: "blur(60px)",
           }}
         />
 
@@ -180,7 +179,6 @@ export default function HeroSection() {
             bottom: "-10%",
             left: "-8%",
             background: `radial-gradient(circle, ${slide.bg.secondary} 0%, ${slide.bg.primary}60 50%, transparent 70%)`,
-            filter: "blur(80px)",
           }}
         />
 
@@ -195,7 +193,6 @@ export default function HeroSection() {
             top: "30%",
             left: "35%",
             background: `radial-gradient(circle, ${slide.bg.accent}90 0%, transparent 70%)`,
-            filter: "blur(100px)",
           }}
         />
 
@@ -457,8 +454,7 @@ export default function HeroSection() {
                   priority
                   quality={90}
                   style={{
-                    filter:
-                      "drop-shadow(0 30px 60px rgba(45, 43, 39, 0.22)) drop-shadow(0 10px 20px rgba(45, 43, 39, 0.1))",
+                    filter: "drop-shadow(0 20px 40px rgba(45, 43, 39, 0.15))",
                   }}
                 />
 
@@ -468,7 +464,6 @@ export default function HeroSection() {
                   style={{
                     transform: "scaleY(-1) scaleX(0.92)",
                     opacity: 0.12,
-                    filter: "blur(6px)",
                     maskImage:
                       "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 80%)",
                     WebkitMaskImage:

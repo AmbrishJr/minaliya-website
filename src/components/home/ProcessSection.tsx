@@ -54,10 +54,10 @@ export default function ProcessSection() {
       }}
     >
       {/* Background Decoration */}
-      <div
-        className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-10"
-        style={{ background: "var(--color-forest-300)", filter: "blur(120px)" }}
-      />
+        <div
+          className="absolute -top-[10%] -left-[10%] w-[40vw] h-[40vw] rounded-full opacity-10"
+          style={{ background: "radial-gradient(circle, var(--color-forest-300), transparent 70%)" }}
+        />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}

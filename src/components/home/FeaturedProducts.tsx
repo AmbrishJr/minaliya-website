@@ -3,64 +3,7 @@
 import Image from "next/image";
 import { Star, ShoppingBag, Heart, Eye } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
-
-interface Product {
-  name: string;
-  slug: string;
-  image: string;
-  price: number;
-  originalPrice: number;
-  rating: number;
-  reviews: number;
-  badge?: string;
-  sizes: string[];
-}
-
-const products: Product[] = [
-  {
-    name: "Cold Pressed Groundnut Oil",
-    slug: "groundnut-oil",
-    image: "/products/Groundnut Oil 1 Ltr.jpg",
-    price: 349,
-    originalPrice: 449,
-    rating: 4.9,
-    reviews: 234,
-    badge: "Bestseller",
-    sizes: ["500ml", "1 Ltr"],
-  },
-  {
-    name: "Cold Pressed Coconut Oil",
-    slug: "coconut-oil",
-    image: "/products/Coconut Oil 1 Ltr.jpg",
-    price: 399,
-    originalPrice: 499,
-    rating: 4.8,
-    reviews: 189,
-    badge: "Popular",
-    sizes: ["500ml", "1 Ltr"],
-  },
-  {
-    name: "Cold Pressed Sesame Oil",
-    slug: "sesame-oil",
-    image: "/products/Sesame Oil 1 Ltr.jpg",
-    price: 379,
-    originalPrice: 479,
-    rating: 4.9,
-    reviews: 156,
-    sizes: ["500ml", "1 Ltr"],
-  },
-  {
-    name: "Cold Pressed Groundnut Oil",
-    slug: "groundnut-oil-500ml",
-    image: "/products/Groundnut Oil 500 ml.jpg",
-    price: 199,
-    originalPrice: 259,
-    rating: 4.8,
-    reviews: 312,
-    badge: "Value Pack",
-    sizes: ["500ml"],
-  },
-];
+import { allProducts, Product } from "@/data/products";
 
 function ProductCard({ product }: { product: Product }) {
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -228,6 +171,7 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 export default function FeaturedProducts() {
+  const featured = allProducts.slice(0, 4);
   return (
     <section
       id="products"
@@ -247,7 +191,7 @@ export default function FeaturedProducts() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product, i) => (
+          {featured.map((product, i) => (
             <ProductCard key={i} product={product} />
           ))}
         </div>

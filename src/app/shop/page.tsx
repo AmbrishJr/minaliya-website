@@ -36,13 +36,13 @@ export default function ShopPage() {
         >
           {/* Decorative blobs */}
           <div
-            className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
-            style={{ background: "var(--color-amber-300)", filter: "blur(80px)" }}
+            className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-20 translate-x-1/3 -translate-y-1/3"
+            style={{ background: "radial-gradient(circle, var(--color-amber-300), transparent 70%)" }}
             aria-hidden="true"
           />
           <div
-            className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full opacity-15"
-            style={{ background: "var(--color-forest-300)", filter: "blur(60px)" }}
+            className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-20 -translate-x-1/3 translate-y-1/3"
+            style={{ background: "radial-gradient(circle, var(--color-forest-300), transparent 70%)" }}
             aria-hidden="true"
           />
 
