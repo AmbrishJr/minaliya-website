@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Edit, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Edit, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, Eye, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell } from "lucide-react";
 import Link from "next/link";
 import { useOrders } from "@/context/OrderContext";
 import { useAuth } from "@/context/AuthContext";
 import { getUserOrders } from "@/actions/order";
 
-type Tab = "profile" | "orders" | "addresses" | "payment" | "settings" | "edit-profile" | "edit-address" | "add-payment";
+type Tab = "profile" | "orders" | "addresses" | "payment" | "settings" | "edit-profile" | "edit-address" | "add-address" | "add-payment";
 
 interface PaymentMethod {
   id: string;
@@ -32,6 +32,26 @@ interface BulkInquiry {
   date: string;
 }
 
+interface Address {
+  id: string;
+  name: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  isDefault: boolean;
+}
+
+// Preset Premium Avatars matching Minaliyaa wood-pressed oil brand aesthetic (warm gold, amber, herbal forest green gradients)
+const AVATAR_PRESETS = [
+  "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", // Amber Cold-pressed
+  "linear-gradient(135deg, #10b981 0%, #047857 100%)", // Sesame Forest Green
+  "linear-gradient(135deg, #f43f5e 0%, #be123c 100%)", // Coconut Sunset Red
+  "linear-gradient(135deg, #6366f1 0%, #4338ca 100%)", // Lavender Royal Blue
+];
+
 export default function AccountDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [ordersSubTab, setOrdersSubTab] = useState<"standard" | "bulk">("standard");
@@ -49,7 +69,7 @@ export default function AccountDashboard() {
   // Bulk Inquiries State
   const [bulkInquiries, setBulkInquiries] = useState<BulkInquiry[]>([]);
 
-  // Form State
+  // Payment Form State
   const [paymentType, setPaymentType] = useState<"card" | "upi">("card");
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -62,16 +82,33 @@ export default function AccountDashboard() {
   const [profileName, setProfileName] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
   const [profileMobile, setProfileMobile] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Address CRUD Form State
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [addressName, setAddressName] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [addressCity, setAddressCity] = useState("");
+  const [addressState, setAddressState] = useState("");
+  const [addressZip, setAddressZip] = useState("");
+  const [addressPhone, setAddressPhone] = useState("");
+
+  // Account Settings Notification State
+  const [settingsNewsletter, setSettingsNewsletter] = useState(true);
+  const [settingsWhatsappAlerts, setSettingsWhatsappAlerts] = useState(true);
+
+  // Initialize values when user loads or tab changes
   useEffect(() => {
     if (user) {
       setProfileName(user.name || "");
       setProfileMobile(user.mobile || "");
       setProfileEmail(user.email || "");
+      setSettingsNewsletter(user.newsletterSubscribed !== false);
     }
   }, [user, activeTab]);
 
-  // Fetch dynamically live orders from Neon and combine with local storage ones
+  // Fetch live orders dynamically
   useEffect(() => {
     async function fetchDbOrders() {
       if (!user) {
@@ -81,7 +118,6 @@ export default function AccountDashboard() {
       setIsOrdersLoading(true);
       const res = await getUserOrders(user.email, user.mobile);
       if (res.success && res.orders) {
-        // Combine DB orders & local storage orders, de-duplicating by order ID
         const combined = [...res.orders];
         const dbOrderIds = new Set(res.orders.map((o) => o.id));
         for (const localOrder of localOrders) {
@@ -98,6 +134,7 @@ export default function AccountDashboard() {
     fetchDbOrders();
   }, [user, localOrders, activeTab]);
 
+  // Load secondary storage items
   useEffect(() => {
     const stored = localStorage.getItem("minaliya-payment-methods");
     if (stored) {
@@ -108,7 +145,6 @@ export default function AccountDashboard() {
       }
     }
 
-    // Load bulk inquiries from local storage
     const storedInquiries = localStorage.getItem("minaliya-bulk-inquiries");
     if (storedInquiries) {
       try {
@@ -121,6 +157,100 @@ export default function AccountDashboard() {
     setIsLoaded(true);
   }, [activeTab]);
 
+  // Image Upload handler
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should be less than 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      updateUser({ image: base64String });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Preset Avatar Pick handler
+  const handlePresetAvatarPick = (presetGradient: string) => {
+    updateUser({ image: presetGradient });
+  };
+
+  // Address CRUD Handlers
+  const handleOpenAddAddress = () => {
+    setSelectedAddressId(null);
+    setAddressName(user?.name || "");
+    setAddressLine1("");
+    setAddressLine2("");
+    setAddressCity("");
+    setAddressState("");
+    setAddressZip("");
+    setAddressPhone(user?.mobile || "");
+    setActiveTab("add-address");
+  };
+
+  const handleOpenEditAddress = (addr: Address) => {
+    setSelectedAddressId(addr.id);
+    setAddressName(addr.name);
+    setAddressLine1(addr.addressLine1);
+    setAddressLine2(addr.addressLine2 || "");
+    setAddressCity(addr.city);
+    setAddressState(addr.state);
+    setAddressZip(addr.zipCode);
+    setAddressPhone(addr.phone);
+    setActiveTab("edit-address");
+  };
+
+  const handleSaveAddress = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentAddresses: Address[] = user?.addresses || [];
+    
+    const newAddress: Address = {
+      id: selectedAddressId || `addr-${Date.now()}`,
+      name: addressName,
+      addressLine1,
+      addressLine2: addressLine2 || undefined,
+      city: addressCity,
+      state: addressState,
+      zipCode: addressZip,
+      phone: addressPhone,
+      isDefault: currentAddresses.length === 0 ? true : false,
+    };
+
+    let updatedAddresses: Address[] = [];
+    if (selectedAddressId) {
+      updatedAddresses = currentAddresses.map((a) => (a.id === selectedAddressId ? { ...newAddress, isDefault: a.isDefault } : a));
+    } else {
+      updatedAddresses = [...currentAddresses, newAddress];
+    }
+
+    updateUser({ addresses: updatedAddresses });
+    setActiveTab("addresses");
+  };
+
+  const handleDeleteAddress = (id: string) => {
+    const currentAddresses: Address[] = user?.addresses || [];
+    const filtered = currentAddresses.filter((a) => a.id !== id);
+    if (currentAddresses.find((a) => a.id === id)?.isDefault && filtered.length > 0) {
+      filtered[0].isDefault = true;
+    }
+    updateUser({ addresses: filtered });
+  };
+
+  const handleSetDefaultAddress = (id: string) => {
+    const currentAddresses: Address[] = user?.addresses || [];
+    const updated = currentAddresses.map((a) => ({
+      ...a,
+      isDefault: a.id === id,
+    }));
+    updateUser({ addresses: updated });
+  };
+
+  // Payment Handlers
   const savePaymentMethods = (methods: PaymentMethod[]) => {
     setPaymentMethods(methods);
     localStorage.setItem("minaliya-payment-methods", JSON.stringify(methods));
@@ -235,12 +365,49 @@ export default function AccountDashboard() {
     setActiveTab("profile");
   };
 
+  const handleSaveSettings = () => {
+    updateUser({
+      newsletterSubscribed: settingsNewsletter,
+    });
+    alert("Preferences updated successfully!");
+  };
+
+  const renderAvatar = (avatarClass: string, nameInitial: string) => {
+    const isGradient = user?.image?.startsWith("linear-gradient");
+    const hasImage = user?.image && !isGradient;
+
+    if (hasImage && user?.image) {
+      return (
+        <img
+          src={user.image}
+          alt={user.name || "User Avatar"}
+          className={`${avatarClass} rounded-full object-cover border-4`}
+          style={{ borderColor: "white", boxShadow: "var(--shadow-soft)" }}
+        />
+      );
+    }
+
+    return (
+      <div
+        className={`${avatarClass} rounded-full flex items-center justify-center text-white font-bold border-4`}
+        style={{
+          background: isGradient && user?.image ? user.image : "var(--color-amber-500)",
+          borderColor: "white",
+          boxShadow: "var(--shadow-soft)",
+          fontSize: avatarClass.includes("w-20") ? "1.75rem" : "1.25rem"
+        }}
+      >
+        {nameInitial}
+      </div>
+    );
+  };
+
   const renderTabButton = (tab: Tab, icon: React.ReactNode, label: string) => {
-    const isActive = activeTab === tab;
+    const isActive = activeTab === tab || (tab === "addresses" && activeTab === "edit-address") || (tab === "addresses" && activeTab === "add-address");
     return (
       <button
         onClick={() => setActiveTab(tab)}
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors w-full text-left ${isActive
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors w-full text-left cursor-pointer ${isActive
             ? "bg-[var(--color-forest-50)] text-[var(--color-forest-700)]"
             : "hover:bg-stone-50 text-[var(--color-stone-700)]"
           }`}
@@ -267,7 +434,7 @@ export default function AccountDashboard() {
           <div className="h-px w-full my-2" style={{ background: "var(--color-stone-200)" }}></div>
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-red-50 text-red-600 text-left w-full"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-red-50 text-red-600 text-left w-full cursor-pointer"
           >
             <LogOut size={18} />
             Log Out
@@ -282,17 +449,7 @@ export default function AccountDashboard() {
             <section className="p-8 rounded-2xl border" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-5">
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold border-4"
-                    style={{
-                      background: "var(--color-amber-100)",
-                      color: "var(--color-amber-700)",
-                      borderColor: "white",
-                      boxShadow: "var(--shadow-soft)",
-                    }}
-                  >
-                    U
-                  </div>
+                  {renderAvatar("w-20 h-20", profileName ? profileName.charAt(0).toUpperCase() : "U")}
                   <div>
                     <h2
                       className="text-2xl font-bold mb-1"
@@ -305,7 +462,7 @@ export default function AccountDashboard() {
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setActiveTab("edit-profile")} className="btn-secondary text-sm py-2 px-4">
+                <button onClick={() => setActiveTab("edit-profile")} className="btn-secondary text-sm py-2 px-4 cursor-pointer">
                   Edit Profile
                 </button>
               </div>
@@ -333,7 +490,7 @@ export default function AccountDashboard() {
                     Email Address
                   </p>
                   <p className="font-medium text-sm" style={{ color: "var(--color-stone-800)" }}>
-                    {user?.email || "user@example.com"}
+                    {user?.email || "Not Provided"}
                   </p>
                 </div>
                 <div>
@@ -341,10 +498,10 @@ export default function AccountDashboard() {
                     className="text-xs uppercase tracking-wider mb-1"
                     style={{ color: "var(--color-stone-400)", fontWeight: "600" }}
                   >
-                    Member Since
+                    Addresses Saved
                   </p>
                   <p className="font-medium text-sm" style={{ color: "var(--color-stone-800)" }}>
-                    May 2026
+                    {user?.addresses?.length || 0} Saved
                   </p>
                 </div>
                 <div>
@@ -354,7 +511,9 @@ export default function AccountDashboard() {
                   >
                     Newsletter
                   </p>
-                  <p className="font-medium text-sm text-green-600">Subscribed</p>
+                  <p className={`font-medium text-sm ${user?.newsletterSubscribed !== false ? "text-green-600" : "text-stone-450"}`}>
+                    {user?.newsletterSubscribed !== false ? "Subscribed" : "Unsubscribed"}
+                  </p>
                 </div>
               </div>
             </section>
@@ -369,7 +528,7 @@ export default function AccountDashboard() {
                 </h3>
                 <button
                   onClick={() => setActiveTab("orders")}
-                  className="text-sm font-medium flex items-center hover:underline"
+                  className="text-sm font-medium flex items-center hover:underline cursor-pointer"
                   style={{ color: "var(--color-forest-600)" }}
                 >
                   View All <ChevronRight size={16} />
@@ -409,13 +568,13 @@ export default function AccountDashboard() {
                         <div>
                           <div className="flex items-center gap-3 mb-1">
                             <span className="font-bold text-stone-900">{order.id}</span>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}>{order.status}</span>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold font-sans" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}>{order.status}</span>
                           </div>
                           <p className="text-sm text-stone-500">{new Date(order.date).toLocaleDateString()} • {order.items.length} {order.items.length === 1 ? 'item' : 'items'}</p>
                         </div>
                         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end mt-2 sm:mt-0">
                           <span className="font-bold text-stone-900">₹{order.totalPrice}</span>
-                          <button onClick={() => setActiveTab("orders")} className="btn-secondary py-1.5 px-4 text-sm whitespace-nowrap">Details</button>
+                          <button onClick={() => setActiveTab("orders")} className="btn-secondary py-1.5 px-4 text-sm whitespace-nowrap cursor-pointer">Details</button>
                         </div>
                       </div>
                     ))}
@@ -430,46 +589,63 @@ export default function AccountDashboard() {
                   className="text-xl font-bold"
                   style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}
                 >
-                  Default Address
+                  Default Shipping Address
                 </h3>
                 <button
                   onClick={() => setActiveTab("addresses")}
-                  className="text-sm font-medium flex items-center hover:underline"
+                  className="text-sm font-medium flex items-center hover:underline cursor-pointer"
                   style={{ color: "var(--color-forest-600)" }}
                 >
                   Manage Addresses <ChevronRight size={16} />
                 </button>
               </div>
 
-              <div
-                className="p-6 rounded-2xl border flex flex-col sm:flex-row gap-6 justify-between items-start"
-                style={{ background: "white", borderColor: "var(--color-stone-200)" }}
-              >
-                <div className="flex gap-4">
-                  <div className="mt-1">
-                    <MapPin size={20} style={{ color: "var(--color-stone-400)" }} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold mb-1" style={{ color: "var(--color-stone-800)" }}>
-                      Guest User
-                    </h4>
-                    <p className="text-sm leading-relaxed mb-3" style={{ color: "var(--color-stone-500)" }}>
-                      123 Artisanal Way, Suite 4B<br />
-                      Mumbai, Maharashtra 400001<br />
-                      India
-                    </p>
-                    <p className="text-sm font-medium" style={{ color: "var(--color-stone-700)" }}>
-                      Mobile: +91 98765 43210
-                    </p>
-                  </div>
+              {(!user?.addresses || user.addresses.length === 0) ? (
+                <div className="p-6 rounded-2xl border text-center" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
+                  <p className="text-stone-500 text-sm mb-4">No shipping addresses saved yet.</p>
+                  <button onClick={handleOpenAddAddress} className="btn-secondary text-sm py-2 px-6 cursor-pointer">
+                    Add Address
+                  </button>
                 </div>
-                <button
-                  onClick={() => setActiveTab("addresses")}
-                  className="btn-secondary text-sm py-1.5 px-4 rounded-full w-full sm:w-auto"
-                >
-                  Edit
-                </button>
-              </div>
+              ) : (
+                (() => {
+                  const defaultAddr = user.addresses.find((a: any) => a.isDefault) || user.addresses[0];
+                  return (
+                    <div
+                      className="p-6 rounded-2xl border flex flex-col sm:flex-row gap-6 justify-between items-start"
+                      style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                    >
+                      <div className="flex gap-4">
+                        <div className="mt-1">
+                          <MapPin size={20} style={{ color: "var(--color-stone-400)" }} />
+                        </div>
+                        <div>
+                          <h4 className="font-bold mb-1" style={{ color: "var(--color-stone-800)" }}>
+                            {defaultAddr.name}
+                          </h4>
+                          <p className="text-sm leading-relaxed mb-3 font-sans" style={{ color: "var(--color-stone-500)" }}>
+                            {defaultAddr.addressLine1}
+                            {defaultAddr.addressLine2 && <><br />{defaultAddr.addressLine2}</>}
+                            <br />
+                            {defaultAddr.city}, {defaultAddr.state} {defaultAddr.zipCode}
+                            <br />
+                            India
+                          </p>
+                          <p className="text-sm font-medium" style={{ color: "var(--color-stone-700)" }}>
+                            Mobile: +91 {defaultAddr.phone}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleOpenEditAddress(defaultAddr)}
+                        className="btn-secondary text-sm py-1.5 px-4 rounded-full w-full sm:w-auto cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  );
+                })()
+              )}
             </section>
           </>
         )}
@@ -536,7 +712,7 @@ export default function AccountDashboard() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-6 font-sans">
                   {displayOrders.map((order: any) => (
                     <div key={order.id} className="rounded-xl border overflow-hidden" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}>
                       <div className="p-5 border-b flex flex-col sm:flex-row justify-between sm:items-center gap-4" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
@@ -663,38 +839,87 @@ export default function AccountDashboard() {
               <h3 className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}>
                 Saved Addresses
               </h3>
-              <button className="btn-primary text-sm py-2 px-4">Add New Address</button>
+              <button onClick={handleOpenAddAddress} className="btn-primary text-sm py-2 px-4 cursor-pointer">
+                Add New Address
+              </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="p-6 rounded-xl border flex flex-col sm:flex-row gap-6 justify-between items-start" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-forest-200)" }}>
-                <div className="flex gap-4">
-                  <div className="mt-1">
-                    <MapPin size={20} style={{ color: "var(--color-forest-600)" }} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold" style={{ color: "var(--color-stone-800)" }}>Guest User</h4>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-forest-100 text-forest-700" style={{ background: "var(--color-forest-100)", color: "var(--color-forest-700)" }}>Default</span>
-                    </div>
-                    <p className="text-sm leading-relaxed mb-3" style={{ color: "var(--color-stone-500)" }}>
-                      123 Artisanal Way, Suite 4B<br />
-                      Mumbai, Maharashtra 400001<br />
-                      India
-                    </p>
-                    <p className="text-sm font-medium" style={{ color: "var(--color-stone-700)" }}>Mobile: +91 98765 43210</p>
-                  </div>
+            {(!user?.addresses || user.addresses.length === 0) ? (
+              <div className="text-center py-12">
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: "var(--color-cream-100)", color: "var(--color-stone-400)" }}
+                >
+                  <MapPin size={28} />
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setActiveTab("edit-address")}
-                    className="btn-secondary text-sm py-1.5 px-4 rounded-full flex-1 sm:flex-none"
-                  >
-                    Edit
-                  </button>
-                </div>
+                <p className="text-stone-500 text-sm mb-6">You have no saved addresses. Add your shipping details to checkout faster.</p>
+                <button onClick={handleOpenAddAddress} className="btn-secondary text-sm py-2 px-6 cursor-pointer">
+                  Add First Address
+                </button>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4 font-sans">
+                {user.addresses.map((addr: Address) => (
+                  <div
+                    key={addr.id}
+                    className="p-6 rounded-xl border flex flex-col sm:flex-row gap-6 justify-between items-start"
+                    style={{
+                      background: addr.isDefault ? "var(--color-cream-50)" : "white",
+                      borderColor: addr.isDefault ? "var(--color-forest-200)" : "var(--color-stone-200)",
+                    }}
+                  >
+                    <div className="flex gap-4">
+                      <div className="mt-1">
+                        <MapPin size={20} style={{ color: addr.isDefault ? "var(--color-forest-600)" : "var(--color-stone-400)" }} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-stone-800">{addr.name}</h4>
+                          {addr.isDefault && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-forest-100 text-forest-700">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed mb-3 text-stone-500">
+                          {addr.addressLine1}
+                          {addr.addressLine2 && <><br />{addr.addressLine2}</>}
+                          <br />
+                          {addr.city}, {addr.state} {addr.zipCode}
+                          <br />
+                          India
+                        </p>
+                        <p className="text-sm font-medium text-stone-700">Mobile: +91 {addr.phone}</p>
+                      </div>
+                    </div>
+                    <div className="flex sm:flex-col gap-2 w-full sm:w-auto items-end">
+                      <div className="flex gap-2 w-full sm:w-auto justify-end">
+                        <button
+                          onClick={() => handleOpenEditAddress(addr)}
+                          className="btn-secondary text-xs py-1.5 px-3 rounded-full flex-1 sm:flex-none cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className="px-3 py-1.5 border border-red-200 text-red-500 hover:bg-red-50 text-xs rounded-full cursor-pointer transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      {!addr.isDefault && (
+                        <button
+                          onClick={() => handleSetDefaultAddress(addr.id)}
+                          className="text-[11px] font-semibold text-forest-600 hover:underline cursor-pointer mt-1"
+                        >
+                          Set as Default
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -727,12 +952,12 @@ export default function AccountDashboard() {
                 <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--color-stone-500)" }}>
                   Save your credit/debit cards or UPI IDs for faster checkout next time.
                 </p>
-                <button onClick={() => setActiveTab("add-payment")} className="btn-secondary text-sm py-2 px-6">
+                <button onClick={() => setActiveTab("add-payment")} className="btn-secondary text-sm py-2 px-6 cursor-pointer">
                   Add First Payment Method
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
                 {paymentMethods.map((method) => (
                   <div
                     key={method.id}
@@ -967,85 +1192,273 @@ export default function AccountDashboard() {
         )}
 
         {activeTab === "settings" && (
-          <section className="p-8 rounded-2xl border" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
-            <h3 className="text-2xl font-bold mb-6" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}>
+          <section className="p-8 rounded-2xl border font-sans" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
+            <h3 className="text-2xl font-bold mb-1 font-heading text-stone-900">
               Account Settings
             </h3>
-            <div className="space-y-6 max-w-md">
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: "var(--color-stone-700)" }}>Email Preferences</label>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="newsletter" defaultChecked className="w-4 h-4 rounded border-gray-300 text-forest-600 focus:ring-forest-500" />
-                  <label htmlFor="newsletter" className="text-sm" style={{ color: "var(--color-stone-600)" }}>Subscribe to newsletter for offers and updates</label>
+            <p className="text-stone-500 text-sm mb-6">Manage your Minaliyaa alert preferences and notification credentials.</p>
+
+            <div className="space-y-6 max-w-lg">
+              {/* Premium preferences section */}
+              <div className="p-6 rounded-2xl border bg-stone-50/50 space-y-6 border-stone-200/80">
+                <h4 className="font-bold text-stone-800 flex items-center gap-2 mb-2 text-sm uppercase tracking-wider">
+                  <ShieldCheck size={16} className="text-forest-600" /> Notifications & Security
+                </h4>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-bold text-stone-800 flex items-center gap-1.5">
+                      <Mail size={14} className="text-stone-400" /> Email Newsletter
+                    </label>
+                    <p className="text-xs text-stone-500">Receive weekly wellness tips, cold-pressed oil recipes, and promotional discounts.</p>
+                  </div>
+                  <button
+                    onClick={() => setSettingsNewsletter(!settingsNewsletter)}
+                    className="text-forest-600 hover:text-forest-750 transition-colors cursor-pointer"
+                  >
+                    {settingsNewsletter ? <ToggleRight size={38} /> : <ToggleLeft size={38} className="text-stone-300" />}
+                  </button>
+                </div>
+
+                <div className="flex items-start justify-between gap-4 pt-4 border-t border-stone-200/60">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-bold text-stone-800 flex items-center gap-1.5">
+                      <Bell size={14} className="text-stone-400" /> WhatsApp Transactional Alerts
+                    </label>
+                    <p className="text-xs text-stone-500 font-sans">Receive active tracking status, delivery alerts, and instant OTP verification support on WhatsApp.</p>
+                  </div>
+                  <button
+                    onClick={() => setSettingsWhatsappAlerts(!settingsWhatsappAlerts)}
+                    className="text-forest-600 hover:text-forest-750 transition-colors cursor-pointer"
+                  >
+                    {settingsWhatsappAlerts ? <ToggleRight size={38} /> : <ToggleLeft size={38} className="text-stone-300" />}
+                  </button>
                 </div>
               </div>
-              <div className="pt-4 border-t" style={{ borderColor: "var(--color-stone-200)" }}>
-                <h4 className="font-bold mb-4" style={{ color: "var(--color-stone-800)" }}>Change Password</h4>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>Current Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>New Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} />
-                  </div>
-                  <button className="btn-primary text-sm py-2.5 px-6">Update Password</button>
-                </div>
+
+              <div className="pt-4 flex gap-4">
+                <button onClick={handleSaveSettings} className="btn-primary text-sm py-2.5 px-6 cursor-pointer">
+                  Save Settings
+                </button>
               </div>
             </div>
           </section>
         )}
 
-        {activeTab === "edit-address" && (
+        {/* Add Address tab */}
+        {activeTab === "add-address" && (
           <section className="p-8 rounded-2xl border" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}>
-                Edit Address
+              <h3 className="text-2xl font-bold font-heading text-stone-900">
+                Add New Address
               </h3>
-              <button onClick={() => setActiveTab("addresses")} className="text-sm font-medium hover:underline" style={{ color: "var(--color-stone-500)" }}>Cancel</button>
+              <button onClick={() => setActiveTab("addresses")} className="text-sm font-medium hover:underline text-stone-500 cursor-pointer">Cancel</button>
             </div>
 
-            <form className="space-y-5 max-w-lg" onSubmit={(e) => { e.preventDefault(); setActiveTab("addresses"); }}>
+            <form className="space-y-5 max-w-lg font-sans" onSubmit={handleSaveAddress}>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>Full Name</label>
-                <input type="text" defaultValue="Guest User" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} required />
+                <label className="block text-sm font-semibold mb-1 text-stone-700">Receiver Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Guest User"
+                  value={addressName}
+                  onChange={(e) => setAddressName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                  style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                  required
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>Address Line 1</label>
-                <input type="text" defaultValue="123 Artisanal Way, Suite 4B" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} required />
+                <label className="block text-sm font-semibold mb-1 text-stone-700">Address Line 1</label>
+                <input
+                  type="text"
+                  placeholder="Street address, P.O. box, company name"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                  style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                  required
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>Address Line 2 (Optional)</label>
-                <input type="text" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} />
+                <label className="block text-sm font-semibold mb-1 text-stone-700">Address Line 2 (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="Apartment, suite, unit, building, floor"
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                  style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>City</label>
-                  <input type="text" defaultValue="Mumbai" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} required />
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">City</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Mumbai"
+                    value={addressCity}
+                    onChange={(e) => setAddressCity(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>State</label>
-                  <input type="text" defaultValue="Maharashtra" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} required />
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">State</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Maharashtra"
+                    value={addressState}
+                    onChange={(e) => setAddressState(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>ZIP Code</label>
-                  <input type="text" defaultValue="400001" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} required />
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">ZIP Code</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 400001"
+                    maxLength={6}
+                    value={addressZip}
+                    onChange={(e) => setAddressZip(e.target.value.replace(/[^0-9]/gi, ""))}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all font-mono"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>Phone Number</label>
-                  <input type="tel" defaultValue="+91 98765 43210" className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} required />
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">Contact Number</label>
+                  <input
+                    type="tel"
+                    placeholder="10 digit mobile"
+                    maxLength={10}
+                    value={addressPhone}
+                    onChange={(e) => setAddressPhone(e.target.value.replace(/[^0-9]/gi, ""))}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all font-mono"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
                 </div>
               </div>
 
               <div className="pt-4 flex gap-4">
-                <button type="submit" className="btn-primary text-sm py-2.5 px-6">Save Address</button>
+                <button type="submit" className="btn-primary text-sm py-2.5 px-6 cursor-pointer">Save Address</button>
+                <button type="button" onClick={() => setActiveTab("addresses")} className="btn-secondary text-sm py-2.5 px-6 cursor-pointer">Cancel</button>
+              </div>
+            </form>
+          </section>
+        )}
+
+        {/* Edit Address tab */}
+        {activeTab === "edit-address" && (
+          <section className="p-8 rounded-2xl border" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold font-heading text-stone-900">
+                Edit Address
+              </h3>
+              <button onClick={() => setActiveTab("addresses")} className="text-sm font-medium hover:underline text-stone-500 cursor-pointer">Cancel</button>
+            </div>
+
+            <form className="space-y-5 max-w-lg font-sans" onSubmit={handleSaveAddress}>
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-stone-700">Receiver Full Name</label>
+                <input
+                  type="text"
+                  value={addressName}
+                  onChange={(e) => setAddressName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                  style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-stone-700">Address Line 1</label>
+                <input
+                  type="text"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                  style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-stone-700">Address Line 2 (Optional)</label>
+                <input
+                  type="text"
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                  style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">City</label>
+                  <input
+                    type="text"
+                    value={addressCity}
+                    onChange={(e) => setAddressCity(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">State</label>
+                  <input
+                    type="text"
+                    value={addressState}
+                    onChange={(e) => setAddressState(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">ZIP Code</label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={addressZip}
+                    onChange={(e) => setAddressZip(e.target.value.replace(/[^0-9]/gi, ""))}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all font-mono"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1 text-stone-700">Contact Number</label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={addressPhone}
+                    onChange={(e) => setAddressPhone(e.target.value.replace(/[^0-9]/gi, ""))}
+                    className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all font-mono"
+                    style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-4">
+                <button type="submit" className="btn-primary text-sm py-2.5 px-6 cursor-pointer">Save Address</button>
+                <button type="button" onClick={() => setActiveTab("addresses")} className="btn-secondary text-sm py-2.5 px-6 cursor-pointer">Cancel</button>
               </div>
             </form>
           </section>
@@ -1060,12 +1473,63 @@ export default function AccountDashboard() {
               <button onClick={() => setActiveTab("profile")} className="text-sm font-medium hover:underline text-stone-500 cursor-pointer">Cancel</button>
             </div>
 
-            <form className="space-y-5 max-w-lg" onSubmit={handleSaveProfile}>
-              <div className="flex items-center gap-6 mb-6">
-                <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold border-4" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)", borderColor: "white", boxShadow: "var(--shadow-soft)" }}>
-                  {profileName ? profileName.charAt(0).toUpperCase() : "U"}
+            <form className="space-y-5 max-w-lg font-sans" onSubmit={handleSaveProfile}>
+              {/* Photo Upload and Presets UI */}
+              <div className="space-y-4 mb-6">
+                <label className="block text-sm font-semibold text-stone-700">Profile Photo</label>
+                <div className="flex flex-wrap items-center gap-6">
+                  {renderAvatar("w-20 h-20", profileName ? profileName.charAt(0).toUpperCase() : "U")}
+                  
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn-secondary text-xs py-2 px-4 cursor-pointer flex items-center gap-2"
+                      >
+                        <Upload size={14} /> Upload Custom Photo
+                      </button>
+                      
+                      {user?.image && (
+                        <button
+                          type="button"
+                          onClick={() => updateUser({ image: undefined })}
+                          className="px-3 py-2 border border-red-200 text-red-500 hover:bg-red-50 text-xs rounded-lg cursor-pointer transition-colors"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-stone-400">Supported formats: JPG, PNG. Max size: 2MB.</p>
+                  </div>
                 </div>
-                <button type="button" className="btn-secondary text-sm py-2 px-4 cursor-pointer">Change Photo</button>
+
+                {/* Elegant Brand Presets Grid */}
+                <div className="pt-4 border-t border-stone-100">
+                  <span className="block text-xs font-semibold text-stone-500 mb-2">Or select a signature Minaliyaa avatar:</span>
+                  <div className="flex gap-3">
+                    {AVATAR_PRESETS.map((gradient, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handlePresetAvatarPick(gradient)}
+                        className="w-10 h-10 rounded-full cursor-pointer hover:scale-105 active:scale-95 transition-all border-2"
+                        style={{
+                          background: gradient,
+                          borderColor: user?.image === gradient ? "var(--color-forest-500)" : "transparent",
+                          boxShadow: user?.image === gradient ? "0 0 0 2px white, 0 0 0 4px var(--color-forest-500)" : "none"
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -1081,7 +1545,7 @@ export default function AccountDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1 text-stone-700">Email Address</label>
+                <label className="block text-sm font-semibold mb-1 text-stone-750">Email Address</label>
                 <input
                   type="email"
                   value={profileEmail}
@@ -1093,7 +1557,7 @@ export default function AccountDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold mb-1 text-stone-700">Phone Number (10 digits)</label>
+                <label className="block text-sm font-semibold mb-1 text-stone-750">Phone Number (10 digits)</label>
                 <input
                   type="tel"
                   placeholder="9876543210"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Phone, User, CheckCircle2, MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { sendOtpAction, verifyOtpAction } from "@/actions/auth";
 
 export default function LoginModal() {
   const { isLoginModalOpen, closeLoginModal, login } = useAuth();
@@ -10,11 +11,13 @@ export default function LoginModal() {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpToken, setOtpToken] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   if (!isLoginModalOpen) return null;
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.length < 2) {
       setError("Please enter a valid name");
@@ -24,21 +27,55 @@ export default function LoginModal() {
       setError("Please enter a valid 10-digit mobile number");
       return;
     }
+    
     setError("");
-    setStep("otp");
+    setIsLoading(true);
+    
+    try {
+      const response = await sendOtpAction(name, mobile);
+      if (response.success && response.otpToken) {
+        setOtpToken(response.otpToken);
+        setStep("otp");
+      } else {
+        setError(response.error || "Failed to send OTP. Please check details.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate OTP verification (allow 123456 as dummy OTP)
-    if (otp === "123456") {
-      login({ name, mobile });
-      setStep("info");
-      setName("");
-      setMobile("");
-      setOtp("");
-    } else {
-      setError("Invalid OTP. Try 123456");
+    if (otp.length < 6) {
+      setError("Please enter a 6-digit code");
+      return;
+    }
+
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await verifyOtpAction(name, mobile, otp, otpToken);
+      if (response.success && response.user) {
+        login({ 
+          name: response.user.name, 
+          mobile: response.user.mobile,
+          email: response.user.email
+        });
+        setStep("info");
+        setName("");
+        setMobile("");
+        setOtp("");
+        setOtpToken("");
+      } else {
+        setError(response.error || "Invalid OTP. Please try again.");
+      }
+    } catch (err) {
+      setError("An error occurred during verification. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -119,9 +156,10 @@ export default function LoginModal() {
 
               <button 
                 type="submit"
-                className="w-full btn-primary py-4 justify-center text-base mt-4 shadow-lg shadow-forest-600/20"
+                disabled={isLoading}
+                className="w-full btn-primary py-4 justify-center text-base mt-4 shadow-lg shadow-forest-600/20 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Send OTP via WhatsApp
+                {isLoading ? "Sending OTP..." : "Send OTP via WhatsApp"}
               </button>
             </form>
           ) : (
@@ -145,9 +183,10 @@ export default function LoginModal() {
               <div className="space-y-3">
                 <button 
                   type="submit"
-                  className="w-full btn-primary py-4 justify-center text-base shadow-lg shadow-forest-600/20"
+                  disabled={isLoading}
+                  className="w-full btn-primary py-4 justify-center text-base shadow-lg shadow-forest-600/20 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Verify & Login
+                  {isLoading ? "Verifying..." : "Verify & Login"}
                 </button>
                 <button 
                   type="button"

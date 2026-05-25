@@ -2,11 +2,16 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { updateUserAction } from "@/actions/auth";
 
 interface User {
   name: string;
   mobile: string;
   email?: string;
+  image?: string;
+  newsletterSubscribed?: boolean;
+  addresses?: any;
+  cart?: any;
 }
 
 interface AuthContextType {
@@ -57,21 +62,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const openLoginModal = () => setIsLoginModalOpen(true);
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<User>) => {
     if (!user) {
       // If no user is logged in (guest mode), we can temporarily initialize one
       const newUser = {
         name: userData.name || "Guest User",
         mobile: userData.mobile || "9876543210",
         email: userData.email || "user@example.com",
+        image: userData.image,
+        newsletterSubscribed: userData.newsletterSubscribed !== undefined ? userData.newsletterSubscribed : true,
+        addresses: userData.addresses || [],
+        cart: userData.cart || [],
       };
       setUser(newUser);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
       return;
     }
+
     const updatedUser = { ...user, ...userData };
+    
+    // Optimistic Update: Save to local storage and state immediately to keep UI fast & responsive
     setUser(updatedUser);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+
+    // Persist to Postgres database asynchronously in the background
+    try {
+      const response = await updateUserAction(user.mobile, {
+        name: userData.name,
+        email: userData.email,
+        mobile: userData.mobile,
+        image: userData.image,
+        newsletterSubscribed: userData.newsletterSubscribed,
+        addresses: userData.addresses,
+        cart: userData.cart,
+      });
+
+      if (response.success && response.user) {
+        // Sync local state with actual verified details returned from Prisma
+        const finalUser = {
+          name: response.user.name || updatedUser.name,
+          mobile: response.user.mobile || updatedUser.mobile,
+          email: response.user.email || updatedUser.email || undefined,
+          image: response.user.image || updatedUser.image || undefined,
+          newsletterSubscribed: response.user.newsletterSubscribed !== undefined ? response.user.newsletterSubscribed : updatedUser.newsletterSubscribed,
+          addresses: response.user.addresses || updatedUser.addresses || [],
+          cart: response.user.cart || updatedUser.cart || [],
+        };
+        setUser(finalUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(finalUser));
+      } else {
+        console.error("[Auth Context] Database profile update failed:", response.error);
+      }
+    } catch (error) {
+      console.error("[Auth Context] Database profile update exception:", error);
+    }
   };
 
   return (
