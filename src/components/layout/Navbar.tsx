@@ -37,7 +37,8 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { totalItems, openCart } = useCart();
   const { totalItems: wishlistTotal } = useWishlist();
-  const { isAuthenticated, openLoginModal } = useAuth();
+  const { isAuthenticated, isAuthReady, openLoginModal } = useAuth();
+  const showLoginPrompt = isAuthReady && !isAuthenticated;
   const router = useRouter();
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -159,10 +160,18 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={handleProfileClick}
-                className="hidden sm:flex p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
-                aria-label="Account"
+                className="hidden sm:flex relative p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
+                aria-label={showLoginPrompt ? "Login now" : "Account"}
               >
                 <User size={20} />
+                {showLoginPrompt && (
+                  <span
+                    className="absolute -top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide rounded-full whitespace-nowrap shadow-sm animate-pulse"
+                    style={{ background: "#FEF3C7", color: "#92400E" }}
+                  >
+                    Login now!
+                  </span>
+                )}
               </button>
               <button
                 onClick={openCart}
@@ -350,10 +359,20 @@ export default function Navbar() {
                   setMobileOpen(false);
                   handleProfileClick(e);
                 }}
-                className="flex items-center w-full gap-3 px-4 py-2.5 rounded-lg hover:bg-stone-100 text-sm font-medium"
+                className="flex items-center justify-between w-full gap-3 px-4 py-2.5 rounded-lg hover:bg-stone-100 text-sm font-medium"
                 style={{ color: "var(--color-stone-700)" }}
               >
-                <User size={18} /> My Account
+                <span className="flex items-center gap-3">
+                  <User size={18} /> My Account
+                </span>
+                {showLoginPrompt && (
+                  <span
+                    className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full"
+                    style={{ background: "#FEF3C7", color: "#92400E" }}
+                  >
+                    Login now!
+                  </span>
+                )}
               </button>
               <Link
                 href="/wishlist"

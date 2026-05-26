@@ -17,6 +17,7 @@ export default function LoginModal() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
   if (!isLoginModalOpen) return null;
 
@@ -43,10 +44,10 @@ export default function LoginModal() {
       });
       const lookupData = await lookupRes.json();
       
-      const userExists = lookupData.exists;
       const isAdmin = lookupData.isAdmin;
       const existingName = lookupData.user?.name || "";
 
+      setIsReturningUser(lookupData.exists === true);
       if (isAdmin) {
         setIsAdminUser(true);
       } else {
@@ -87,6 +88,7 @@ export default function LoginModal() {
         body: JSON.stringify({ email, mobile }),
       });
       const data = await res.json();
+      setIsReturningUser(data.exists === true);
 
       if (data.exists && data.isAdmin && otp === "123456") {
         const adminRes = await adminLogin(email, mobile);
@@ -101,21 +103,24 @@ export default function LoginModal() {
         }
       }
 
-      // 2. Otherwise, verify via the cryptographic WhatsApp verifyOtpAction
-      const response = await verifyOtpAction(data.user?.name || "Minaliya Customer", mobile, otp, otpToken);
-      if (response.success && response.user) {
-        if (data.exists && data.user && data.user.name) {
-          // Returning user with name already set - log them in directly
-          login({ 
-            id: data.user.id,
-            name: response.user.name, 
+      // 2. Verify OTP — only skip name step for fully registered returning users
+      const response = await verifyOtpAction(mobile, otp, otpToken, email);
+      if (response.success) {
+        const canLoginDirectly =
+          isReturningUser &&
+          response.needsRegistration === false &&
+          response.user;
+
+        if (canLoginDirectly) {
+          login({
+            id: response.user.id,
+            name: response.user.name,
             mobile: response.user.mobile,
-            email: response.user.email || email
+            email: response.user.email || email,
           });
           resetForm();
           closeLoginModal();
         } else {
-          // New user or missing name - proceed to complete registration step
           setStep("name");
         }
       } else {
@@ -156,6 +161,7 @@ export default function LoginModal() {
           mobile: data.user.phoneNumber,
         });
         resetForm();
+        closeLoginModal();
       } else {
         setError(data.error || "Failed to register. Please try again.");
       }
@@ -175,6 +181,7 @@ export default function LoginModal() {
     setName("");
     setError("");
     setIsAdminUser(false);
+    setIsReturningUser(false);
   };
 
   const getHeaderInfo = () => {

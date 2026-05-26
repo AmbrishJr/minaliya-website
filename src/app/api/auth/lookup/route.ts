@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { isCompleteReturningUser, normalizePhone } from "@/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,21 +39,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Try to find the user by email or phone number
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: email || undefined },
-          { phoneNumber: mobile || undefined },
-        ],
-      },
+    const phone = normalizePhone(mobile);
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber: phone },
     });
 
-    if (user && user.name) {
-      return NextResponse.json({ exists: true, user });
-    } else {
-      return NextResponse.json({ exists: false });
+    if (user && isCompleteReturningUser(user, email, mobile)) {
+      return NextResponse.json({
+        exists: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          mobile: user.phoneNumber,
+        },
+      });
     }
+
+    return NextResponse.json({ exists: false });
   } catch (error) {
     console.error("Auth lookup error:", error);
     return NextResponse.json(

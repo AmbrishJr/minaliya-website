@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 
 export default function AccountPage() {
-  const { isAuthenticated, openLoginModal } = useAuth();
+  const { isAuthenticated, user, openLoginModal } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function AccountPage() {
               My Account
             </h1>
             <p className="text-lg" style={{ color: "var(--color-stone-500)" }}>
-              Welcome back, User! View your recent orders and manage your profile.
+              Welcome back, {user?.name?.split(" ")[0] || "there"}! View your recent orders and manage your profile.
             </p>
           </div>
 

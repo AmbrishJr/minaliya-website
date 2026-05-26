@@ -2,6 +2,7 @@
 
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { isCompleteReturningUser, normalizePhone } from "@/lib/auth-utils";
 
 const OTP_SECRET = process.env.OTP_SECRET || "minaliyaa-otp-secure-signing-key-32-chars-long";
 const AISENSY_API_KEY = process.env.AISENSY_API_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NGE2N2NhMmIyZDBmNTVkZGM5ZDRmMSIsIm5hbWUiOiJNaW5hbGl5YSBHb29kcyBBbmQgU2VydmljZXMiLCJhcHBOYW1lIjoiQWlTZW5zeSIsImNsaWVudElkIjoiNjg0YTY3Y2EyYjJkMGY1NWRkYzlkNGVhIiwiYWN0aXZlUGxhbiI6Ik5PTkUiLCJpYXQiOjE3NDk3MDY2OTh9.fTdJ31H_ROoT-M1RKE0AWV5Y4pnDdMSDISwNqm7TwIc";
@@ -60,25 +61,26 @@ function verifyOtpToken(mobile: string, otp: string, token: string): boolean {
  * Generates an OTP, signs it, and triggers the AiSensy WhatsApp campaign.
  */
 export async function sendOtpAction(name: string, mobile: string) {
+  const phone = normalizePhone(mobile);
   try {
-    if (!mobile || mobile.length < 10) {
+    if (!phone || phone.length < 10) {
       return { success: false, error: "Please enter a valid mobile number." };
     }
 
     // Generate a 6-digit dynamic OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiration
-    const otpToken = generateOtpToken(mobile, otp, expiresAt);
+    const otpToken = generateOtpToken(phone, otp, expiresAt);
 
     // In development mode, always print to console for quick developer feedback
     if (process.env.NODE_ENV !== "production") {
       console.log(`\n==============================================`);
-      console.log(`[OTP DEBUG] Generated OTP for ${mobile}: ${otp}`);
+      console.log(`[OTP DEBUG] Generated OTP for ${phone}: ${otp}`);
       console.log(`==============================================\n`);
     }
 
     // Format destination with 91 country code for India
-    let destination = mobile.trim();
+    let destination = phone;
     if (destination.length === 10 && !destination.startsWith("91")) {
       destination = `91${destination}`;
     }
@@ -161,10 +163,10 @@ export async function sendOtpAction(name: string, mobile: string) {
       console.warn("[OTP] Network/fetch error, but returning success token because NODE_ENV is development.");
       const mockOtp = "123456";
       const expiresAt = Date.now() + 5 * 60 * 1000;
-      const otpToken = generateOtpToken(mobile, mockOtp, expiresAt);
+      const otpToken = generateOtpToken(phone, mockOtp, expiresAt);
       
       console.log(`\n==============================================`);
-      console.log(`[OTP DEBUG FALLBACK] Network error. Mock OTP for ${mobile}: ${mockOtp}`);
+      console.log(`[OTP DEBUG FALLBACK] Network error. Mock OTP for ${phone}: ${mockOtp}`);
       console.log(`==============================================\n`);
 
       return { 
@@ -179,56 +181,48 @@ export async function sendOtpAction(name: string, mobile: string) {
 }
 
 /**
- * Validates the entered OTP code against the signed token, and registers/logs in the user.
+ * Validates the entered OTP code against the signed token.
+ * Does not create DB users — registration (name + email) happens in /api/auth/register.
  */
-export async function verifyOtpAction(name: string, mobile: string, otp: string, otpToken: string) {
+export async function verifyOtpAction(
+  mobile: string,
+  otp: string,
+  otpToken: string,
+  email: string
+) {
   try {
     if (!mobile || !otp || !otpToken) {
       return { success: false, error: "Invalid submission data." };
     }
 
-    // Verify cryptographic token integrity and expiration
-    const isValid = verifyOtpToken(mobile, otp, otpToken);
+    const phone = normalizePhone(mobile);
+    const isValid = verifyOtpToken(phone, otp, otpToken);
     if (!isValid) {
       return { success: false, error: "Invalid or expired OTP. Please try again." };
     }
 
-    // User is validated. Database integration with Prisma: find or create the User
-    let user = await prisma.user.findUnique({
-      where: { phoneNumber: mobile },
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber: phone },
     });
 
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          phoneNumber: mobile,
-          name: name || "Minaliya Customer",
+    if (user && isCompleteReturningUser(user, email, phone)) {
+      return {
+        success: true,
+        needsRegistration: false,
+        user: {
+          id: user.id,
+          name: user.name!,
+          mobile: user.phoneNumber || phone,
+          email: user.email || undefined,
+          image: user.image || undefined,
+          newsletterSubscribed: user.newsletterSubscribed,
+          addresses: user.addresses || [],
+          cart: user.cart || [],
         },
-      });
-      console.log(`[OTP] Created new user in database: ${mobile}`);
-    } else {
-      console.log(`[OTP] Found existing user in database: ${mobile}`);
-      // Update name if missing
-      if (name && !user.name) {
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: { name },
-        });
-      }
+      };
     }
 
-    return { 
-      success: true, 
-      user: { 
-        name: user.name || name || "Minaliya Customer", 
-        mobile: user.phoneNumber || mobile,
-        email: user.email || undefined,
-        image: user.image || undefined,
-        newsletterSubscribed: user.newsletterSubscribed,
-        addresses: user.addresses || [],
-        cart: user.cart || [],
-      } 
-    };
+    return { success: true, needsRegistration: true };
   } catch (error) {
     console.error("[OTP] Exception occurred while verifying WhatsApp OTP:", error);
     return { success: false, error: "Failed to verify OTP. Please try again." };
@@ -265,7 +259,7 @@ export async function updateUserAction(
       const newUser = await prisma.user.create({
         data: {
           phoneNumber: data.mobile || currentMobile,
-          name: data.name || "Minaliya Customer",
+          name: data.name || null,
           email: data.email || null,
           image: data.image || null,
           newsletterSubscribed: data.newsletterSubscribed !== undefined ? data.newsletterSubscribed : true,

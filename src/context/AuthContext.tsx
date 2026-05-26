@@ -18,6 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   isLoginModalOpen: boolean;
   login: (userData: User) => void;
   logout: () => void;
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isAuthReady: mounted,
         isLoginModalOpen,
         login,
         logout,
