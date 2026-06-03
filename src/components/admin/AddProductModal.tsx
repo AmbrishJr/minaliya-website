@@ -182,20 +182,21 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] overflow-y-auto">
           <div
-            className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm"
+            className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm"
             onClick={() => !loading && !uploading && setOpen(false)}
           />
+          <div className="flex min-h-full items-center justify-center p-4">
           <div
-            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl"
+            className="relative w-full max-w-2xl rounded-3xl border shadow-2xl"
             style={{
               background: "white",
               borderColor: "var(--color-stone-200)",
             }}
           >
             <div
-              className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-white"
+              className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-white rounded-t-3xl"
               style={{ borderColor: "var(--color-stone-200)" }}
             >
               <div className="flex items-center gap-3">
@@ -464,6 +465,7 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
                 </button>
               </div>
             </form>
+          </div>
           </div>
         </div>
       )}
