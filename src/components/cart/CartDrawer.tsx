@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   X,
   Minus,
@@ -13,6 +15,8 @@ import {
 } from "lucide-react";
 
 export default function CartDrawer() {
+  const router = useRouter();
+  const { isAuthenticated, openLoginModal } = useAuth();
   const {
     items,
     isOpen,
@@ -265,14 +269,20 @@ export default function CartDrawer() {
             )}
 
             {/* Checkout Button */}
-            <Link
-              href="/checkout"
-              onClick={closeCart}
+            <button
+              onClick={() => {
+                closeCart();
+                if (!isAuthenticated) {
+                  openLoginModal();
+                } else {
+                  router.push("/checkout");
+                }
+              }}
               className="btn-primary w-full justify-center text-base py-4"
             >
               Proceed to Checkout
               <ArrowRight size={18} />
-            </Link>
+            </button>
 
             {/* Continue Shopping */}
             <button

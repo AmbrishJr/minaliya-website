@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrderContext";
 import { ChevronRight, Lock, MapPin, CreditCard, CheckCircle2, ShoppingBag, ArrowLeft, AlertCircle, Tag, X, ChevronDown } from "lucide-react";
@@ -59,9 +60,19 @@ const AVAILABLE_COUPONS: Coupon[] = [
 ];
 
 export default function CheckoutClient() {
+  const router = useRouter();
   const { items, totalPrice, totalItems, clearCart } = useCart();
   const { addOrder } = useOrders();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isAuthReady, openLoginModal } = useAuth();
+
+  // Protect checkout route
+  useEffect(() => {
+    if (isAuthReady && !isAuthenticated) {
+      openLoginModal();
+      router.push("/shop");
+    }
+  }, [isAuthReady, isAuthenticated, openLoginModal, router]);
+
   const [step, setStep] = useState<"shipping" | "payment" | "success">("shipping");
   const [selectedPayment, setSelectedPayment] = useState<"card" | "upi" | "cod">("card");
   const [selectedUpi, setSelectedUpi] = useState<string | null>(null);
