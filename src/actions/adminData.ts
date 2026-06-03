@@ -11,13 +11,9 @@ export type CreateProductInput = {
   categoryId: string;
   price: number;
   discountPrice?: number | null;
-  stock: number;
-  imagePath: string;
-  extraImagePaths?: string[];
+  stock?: number;
+  images: string[];
   isFeatured?: boolean;
-  extractionMethod?: string;
-  origin?: string;
-  shelfLife?: string;
 };
 
 async function requireAdmin() {
@@ -140,7 +136,7 @@ export async function createProduct(input: CreateProductInput) {
   const slug = slugify(input.slug || input.name || "");
   const description = input.description?.trim();
   const categoryId = input.categoryId?.trim();
-  const imagePath = input.imagePath?.trim();
+  const images = input.images?.filter((p) => p.startsWith("/"));
 
   if (!name || !slug || !description || !categoryId) {
     return {
@@ -149,19 +145,21 @@ export async function createProduct(input: CreateProductInput) {
     };
   }
 
-  if (!imagePath || !imagePath.startsWith("/")) {
+  if (!images?.length) {
     return {
       success: false as const,
-      error: "Image path is required and must start with / (e.g. /products/your-image.jpg).",
+      error: "At least one product image is required.",
     };
   }
 
   const price = Number(input.price);
-  const stock = Number(input.stock);
 
   if (!Number.isFinite(price) || price <= 0) {
-    return { success: false as const, error: "MRP must be a positive number." };
+    return { success: false as const, error: "Price must be a positive number." };
   }
+
+  const stock =
+    input.stock != null ? Number(input.stock) : 100;
 
   if (!Number.isInteger(stock) || stock < 0) {
     return { success: false as const, error: "Stock must be a whole number of 0 or more." };
@@ -171,13 +169,13 @@ export async function createProduct(input: CreateProductInput) {
     input.discountPrice != null ? Number(input.discountPrice) : null;
 
   if (discountPrice != null && (!Number.isFinite(discountPrice) || discountPrice <= 0)) {
-    return { success: false as const, error: "Sale price must be a positive number." };
+    return { success: false as const, error: "Discount price must be a positive number." };
   }
 
   if (discountPrice != null && discountPrice > price) {
     return {
       success: false as const,
-      error: "Sale price cannot be higher than MRP.",
+      error: "Discount price cannot be higher than the regular price.",
     };
   }
 
@@ -200,22 +198,6 @@ export async function createProduct(input: CreateProductInput) {
     };
   }
 
-  const extraImages = (input.extraImagePaths || [])
-    .map((p) => p.trim())
-    .filter((p) => p.startsWith("/"));
-  const images = [imagePath, ...extraImages.filter((p) => p !== imagePath)];
-
-  const specifications: Record<string, string> = {};
-  if (input.extractionMethod?.trim()) {
-    specifications["Extraction Method"] = input.extractionMethod.trim();
-  }
-  if (input.origin?.trim()) {
-    specifications["Origin"] = input.origin.trim();
-  }
-  if (input.shelfLife?.trim()) {
-    specifications["Shelf Life"] = input.shelfLife.trim();
-  }
-
   try {
     const product = await prisma.product.create({
       data: {
@@ -228,8 +210,6 @@ export async function createProduct(input: CreateProductInput) {
         stock,
         images,
         isFeatured: input.isFeatured ?? false,
-        specifications:
-          Object.keys(specifications).length > 0 ? specifications : undefined,
       },
     });
 

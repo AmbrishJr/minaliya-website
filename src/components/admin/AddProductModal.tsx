@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { X, Plus, Loader2, Leaf } from "lucide-react";
+import { X, Plus, Loader2, Leaf, Upload, Trash2, ImageIcon } from "lucide-react";
 import { createProduct } from "@/actions/adminData";
 import { slugify } from "@/lib/product-utils";
 
@@ -23,6 +23,7 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
 
@@ -32,15 +33,11 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
-  const [stock, setStock] = useState("");
-  const [imagePath, setImagePath] = useState("");
-  const [extraImagePaths, setExtraImagePaths] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
-  const [extractionMethod, setExtractionMethod] = useState(
-    "Wooden Cold Pressed (Mara Chekku)"
-  );
-  const [origin, setOrigin] = useState("Tamil Nadu, India");
-  const [shelfLife, setShelfLife] = useState("6 Months");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setName("");
@@ -50,13 +47,10 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
     setDescription("");
     setPrice("");
     setDiscountPrice("");
-    setStock("");
-    setImagePath("");
-    setExtraImagePaths("");
     setIsFeatured(false);
-    setExtractionMethod("Wooden Cold Pressed (Mara Chekku)");
-    setOrigin("Tamil Nadu, India");
-    setShelfLife("6 Months");
+    setImageFiles([]);
+    setImagePreviews([]);
+    setUploadedUrls([]);
     setError("");
   };
 
@@ -66,10 +60,82 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
     }
   };
 
+  const handleFileSelect = useCallback((files: FileList | null) => {
+    if (!files?.length) return;
+
+    const newFiles = Array.from(files);
+    const total = imageFiles.length + newFiles.length;
+
+    if (total > 4) {
+      setError("You can upload a maximum of 4 images.");
+      return;
+    }
+
+    setImageFiles((prev) => [...prev, ...newFiles]);
+
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews((prev) => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setError("");
+    setUploadedUrls([]);
+  }, [imageFiles.length]);
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setUploadedUrls([]);
+  };
+
+  const uploadImages = async (): Promise<string[] | null> => {
+    if (uploadedUrls.length > 0) return uploadedUrls;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      imageFiles.forEach((file) => formData.append("images", file));
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const { urls } = await res.json();
+      setUploadedUrls(urls);
+      return urls;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload images.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!imageFiles.length) {
+      setError("Please select at least one product image.");
+      return;
+    }
+
     setLoading(true);
+
+    const urls = await uploadImages();
+    if (!urls) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const result = await createProduct({
@@ -79,16 +145,9 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
         categoryId,
         price: parseFloat(price),
         discountPrice: discountPrice ? parseFloat(discountPrice) : null,
-        stock: parseInt(stock, 10),
-        imagePath,
-        extraImagePaths: extraImagePaths
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        stock: 100,
+        images: urls,
         isFeatured,
-        extractionMethod,
-        origin,
-        shelfLife,
       });
 
       if (result.success) {
@@ -104,6 +163,11 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
       setLoading(false);
     }
   };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    handleFileSelect(e.dataTransfer.files);
+  }, [handleFileSelect]);
 
   return (
     <>
@@ -121,7 +185,7 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm"
-            onClick={() => !loading && setOpen(false)}
+            onClick={() => !loading && !uploading && setOpen(false)}
           />
           <div
             className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl"
@@ -158,7 +222,7 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
               </div>
               <button
                 type="button"
-                onClick={() => !loading && setOpen(false)}
+                onClick={() => !loading && !uploading && setOpen(false)}
                 className="p-2 rounded-full hover:bg-stone-100 text-stone-400"
                 aria-label="Close"
               >
@@ -235,10 +299,10 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                    MRP (₹) *
+                    Price (₹) *
                   </label>
                   <input
                     required
@@ -253,7 +317,7 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                    Sale Price (₹)
+                    Discount Price (₹)
                   </label>
                   <input
                     type="number"
@@ -265,51 +329,90 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
                     placeholder="349"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                    Stock *
-                  </label>
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
+                  Product Images * (1-4 images)
+                </label>
+
+                {/* Drop zone */}
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors hover:bg-stone-50/50"
+                  style={{
+                    borderColor: "var(--color-stone-300)",
+                  }}
+                >
                   <input
-                    required
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    className={inputClass}
-                    placeholder="100"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e.target.files)}
                   />
+                  <div className="flex flex-col items-center gap-2">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: "var(--color-forest-50)",
+                        color: "var(--color-forest-600)",
+                      }}
+                    >
+                      <Upload size={22} />
+                    </div>
+                    <p className="text-sm font-medium text-stone-600">
+                      Drop images here or click to browse
+                    </p>
+                    <p className="text-xs text-stone-400">
+                      PNG, JPG, WebP (max 4 images)
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                  Primary Image Path *
-                </label>
-                <input
-                  required
-                  value={imagePath}
-                  onChange={(e) => setImagePath(e.target.value)}
-                  className={`${inputClass} font-mono text-xs`}
-                  placeholder="/products/Groundnut Oil 1 Ltr.jpg"
-                />
-                <p className="text-[11px] text-stone-400 mt-1.5">
-                  Place the image file in{" "}
-                  <code className="text-stone-600">public/products/</code>, then
-                  enter the path starting with /products/
-                </p>
-              </div>
+                {/* Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-4 gap-3 mt-3">
+                    {imagePreviews.map((preview, i) => (
+                      <div
+                        key={i}
+                        className="relative group aspect-square rounded-lg overflow-hidden border border-stone-200 bg-stone-50"
+                      >
+                        <img
+                          src={preview}
+                          alt={`Preview ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-forest-600 text-white">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                    ))}
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                  Extra Image Paths (optional)
-                </label>
-                <input
-                  value={extraImagePaths}
-                  onChange={(e) => setExtraImagePaths(e.target.value)}
-                  className={`${inputClass} font-mono text-xs`}
-                  placeholder="/products/extra.jpg, /products/extra2.jpg"
-                />
+                    {imagePreviews.length < 4 && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-square rounded-lg border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 hover:text-stone-600 hover:border-stone-400 transition-colors"
+                      >
+                        <Plus size={24} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <label className="flex items-center gap-2 cursor-pointer">
@@ -324,39 +427,6 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
                 </span>
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-stone-100">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                    Extraction Method
-                  </label>
-                  <input
-                    value={extractionMethod}
-                    onChange={(e) => setExtractionMethod(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                    Origin
-                  </label>
-                  <input
-                    value={origin}
-                    onChange={(e) => setOrigin(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-stone-500 mb-1.5">
-                    Shelf Life
-                  </label>
-                  <input
-                    value={shelfLife}
-                    onChange={(e) => setShelfLife(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
               {error && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                   {error}
@@ -370,20 +440,20 @@ export default function AddProductModal({ categories }: AddProductModalProps) {
                     setOpen(false);
                     resetForm();
                   }}
-                  disabled={loading}
+                  disabled={loading || uploading}
                   className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || categories.length === 0}
+                  disabled={loading || uploading || categories.length === 0}
                   className="flex-1 btn-primary justify-center py-3 rounded-xl disabled:opacity-70"
                 >
-                  {loading ? (
+                  {loading || uploading ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Creating...
+                      {uploading ? "Uploading..." : "Creating..."}
                     </>
                   ) : (
                     <>

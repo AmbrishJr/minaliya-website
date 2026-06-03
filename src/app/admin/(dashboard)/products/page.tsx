@@ -64,7 +64,7 @@ export default async function AdminProductsPage() {
         className="rounded-2xl border overflow-hidden"
         style={{
           background: "white",
-          borderColor: "var(--color-stone-200)",
+          borderColor: "var(--color-forest-200)",
           boxShadow: "var(--shadow-card)",
         }}
       >
@@ -73,16 +73,17 @@ export default async function AdminProductsPage() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr
-                  className="border-b text-stone-500 font-semibold"
+                  className="border-b font-semibold"
                   style={{
-                    borderColor: "var(--color-stone-100)",
-                    background: "var(--color-stone-50)",
+                    borderColor: "var(--color-forest-100)",
+                    background: "var(--color-forest-50)",
+                    color: "var(--color-forest-700)",
                   }}
                 >
                   <th className="p-4 pl-6 text-xs uppercase tracking-wider">Product Info</th>
                   <th className="p-4 text-xs uppercase tracking-wider">Slug</th>
                   <th className="p-4 text-xs uppercase tracking-wider">Category</th>
-                  <th className="p-4 text-xs uppercase tracking-wider">Price (Retail)</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Price</th>
                   <th className="p-4 text-xs uppercase tracking-wider">Stock Level</th>
                   <th className="p-4 pr-6 text-xs uppercase tracking-wider text-right">Status</th>
                 </tr>
@@ -95,12 +96,14 @@ export default async function AdminProductsPage() {
                   return (
                     <tr
                       key={product.id}
-                      className="hover:bg-stone-50/50 text-stone-600 transition-colors border-b"
+                      className="hover:bg-forest-50/30 text-stone-600 transition-colors border-b"
                       style={{ borderColor: "var(--color-stone-100)" }}
                     >
                       <td className="p-4 pl-6">
                         <div className="flex items-center gap-3">
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-50 flex items-center justify-center shrink-0 border border-stone-200">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-50 flex items-center justify-center shrink-0 border"
+                            style={{ borderColor: "var(--color-forest-200)" }}
+                          >
                             <Image
                               src={product.images[0] || "/products/placeholder.jpg"}
                               alt={product.name}
@@ -114,20 +117,31 @@ export default async function AdminProductsPage() {
                               {product.name}
                             </span>
                             {product.isFeatured && (
-                              <span className="inline-flex text-[9px] font-bold uppercase tracking-wider text-amber-600 mt-1">
-                                ⭐ Featured Item
+                              <span className="inline-flex text-[9px] font-bold uppercase tracking-wider mt-1"
+                                style={{ color: "var(--color-amber-600)" }}
+                              >
+                                ⭐ Featured
                               </span>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="p-4 font-mono text-xs text-stone-500 font-medium">{product.slug}</td>
-                      <td className="p-4 font-medium text-stone-700">{product.categoryName}</td>
+                      <td className="p-4 font-medium">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            background: "var(--color-cream-100)",
+                            color: "var(--color-stone-700)",
+                          }}
+                        >
+                          {product.categoryName}
+                        </span>
+                      </td>
                       <td className="p-4">
                         <div className="font-semibold text-stone-900">₹{product.price}</div>
                         {product.discountPrice && (
-                          <div className="text-xs text-stone-400 line-through">
-                            ₹{product.discountPrice}
+                          <div className="text-xs font-medium" style={{ color: "var(--color-forest-600)" }}>
+                            Sale: ₹{product.discountPrice}
                           </div>
                         )}
                       </td>

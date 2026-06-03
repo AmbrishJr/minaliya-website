@@ -47,37 +47,44 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{
-          background: "white",
+          background: "var(--color-cream-50)",
           borderColor: "var(--color-stone-200)",
         }}
       >
         {/* Sidebar Header */}
         <div
           className="flex items-center justify-between h-16 px-6 border-b"
-          style={{ borderColor: "var(--color-stone-200)" }}
+          style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-100)" }}
         >
           <Link href="/admin" className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{
-                background: "var(--color-forest-50)",
-                border: "1px solid var(--color-forest-100)",
+                background: "var(--color-forest-600)",
               }}
             >
-              <ShieldAlert size={16} style={{ color: "var(--color-forest-600)" }} />
+              <ShieldAlert size={16} style={{ color: "white" }} />
             </div>
             <span
               className="text-lg font-bold tracking-wide"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-800)" }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-forest-700)" }}
             >
-              Minaliya Admin
+              Minaliya
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
+              style={{
+                background: "var(--color-amber-100)",
+                color: "var(--color-amber-700)",
+              }}
+            >
+              Admin
             </span>
           </Link>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg lg:hidden transition-colors"
             style={{ color: "var(--color-stone-400)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-stone-700)"; e.currentTarget.style.background = "var(--color-stone-100)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-stone-700)"; e.currentTarget.style.background = "var(--color-stone-200)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-stone-400)"; e.currentTarget.style.background = "transparent"; }}
           >
             <X size={18} />
@@ -85,7 +92,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -95,15 +102,14 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 key={item.name}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
                 style={{
-                  color: isActive ? "var(--color-forest-700)" : "var(--color-stone-600)",
-                  background: isActive ? "var(--color-forest-50)" : "transparent",
-                  borderLeft: isActive ? "3px solid var(--color-forest-500)" : "3px solid transparent",
+                  color: isActive ? "white" : "var(--color-stone-600)",
+                  background: isActive ? "var(--color-forest-600)" : "transparent",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.background = "var(--color-stone-50)";
+                    e.currentTarget.style.background = "var(--color-stone-100)";
                     e.currentTarget.style.color = "var(--color-stone-800)";
                   }
                 }}
@@ -116,7 +122,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               >
                 <Icon
                   size={18}
-                  style={{ color: isActive ? "var(--color-forest-600)" : "var(--color-stone-400)" }}
+                  style={{ color: isActive ? "white" : "var(--color-stone-400)" }}
                 />
                 {item.name}
               </Link>
@@ -132,16 +138,15 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <div
             className="flex items-center gap-3 px-3 py-2.5 mb-3 rounded-xl"
             style={{
-              background: "var(--color-cream-100)",
+              background: "white",
               border: "1px solid var(--color-stone-200)",
             }}
           >
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
               style={{
-                background: "var(--color-forest-50)",
-                color: "var(--color-forest-600)",
-                border: "1px solid var(--color-forest-100)",
+                background: "var(--color-forest-600)",
+                color: "white",
               }}
             >
               AD
@@ -157,15 +162,16 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
             style={{
               color: "var(--color-terra-500)",
-              border: "1px solid transparent",
+              background: "white",
+              border: "1px solid var(--color-stone-200)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--color-terra-50)";
               e.currentTarget.style.borderColor = "var(--color-terra-200)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "transparent";
+              e.currentTarget.style.background = "white";
+              e.currentTarget.style.borderColor = "var(--color-stone-200)";
             }}
           >
             <LogOut size={16} />
