@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrderContext";
 import { ChevronRight, Lock, MapPin, CreditCard, CheckCircle2, ShoppingBag, ArrowLeft, AlertCircle, Tag, X, ChevronDown } from "lucide-react";
 import { createOrder } from "@/actions/order";
+import { useAuth } from "@/context/AuthContext";
 
 interface Coupon {
   code: string;
@@ -14,6 +15,18 @@ interface Coupon {
   value: number; // e.g. 10 for 10%
   minOrderValue?: number; // e.g. 500
   description: string;
+}
+
+interface Address {
+  id: string;
+  name: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  isDefault: boolean;
 }
 
 const AVAILABLE_COUPONS: Coupon[] = [
@@ -48,6 +61,7 @@ const AVAILABLE_COUPONS: Coupon[] = [
 export default function CheckoutClient() {
   const { items, totalPrice, totalItems, clearCart } = useCart();
   const { addOrder } = useOrders();
+  const { user } = useAuth();
   const [step, setStep] = useState<"shipping" | "payment" | "success">("shipping");
   const [selectedPayment, setSelectedPayment] = useState<"card" | "upi" | "cod">("card");
   const [selectedUpi, setSelectedUpi] = useState<string | null>(null);
@@ -64,6 +78,61 @@ export default function CheckoutClient() {
   const [formError, setFormError] = useState("");
   const [createdOrderId, setCreatedOrderId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Saved address state
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | "new">("new");
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
+
+  // Derived: saved addresses from user profile
+  const savedAddresses: Address[] = Array.isArray(user?.addresses)
+    ? (user.addresses as Address[]).filter(Boolean)
+    : [];
+
+  // Auto-select the default address when user data loads from localStorage
+  useEffect(() => {
+    if (!user || hasAutoSelected) return;
+    const addrs: Address[] = Array.isArray(user.addresses)
+      ? (user.addresses as Address[]).filter(Boolean)
+      : [];
+    const defAddr = addrs.find((a) => a.isDefault) || addrs[0] || null;
+    if (defAddr) {
+      setSelectedSavedAddressId(defAddr.id);
+      const nameParts = defAddr.name.trim().split(" ");
+      setFirstName(nameParts[0] || "");
+      setLastName(nameParts.slice(1).join(" ") || "");
+      setAddress([defAddr.addressLine1, defAddr.addressLine2].filter(Boolean).join(", "));
+      setCity(defAddr.city);
+      setPostalCode(defAddr.zipCode);
+      setPhone(defAddr.phone);
+    } else {
+      if (user.mobile) setPhone(user.mobile);
+    }
+    if (user.email) setEmail(user.email);
+    setHasAutoSelected(true);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handler: user picks a saved address card or "new"
+  const handleSelectSavedAddress = (id: string | "new") => {
+    setSelectedSavedAddressId(id);
+    if (id === "new") {
+      setFirstName("");
+      setLastName("");
+      setAddress("");
+      setCity("");
+      setPostalCode("");
+      setPhone(user?.mobile || "");
+      return;
+    }
+    const addr = savedAddresses.find((a) => a.id === id);
+    if (!addr) return;
+    const nameParts = addr.name.trim().split(" ");
+    setFirstName(nameParts[0] || "");
+    setLastName(nameParts.slice(1).join(" ") || "");
+    setAddress([addr.addressLine1, addr.addressLine2].filter(Boolean).join(", "));
+    setCity(addr.city);
+    setPostalCode(addr.zipCode);
+    setPhone(addr.phone);
+  };
 
   // Coupon states
   const [couponInput, setCouponInput] = useState("");
@@ -267,103 +336,184 @@ export default function CheckoutClient() {
             {step === "shipping" && (
               <div className="space-y-6 animate-fade-in-up">
                 <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <MapPin size={20} className="text-forest-600" /> Contact & Shipping Information
+                  <MapPin size={20} className="text-forest-600" /> Contact &amp; Shipping Information
                 </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Email Address</label>
-                    <input 
-                      required 
-                      type="email" 
-                      placeholder="you@example.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>First Name</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="John" 
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Last Name</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="Doe" 
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Address</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="123 Main St, Apartment 4B" 
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>City</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="Chennai" 
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Postal Code / ZIP</label>
-                    <input 
-                      required 
-                      type="text" 
-                      placeholder="600001" 
-                      value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Phone Number (for delivery updates)</label>
-                    <input 
-                      required 
-                      type="tel" 
-                      placeholder="9876543210" 
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/gi, "").slice(0, 10))}
-                      className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                      style={{ background: "white", borderColor: "var(--color-stone-200)" }} 
-                    />
-                  </div>
+                {/* Email – always shown and editable */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Email Address</label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                    style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                  />
                 </div>
 
+                {/* ── Saved Addresses Selector (only when user has saved addresses) ── */}
+                {savedAddresses.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-semibold" style={{ color: "var(--color-stone-600)" }}>
+                      Select a delivery address
+                    </p>
+                    <div className="space-y-2.5">
+                      {savedAddresses.map((addr) => {
+                        const isSelected = selectedSavedAddressId === addr.id;
+                        return (
+                          <label
+                            key={addr.id}
+                            htmlFor={`addr-${addr.id}`}
+                            className="flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200"
+                            style={{
+                              borderColor: isSelected ? "var(--color-forest-500)" : "var(--color-stone-200)",
+                              background: isSelected ? "var(--color-forest-50)" : "white",
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              id={`addr-${addr.id}`}
+                              name="saved_address"
+                              value={addr.id}
+                              checked={isSelected}
+                              onChange={() => handleSelectSavedAddress(addr.id)}
+                              className="mt-0.5 w-4 h-4 shrink-0 accent-forest-600"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-sm" style={{ color: "var(--color-stone-900)" }}>
+                                  {addr.name}
+                                </span>
+                                {addr.isDefault && (
+                                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: "var(--color-forest-100)", color: "var(--color-forest-700)" }}>
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm mt-0.5 leading-snug" style={{ color: "var(--color-stone-500)" }}>
+                                {[addr.addressLine1, addr.addressLine2].filter(Boolean).join(", ")}
+                              </p>
+                              <p className="text-sm" style={{ color: "var(--color-stone-500)" }}>
+                                {addr.city}, {addr.state} &mdash; {addr.zipCode}
+                              </p>
+                              <p className="text-xs mt-1" style={{ color: "var(--color-stone-400)" }}>{addr.phone}</p>
+                            </div>
+                          </label>
+                        );
+                      })}
+
+                      {/* Option: enter a completely new address */}
+                      <label
+                        htmlFor="addr-new"
+                        className="flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200"
+                        style={{
+                          borderColor: selectedSavedAddressId === "new" ? "var(--color-forest-500)" : "var(--color-stone-200)",
+                          background: selectedSavedAddressId === "new" ? "var(--color-forest-50)" : "white",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          id="addr-new"
+                          name="saved_address"
+                          value="new"
+                          checked={selectedSavedAddressId === "new"}
+                          onChange={() => handleSelectSavedAddress("new")}
+                          className="w-4 h-4 shrink-0 accent-forest-600"
+                        />
+                        <span className="text-sm font-semibold" style={{ color: "var(--color-stone-700)" }}>
+                          + Enter a different address
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Manual address form (shown when no saved addresses OR "new" chosen) ── */}
+                {(savedAddresses.length === 0 || selectedSavedAddressId === "new") && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>First Name</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                        style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Last Name</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Doe"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                        style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Address</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="123 Main St, Apartment 4B"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                        style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>City</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Chennai"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                        style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Postal Code / ZIP</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="600001"
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                        style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Phone Number (for delivery updates)</label>
+                      <input
+                        required
+                        type="tel"
+                        placeholder="9876543210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/gi, "").slice(0, 10))}
+                        className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                        style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-4 flex justify-end">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => {
                       if (email && firstName && lastName && address && city && postalCode && phone) {
                         setStep("payment");
@@ -371,7 +521,7 @@ export default function CheckoutClient() {
                       } else {
                         setFormError("Please fill out all required shipping details first.");
                       }
-                    }} 
+                    }}
                     className="btn-primary w-full sm:w-auto py-3.5 px-6 sm:px-8 text-sm sm:text-base justify-center"
                   >
                     Continue <span className="hidden sm:inline">to Payment</span> <ChevronRight size={18} />
