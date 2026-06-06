@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { adminLogout } from "@/actions/admin";
 import {
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
   LogOut,
   X,
   ShieldAlert,
+  BarChart3,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -20,13 +22,25 @@ interface AdminSidebarProps {
 
 const menuItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { name: "Products", href: "/admin/products", icon: Leaf },
   { name: "Inquiries", href: "/admin/inquiries", icon: MessageSquare },
 ];
 
+const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/inquiries"];
+
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    ADMIN_ROUTES.forEach((route) => router.prefetch(route));
+  }, [router]);
+
+  useEffect(() => {
+    if (isOpen) onClose();
+  }, [pathname, isOpen, onClose]);
 
   const handleLogout = async () => {
     await adminLogout();
@@ -101,7 +115,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={onClose}
+                prefetch
+                aria-current={isActive ? "page" : undefined}
                 className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
                 style={{
                   color: isActive ? "white" : "var(--color-stone-600)",

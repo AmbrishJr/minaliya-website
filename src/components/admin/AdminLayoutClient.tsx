@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import { usePathname } from "next/navigation";
@@ -12,10 +12,12 @@ export default function AdminLayoutClient({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   // Map pathnames to beautiful page titles
   const getPageTitle = (path: string) => {
     if (path === "/admin") return "Dashboard Overview";
+    if (path.startsWith("/admin/analytics")) return "Analytics Dashboard";
     if (path.startsWith("/admin/orders")) return "Order Management";
     if (path.startsWith("/admin/products")) return "Product Inventory";
     if (path.startsWith("/admin/inquiries")) return "Bulk Inquiries";
@@ -27,7 +29,7 @@ export default function AdminLayoutClient({
   return (
     <div className="min-h-screen flex" style={{ background: "var(--color-cream-50)", color: "var(--color-stone-800)" }}>
       {/* Sidebar Navigation */}
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AdminSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
@@ -35,8 +37,8 @@ export default function AdminLayoutClient({
         <AdminHeader onMenuToggle={() => setSidebarOpen(!sidebarOpen)} title={title} />
 
         {/* Content Wrapper */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-6xl mx-auto space-y-8 animate-fade-in-up">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+          <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
             {children}
           </div>
         </main>
