@@ -151,7 +151,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
   });
 
   const categoryRevenueMap = new Map<string, number>();
-  orderItemsWithCategory.forEach((item) => {
+  orderItemsWithCategory.forEach((item: any) => {
     const categoryName = item.product.category.name;
     const revenue = Number(item.price) * item.quantity;
     categoryRevenueMap.set(categoryName, (categoryRevenueMap.get(categoryName) || 0) + revenue);
@@ -168,7 +168,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
 
   // Top products
   const productSalesMap = new Map<string, { unitsSold: number; revenue: number; name: string }>();
-  orderItemsWithCategory.forEach((item) => {
+  orderItemsWithCategory.forEach((item: any) => {
     const productName = item.product.name;
     const units = item.quantity;
     const revenue = Number(item.price) * item.quantity;
@@ -191,7 +191,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     _count: true,
   });
 
-  const statusBreakdown = statusBreakdownRaw.map((s) => ({
+  const statusBreakdown = statusBreakdownRaw.map((s: any) => ({
     status: s.status,
     count: s._count,
   }));
@@ -220,7 +220,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
   });
 
   const inquiryMap = new Map<string, { totalQuantity: number; count: number }>();
-  recentInquiries.forEach((inquiry) => {
+  recentInquiries.forEach((inquiry: any) => {
     const product = inquiry.product;
     const existing = inquiryMap.get(product) || { totalQuantity: 0, count: 0 };
     inquiryMap.set(product, {
@@ -236,11 +236,11 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
 
   // Generate recommendations
   const recommendations: AnalyticsData["recommendations"] = [];
-  const pendingOrders = statusBreakdown.find((s) => s.status === "PENDING")?.count || 0;
-  const processingOrders = statusBreakdown.find((s) => s.status === "PROCESSING")?.count || 0;
+  const pendingOrders = statusBreakdown.find((s: any) => s.status === "PENDING")?.count || 0;
+  const processingOrders = statusBreakdown.find((s: any) => s.status === "PROCESSING")?.count || 0;
   const totalPending = pendingOrders + processingOrders;
-  const cancelledOrders = statusBreakdown.find((s) => s.status === "CANCELLED")?.count || 0;
-  const totalOrders = statusBreakdown.reduce((sum, s) => sum + s.count, 0);
+  const cancelledOrders = statusBreakdown.find((s: any) => s.status === "CANCELLED")?.count || 0;
+  const totalOrders = statusBreakdown.reduce((sum: number, s: any) => sum + s.count, 0);
 
   // High priority recommendations
   if (totalPending > 0) {
@@ -254,7 +254,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     });
   }
 
-  const outOfStockProducts = inventoryAlerts.filter((p) => p.stock === 0);
+  const outOfStockProducts = inventoryAlerts.filter((p: any) => p.stock === 0);
   if (outOfStockProducts.length > 0) {
     recommendations.push({
       id: "restock-products",
@@ -267,7 +267,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
   }
 
   // Medium priority recommendations
-  const lowStockProducts = inventoryAlerts.filter((p) => p.stock > 0 && p.stock <= 10);
+  const lowStockProducts = inventoryAlerts.filter((p: any) => p.stock > 0 && p.stock <= 10);
   if (lowStockProducts.length > 0) {
     recommendations.push({
       id: "low-stock",
