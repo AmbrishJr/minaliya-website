@@ -25,7 +25,7 @@ export interface OrderInput {
   items: OrderItemInput[];
 }
 
-export async function createOrder(data: OrderInput) {
+export async function createOrder(data: OrderInput & { paymentStatus?: string }) {
   try {
     if (!data.items || data.items.length === 0) {
       return { success: false, error: "No products in order items." };
@@ -74,7 +74,7 @@ export async function createOrder(data: OrderInput) {
           totalAmount: new Prisma.Decimal(data.totalAmount),
           shippingAddress: data.shippingAddress as any,
           paymentMethod: data.paymentMethod.toUpperCase(),
-          paymentStatus: "PAID",
+          paymentStatus: data.paymentStatus || "PAID",
           status: "PENDING",
           items: {
             create: itemsToCreate,

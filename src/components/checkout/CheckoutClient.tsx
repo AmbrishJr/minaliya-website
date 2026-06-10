@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrderContext";
-import { ChevronRight, Lock, MapPin, CreditCard, CheckCircle2, ShoppingBag, ArrowLeft, AlertCircle, Tag, X, ChevronDown } from "lucide-react";
+import { ChevronRight, Lock, MapPin, CheckCircle2, ShoppingBag, ArrowLeft, AlertCircle, Tag, X, ChevronDown, Shield } from "lucide-react";
 import { createOrder } from "@/actions/order";
 import { lookupPincode } from "@/actions/lookupPincode";
 import { useAuth } from "@/context/AuthContext";
@@ -83,77 +83,18 @@ export default function CheckoutClient() {
   }, [isAuthReady, isAuthenticated, openLoginModal, router]);
 
   const [step, setStep] = useState<"shipping" | "payment" | "success">("shipping");
-  const [selectedPayment, setSelectedPayment] = useState<"card" | "upi">("card");
-  const [selectedUpi, setSelectedUpi] = useState<string | null>(null);
-  const [cardData, setCardData] = useState({ number: "", expiry: "", cvc: "" });
-  const [detectedCardType, setDetectedCardType] = useState<string | null>(null);
+  const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
+  const [razorpayError, setRazorpayError] = useState("");
 
-  const detectCardType = (num: string): string | null => {
-    const n = num.replace(/\D/g, "");
-    if (!n) return null;
-    if (/^4/.test(n)) return "visa";
-    if (/^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d{2}|27[0-1]\d|2720)/.test(n)) return "mastercard";
-    if (/^3[47]/.test(n)) return "amex";
-    if (/^(60|81|82|508|353|356)/.test(n)) return "rupay";
-    return null;
-  };
-
-  const formatCardNumber = (num: string): string => {
-    const n = num.replace(/\D/g, "");
-    if (/^3[47]/.test(n)) {
-      let out = n.slice(0, 4);
-      if (n.length > 4) out += " " + n.slice(4, 10);
-      if (n.length > 10) out += " " + n.slice(10, 15);
-      return out;
-    }
-    return n.replace(/(\d{4})/g, "$1 ").trim();
-  };
-
-  const cardBrandIcons: Record<string, React.ReactNode> = {
-    visa: <i className="fa-brands fa-cc-visa" style={{ fontSize: "40px", color: "#1A1F71" }} />,
-    mastercard: <i className="fa-brands fa-cc-mastercard" style={{ fontSize: "40px", color: "#EB001B" }} />,
-    amex: <i className="fa-brands fa-cc-amex" style={{ fontSize: "40px", color: "#2E77BC" }} />,
-    rupay: (
-      <svg viewBox="0 0 60 38" width="60" height="38" role="img" aria-label="RuPay">
-        <rect width="60" height="38" rx="5" fill="#1a1a2e" />
-        <text x="7" y="22" fontFamily="Arial Black, Arial" fontWeight="900" fontSize="11" fill="#ffffff" letterSpacing="0.5">Ru</text>
-        <text x="22" y="22" fontFamily="Arial Black, Arial" fontWeight="900" fontSize="11" fill="#00b050" letterSpacing="0.5">Pay</text>
-        <rect x="7" y="25" width="46" height="2" rx="1" fill="#00b050" opacity="0.6" />
-        <text x="7" y="34" fontFamily="Arial" fontSize="5.5" fill="#aaaaaa" letterSpacing="1">INDIA'S OWN</text>
-      </svg>
-    ),
-  };
-
-  const upiMethods = [
-    {
-      id: "GPay",
-      label: "Google Pay",
-      icon: <img src="https://cdn.simpleicons.org/googlepay" width="40" height="40" alt="Google Pay" />,
-    },
-    {
-      id: "Razorpay",
-      label: "Razorpay",
-      icon: <img src="https://cdn.simpleicons.org/razorpay" width="40" height="40" alt="Razorpay" />,
-    },
-    {
-      id: "PhonePe",
-      label: "PhonePe",
-      icon: <img src="https://cdn.simpleicons.org/phonepe" width="40" height="40" alt="PhonePe" />,
-    },
-    {
-      id: "Netbanking",
-      label: "Netbanking",
-      icon: (
-        <svg viewBox="0 0 48 48" width="32" height="32" fill="none">
-          <rect x="6" y="20" width="36" height="22" rx="3" stroke="currentColor" strokeWidth="2" fill="none" />
-          <path d="M24 6 6 20h36L24 6z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinejoin="round" />
-          <path d="M18 30h12v8H18z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-          <path d="M14 26h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M22 32h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   // Shipping form state
   const [email, setEmail] = useState("");
@@ -166,8 +107,7 @@ export default function CheckoutClient() {
   const [shippingState, setShippingState] = useState("");
   const [isLookingUpPincode, setIsLookingUpPincode] = useState(false);
   const [formError, setFormError] = useState("");
-  const [createdOrderId, setCreatedOrderId] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Saved address state
   const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | "new">("new");
@@ -302,10 +242,9 @@ export default function CheckoutClient() {
     setCouponError("");
   };
 
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-    setIsSubmitting(true);
+  const handleRazorpayPayment = useCallback(async () => {
+    setIsRazorpayLoading(true);
+    setRazorpayError("");
 
     try {
       const orderPayload = {
@@ -319,7 +258,8 @@ export default function CheckoutClient() {
           state: shippingState || "Tamil Nadu",
           pinCode: postalCode.trim(),
         },
-        paymentMethod: selectedPayment.toUpperCase(),
+        paymentMethod: "RAZORPAY",
+        paymentStatus: "PENDING",
         items: items.map((item) => ({
           productSlug: item.slug,
           quantity: item.quantity,
@@ -327,54 +267,89 @@ export default function CheckoutClient() {
         })),
       };
 
-      const res = await createOrder(orderPayload);
+      const orderRes = await createOrder(orderPayload);
 
-      if (!res.success) {
-        setFormError(res.error || "Failed to place order.");
-        setIsSubmitting(false);
+      if (!orderRes.success) {
+        setRazorpayError(orderRes.error || "Failed to create order.");
+        setIsRazorpayLoading(false);
         return;
       }
 
-      const orderId = res.orderId || `MNL-${Math.floor(100000 + Math.random() * 900000)}`;
+      const dbOrderId = orderRes.orderId!;
 
-      // Sync with local context for state consistency
-      addOrder({
-        id: orderId,
-        date: new Date().toISOString(),
-        items: [...items],
-        totalPrice: finalTotal,
-        status: "Processing",
+      const res = await fetch("/api/razorpay/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: finalTotal, currency: "INR" }),
       });
 
-      setCreatedOrderId(orderId);
-      setStep("success");
-      clearCart();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err: any) {
-      setFormError(err.message || "An unexpected error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create Razorpay order.");
+      }
 
-  if (step === "success") {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8" style={{ background: "var(--color-forest-100)", color: "var(--color-forest-600)" }}>
-          <CheckCircle2 size={48} />
-        </div>
-        <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}>
-          Thank you for your order!
-        </h1>
-        <p className="text-lg mb-10" style={{ color: "var(--color-stone-500)" }}>
-          Your order <span className="font-bold text-stone-900">#{createdOrderId}</span> has been placed successfully. We&apos;ve sent you a confirmation text and email.
-        </p>
-        <Link href="/shop" className="btn-primary">
-          Continue Shopping
-        </Link>
-      </div>
-    );
-  }
+      const razorpayOrder = await res.json();
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "Minaliya",
+        description: "Purchase Payment",
+        order_id: razorpayOrder.id,
+        prefill: {
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.trim(),
+          contact: phone.trim(),
+        },
+        theme: { color: "#072654" },
+        handler: async function (response: any) {
+          const verifyRes = await fetch("/api/razorpay/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderId: dbOrderId,
+            }),
+          });
+
+          const verifyData = await verifyRes.json();
+
+          if (verifyData.success) {
+            addOrder({
+              id: dbOrderId,
+              date: new Date().toISOString(),
+              items: [...items],
+              totalPrice: finalTotal,
+              status: "Processing",
+            });
+            clearCart();
+            router.push(`/payment/success?razorpay_payment_id=${response.razorpay_payment_id}`);
+          } else {
+            router.push("/payment/failed");
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsRazorpayLoading(false);
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function () {
+        router.push("/payment/failed");
+      });
+      rzp.open();
+    } catch (err: any) {
+      setRazorpayError(err.message || "Something went wrong. Please try again.");
+      setIsRazorpayLoading(false);
+    }
+  }, [finalTotal, firstName, lastName, email, phone, shippingState, address, city, postalCode, items, addOrder, clearCart, router]);
+
+
 
   if (items.length === 0) {
     return (
@@ -440,7 +415,7 @@ export default function CheckoutClient() {
             </button>
           </div>
 
-          <form id="checkout-form" onSubmit={handlePlaceOrder} className="space-y-8">
+          <form id="checkout-form" className="space-y-8">
             {formError && (
               <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 text-sm">
                 <AlertCircle size={18} className="shrink-0" />
@@ -669,154 +644,55 @@ export default function CheckoutClient() {
             {step === "payment" && (
               <div className="space-y-6 animate-fade-in-up">
                 <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <CreditCard size={20} className="text-forest-600" /> Payment Details
+                  <Shield size={20} className="text-forest-600" /> Complete Payment
                 </h2>
 
-                <div className="space-y-4">
-                  {/* Payment Options */}
-                  <label 
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all" 
-                    style={{ 
-                      borderColor: selectedPayment === "card" ? "var(--color-forest-600)" : "var(--color-stone-200)", 
-                      background: selectedPayment === "card" ? "var(--color-forest-50)" : "white" 
-                    }}
-                  >
-                    <input 
-                      type="radio" 
-                      name="payment_method" 
-                      checked={selectedPayment === "card"}
-                      onChange={() => setSelectedPayment("card")}
-                      className="w-5 h-5 text-forest-600 focus:ring-forest-500" 
-                    />
-                    <div className="flex-1">
-                      <p className="font-bold text-stone-900">Credit / Debit Card</p>
-                      <p className="text-sm text-stone-500">Securely pay with your card</p>
-                    </div>
-                  </label>
+                <p className="text-sm" style={{ color: "var(--color-stone-500)" }}>
+                  You will be redirected to Razorpay&apos;s secure checkout to complete your payment.
+                </p>
 
-                  <label 
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all hover:bg-stone-50" 
-                    style={{ 
-                      borderColor: selectedPayment === "upi" ? "var(--color-forest-600)" : "var(--color-stone-200)", 
-                      background: selectedPayment === "upi" ? "var(--color-forest-50)" : "white" 
-                    }}
-                  >
-                    <input 
-                      type="radio" 
-                      name="payment_method" 
-                      checked={selectedPayment === "upi"}
-                      onChange={() => setSelectedPayment("upi")}
-                      className="w-5 h-5 text-forest-600 focus:ring-forest-500" 
-                    />
-                    <div className="flex-1">
-                      <p className="font-bold text-stone-900">UPI / Netbanking</p>
-                      <p className="text-sm text-stone-500">Pay using your preferred UPI app</p>
-                    </div>
-                  </label>
-                  
+                {razorpayError && (
+                  <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 text-sm">
+                    <AlertCircle size={18} className="shrink-0" />
+                    <span>{razorpayError}</span>
+                  </div>
+                )}
+
+                <div className="p-6 rounded-xl border text-center" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
+                  <img
+                    src="https://cdn.razorpay.com/logo.svg"
+                    alt="Razorpay"
+                    className="h-8 mx-auto mb-4 opacity-80"
+                  />
+                  <p className="text-sm font-medium mb-1" style={{ color: "var(--color-stone-700)" }}>
+                    Secured by Razorpay
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--color-stone-400)" }}>
+                    Pay using UPI, Card, Netbanking, Wallet &amp; more
+                  </p>
                 </div>
 
-                {/* Card Details Section */}
-                {selectedPayment === "card" && (
-                  <div className="p-6 rounded-xl border mt-6 animate-fade-in" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Card Number</label>
-                        <div className="relative">
-                          <input 
-                            type="text" 
-                            placeholder="0000 0000 0000 0000" 
-                            value={formatCardNumber(cardData.number)}
-                            onChange={(e) => {
-                              const digits = e.target.value.replace(/\D/g, "");
-                              const isAmex = /^3[47]/.test(digits);
-                              const maxLen = isAmex ? 15 : 16;
-                              setCardData({ ...cardData, number: digits.slice(0, maxLen) });
-                              setDetectedCardType(detectCardType(digits));
-                            }}
-                            className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                            style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)", paddingRight: "3rem" }} 
-                            required={selectedPayment === "card"}
-                          />
-                          {detectedCardType && cardBrandIcons[detectedCardType] && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                              {cardBrandIcons[detectedCardType]}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>Expiry Date</label>
-                          <input 
-                            type="month" 
-                            value={cardData.expiry}
-                            onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                            style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} 
-                            required={selectedPayment === "card"}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>CVC</label>
-                          <input 
-                            type="text" 
-                            placeholder="123" 
-                            value={cardData.cvc}
-                            onChange={(e) => setCardData({ ...cardData, cvc: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                            className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all" 
-                            style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }} 
-                            required={selectedPayment === "card"}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* UPI Options Section */}
-                {selectedPayment === "upi" && (
-                  <div className="p-6 rounded-xl border mt-6 animate-fade-in" style={{ background: "white", borderColor: "var(--color-stone-200)" }}>
-                    <p className="text-sm font-bold mb-4" style={{ color: "var(--color-stone-800)" }}>Choose a UPI option</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {upiMethods.map((method) => {
-                        const isSelected = selectedUpi === method.id;
-                        return (
-                          <button
-                            key={method.id}
-                            type="button"
-                            onClick={() => setSelectedUpi(method.id)}
-                            className="p-3 rounded-xl border text-sm font-medium transition-all flex flex-col items-center gap-2"
-                            style={{ 
-                              borderColor: isSelected ? "var(--color-forest-600)" : "var(--color-stone-200)",
-                              background: isSelected ? "var(--color-forest-50)" : "white",
-                              color: isSelected ? "var(--color-forest-700)" : "var(--color-stone-700)"
-                            }}
-                          >
-                            <div 
-                              className="w-10 h-10 flex items-center justify-center transition-colors"
-                            >
-                              {method.icon}
-                            </div>
-                            {method.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div className="pt-6 flex items-center justify-between">
+                <div className="pt-4 flex items-center justify-between">
                   <button type="button" onClick={() => setStep("shipping")} className="text-sm font-medium hover:underline text-stone-500">
                     Return to Shipping
                   </button>
-                  <button 
-                    type="submit" 
-                    form="checkout-form" 
-                    disabled={isSubmitting}
+                  <button
+                    type="button"
+                    disabled={isRazorpayLoading}
+                    onClick={handleRazorpayPayment}
                     className="btn-primary py-3 sm:py-4 px-4 sm:px-10 text-sm sm:text-base shadow-lg shadow-forest-600/20 flex items-center justify-center gap-2 w-full sm:w-auto"
                   >
-                    {isSubmitting ? "Placing Order..." : `Pay ₹${finalTotal} & Place Order`}
+                    {isRazorpayLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>Pay ₹{finalTotal} with Razorpay</>
+                    )}
                   </button>
                 </div>
               </div>
