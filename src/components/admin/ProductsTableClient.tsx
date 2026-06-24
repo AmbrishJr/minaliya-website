@@ -65,6 +65,12 @@ export default function ProductsTableClient({ products, categories }: ProductsTa
 
   return (
     <>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-stone-500">
+          {products.length} product{products.length !== 1 && "s"} total
+        </p>
+        <AddProductModal categories={categories} onSuccess={() => router.refresh()} />
+      </div>
       <div className="overflow-x-auto">
         {products.length > 0 ? (
           <table className="w-full text-left border-collapse text-sm min-w-[750px]">

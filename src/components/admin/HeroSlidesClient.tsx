@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -12,6 +12,9 @@ import {
   ChevronUp,
   ChevronDown,
   GripVertical,
+  Upload,
+  Loader2,
+  X,
 } from "lucide-react";
 import { createHeroSlide, updateHeroSlide, deleteHeroSlide, reorderHeroSlides } from "@/actions/adminData";
 
@@ -50,7 +53,11 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
   const [editing, setEditing] = useState<Slide | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     label: "",
@@ -80,6 +87,8 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
       bgAccent: "#FFFFFF",
       isActive: true,
     });
+    setImagePreview(null);
+    setImageFile(null);
     setError("");
   }
 
@@ -103,6 +112,8 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
       bgAccent: slide.bgAccent,
       isActive: slide.isActive,
     });
+    setImagePreview(slide.image);
+    setImageFile(null);
     setEditing(slide);
     setIsCreating(false);
     setError("");
@@ -112,6 +123,11 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     setIsCreating(false);
     setEditing(null);
     resetForm();
+  }
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview(null);
   }
 
   function updateHeadline(index: number, field: keyof HeadlinePart, value: string) {
@@ -129,6 +145,32 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     setForm({ ...form, headlineParts: parts.length ? parts : emptyHeadline });
   }
 
+  async function uploadImage(file: File): Promise<string | null> {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("images", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const { urls } = await res.json();
+      return urls[0];
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload image.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setError("");
@@ -139,13 +181,21 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     if (!headline.length) { setError("At least one headline part is required."); setSaving(false); return; }
     if (!form.subtitle.trim()) { setError("Subtitle is required."); setSaving(false); return; }
 
+    let imageUrl = form.image;
+
+    if (imageFile) {
+      const uploadedUrl = await uploadImage(imageFile);
+      if (!uploadedUrl) { setSaving(false); return; }
+      imageUrl = uploadedUrl;
+    }
+
     try {
       if (editing) {
         const res = await updateHeroSlide(editing.id, {
           label: form.label,
           headline,
           subtitle: form.subtitle,
-          image: form.image,
+          image: imageUrl,
           imageAlt: form.imageAlt,
           accentColor: form.accentColor,
           badge: form.badge || undefined,
@@ -160,7 +210,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
           label: form.label,
           headline,
           subtitle: form.subtitle,
-          image: form.image,
+          image: imageUrl,
           imageAlt: form.imageAlt,
           accentColor: form.accentColor,
           badge: form.badge || undefined,
@@ -401,30 +451,99 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
                 />
               </div>
 
-              {/* Image + Image Alt */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1">Image URL</label>
+              {/* Image Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1">
+                  Image * (PNG, JPG, WebP)
+                </label>
+
+                {/* Drop zone */}
+                <div
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors hover:bg-stone-50/50"
+                  style={{
+                    borderColor: "var(--color-stone-300)",
+                  }}
+                >
                   <input
-                    type="text"
-                    value={form.image}
-                    onChange={(e) => setForm({ ...form, image: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border text-sm"
-                    style={{ borderColor: "var(--color-stone-200)" }}
-                    placeholder="/products/groundnut-bg-removed.png"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImageFile(file);
+                        setImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
                   />
+
+                  {imagePreview ? (
+                    <div className="relative mx-auto max-w-[200px]">
+                      <Image
+                        src={imagePreview}
+                        alt="Slide preview"
+                        width={200}
+                        height={150}
+                        className="object-contain rounded-lg border"
+                        style={{ borderColor: "var(--color-stone-200)", maxHeight: 150 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setImageFile(null);
+                          setImagePreview(null);
+                          if (editing) setImagePreview(editing.image);
+                        }}
+                        className="absolute -top-2 -right-2 p-0.5 rounded-full bg-stone-800 text-white hover:bg-stone-700"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{
+                          background: "var(--color-forest-50)",
+                          color: "var(--color-forest-600)",
+                        }}
+                      >
+                        <Upload size={20} />
+                      </div>
+                      <p className="text-xs font-medium text-stone-600">
+                        Drop image here or click to browse
+                      </p>
+                      <p className="text-[11px] text-stone-400">
+                        PNG, JPG, WebP supported
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-600 mb-1">Image Alt</label>
-                  <input
-                    type="text"
-                    value={form.imageAlt}
-                    onChange={(e) => setForm({ ...form, imageAlt: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border text-sm"
-                    style={{ borderColor: "var(--color-stone-200)" }}
-                    placeholder="Describe the image"
-                  />
-                </div>
+              </div>
+
+              {/* Image Alt */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-600 mb-1">Image Alt Text</label>
+                <input
+                  type="text"
+                  value={form.imageAlt}
+                  onChange={(e) => setForm({ ...form, imageAlt: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border text-sm"
+                  style={{ borderColor: "var(--color-stone-200)" }}
+                  placeholder="Describe the image"
+                />
               </div>
 
               {/* Badge */}
@@ -506,13 +625,21 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={saving}
-                  className="px-5 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50"
+                  disabled={saving || uploading}
+                  className="px-5 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50 inline-flex items-center gap-2"
                   style={{ background: "var(--color-forest-600)" }}
-                  onMouseEnter={(e) => { if (!saving) e.currentTarget.style.background = "var(--color-forest-700)"; }}
-                  onMouseLeave={(e) => { if (!saving) e.currentTarget.style.background = "var(--color-forest-600)"; }}
+                  onMouseEnter={(e) => { if (!saving && !uploading) e.currentTarget.style.background = "var(--color-forest-700)"; }}
+                  onMouseLeave={(e) => { if (!saving && !uploading) e.currentTarget.style.background = "var(--color-forest-600)"; }}
                 >
-                  {saving ? "Saving..." : editing ? "Update Slide" : "Create Slide"}
+                  {uploading ? (
+                    <><Loader2 size={14} className="animate-spin" /> Uploading...</>
+                  ) : saving ? (
+                    <><Loader2 size={14} className="animate-spin" /> Saving...</>
+                  ) : editing ? (
+                    "Update Slide"
+                  ) : (
+                    "Create Slide"
+                  )}
                 </button>
               </div>
             </div>

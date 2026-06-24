@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import ProductDetail from "@/components/shop/ProductDetail";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const slugRedirects: Record<string, string> = {
   "groundnut-oil-500ml": "groundnut-oil",
   "coconut-oil-500ml": "coconut-oil",

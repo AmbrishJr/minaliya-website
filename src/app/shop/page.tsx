@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import ShopContent from "@/components/shop/ShopContent";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Shop Pure Cold Pressed Oils",
   description:
