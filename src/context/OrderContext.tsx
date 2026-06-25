@@ -9,6 +9,7 @@ export interface Order {
   items: CartItem[];
   totalPrice: number;
   status: "Processing" | "Shipped" | "Delivered";
+  awbNumber?: string | null;
 }
 
 interface OrderContextType {

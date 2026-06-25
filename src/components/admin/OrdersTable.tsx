@@ -1,9 +1,9 @@
 "use client";
 
 import { Fragment, useState, useTransition } from "react";
-import { updateOrderStatus, deleteOrder } from "@/actions/adminData";
+import { updateOrderStatus, deleteOrder, updateOrderAwb } from "@/actions/adminData";
 import OrderStatusBadge from "./OrderStatusBadge";
-import { ChevronDown, ChevronUp, Eye, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X, Pencil, Package } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -26,6 +26,7 @@ interface Order {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  awbNumber: string | null;
   items: OrderItem[];
 }
 
@@ -51,6 +52,28 @@ export default function OrdersTable({
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // AWB editing state
+  const [awbEditingId, setAwbEditingId] = useState<string | null>(null);
+  const [awbInput, setAwbInput] = useState("");
+  const [awbSaving, setAwbSaving] = useState(false);
+  const [awbError, setAwbError] = useState<string | null>(null);
+
+  const handleSaveAwb = async () => {
+    if (!awbEditingId) return;
+    setAwbSaving(true);
+    setAwbError(null);
+    const result = await updateOrderAwb(awbEditingId, awbInput);
+    if (result.success) {
+      setOrders((prev) =>
+        prev.map((o) => o.id === awbEditingId ? { ...o, awbNumber: awbInput.trim() || null } : o)
+      );
+      setAwbEditingId(null);
+    } else {
+      setAwbError(result.error || "Failed to save AWB number.");
+    }
+    setAwbSaving(false);
+  };
 
   const handleDeleteOrder = (id: string) => {
     setDeleteError(null);
@@ -181,6 +204,21 @@ export default function OrdersTable({
               </p>
             </div>
           </div>
+          {/* AWB Number */}
+          <div
+            className="flex items-center gap-2 border-t pt-3"
+            style={{ borderColor: "var(--color-stone-200)" }}
+          >
+            <span className="font-bold text-stone-500 shrink-0 w-16">AWB No:</span>
+            {order.awbNumber ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold tracking-wider" style={{ background: "var(--color-forest-50)", color: "var(--color-forest-700)", border: "1px solid var(--color-forest-200)" }}>
+                <Package size={11} />
+                {order.awbNumber}
+              </span>
+            ) : (
+              <span className="text-stone-400 italic">Not assigned yet</span>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -281,6 +319,18 @@ export default function OrdersTable({
                       title="Delete Order"
                     >
                       <Trash2 size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAwbInput(order.awbNumber || "");
+                        setAwbError(null);
+                        setAwbEditingId(order.id);
+                      }}
+                      className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
+                      title="Edit AWB Number"
+                    >
+                      <Pencil size={16} />
                     </button>
                     <button
                       type="button"
@@ -385,6 +435,18 @@ export default function OrdersTable({
                           <button
                             type="button"
                             onClick={() => {
+                              setAwbInput(order.awbNumber || "");
+                              setAwbError(null);
+                              setAwbEditingId(order.id);
+                            }}
+                            className="p-1.5 rounded-xl border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
+                            title="Edit AWB Number"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
                               setDeleteError(null);
                               setDeletingId(order.id);
                             }}
@@ -481,6 +543,89 @@ export default function OrdersTable({
                       <Trash2 size={16} />
                       Delete
                     </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* AWB Edit Modal */}
+      {awbEditingId && (
+        <div className="fixed inset-0 z-[110] overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm"
+            onClick={() => !awbSaving && setAwbEditingId(null)}
+          />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div
+              className="relative w-full max-w-md rounded-3xl border shadow-2xl p-6 bg-white space-y-5"
+              style={{ borderColor: "var(--color-stone-200)" }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--color-forest-50)", color: "var(--color-forest-600)" }}>
+                    <Package size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-stone-900" style={{ fontFamily: "var(--font-heading)" }}>
+                      AWB / Tracking Number
+                    </h3>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      Order #{awbEditingId.slice(-8).toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAwbEditingId(null)}
+                  disabled={awbSaving}
+                  className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-2">
+                  Enter AWB Number
+                </label>
+                <input
+                  type="text"
+                  value={awbInput}
+                  onChange={(e) => setAwbInput(e.target.value)}
+                  placeholder="e.g. 1234567890"
+                  className="w-full px-4 py-3 rounded-xl border text-sm font-medium focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                  style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSaveAwb(); }}
+                />
+                {awbError && (
+                  <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                    <AlertTriangle size={12} /> {awbError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAwbEditingId(null)}
+                  disabled={awbSaving}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAwb}
+                  disabled={awbSaving}
+                  className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-75 transition-colors"
+                  style={{ background: "var(--color-forest-600)" }}
+                >
+                  {awbSaving ? (
+                    <><Loader2 size={16} className="animate-spin" /> Saving...</>
+                  ) : (
+                    <><Package size={16} /> Save AWB</>
                   )}
                 </button>
               </div>

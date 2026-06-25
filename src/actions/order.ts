@@ -141,6 +141,7 @@ export async function getUserOrders(email?: string, phone?: string) {
             : order.status === "SHIPPED"
             ? "Shipped"
             : "Delivered",
+        awbNumber: order.awbNumber ?? null,
         items: order.items.map((item) => ({
           name: item.product.name,
           slug: item.product.slug,

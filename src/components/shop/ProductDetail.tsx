@@ -51,7 +51,7 @@ export default function ProductDetail({
 }) {
   const [selectedSize, setSelectedSize] = useState(product.sizes.length - 1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
   const [activeTab, setActiveTab] = useState<"description" | "benefits" | "specs" | "usage">(
     "description"
   );
@@ -306,8 +306,9 @@ export default function ProductDetail({
                   style={{ border: "1.5px solid var(--color-stone-200)" }}
                 >
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-11 h-11 flex items-center justify-center hover:bg-stone-100 transition-colors"
+                    onClick={() => setQuantity(Math.max(0, quantity - 1))}
+                    className="w-11 h-11 flex items-center justify-center hover:bg-stone-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={quantity <= 0}
                     aria-label="Decrease quantity"
                   >
                     <Minus size={16} />
@@ -331,8 +332,11 @@ export default function ProductDetail({
               {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <button
-                  className="btn-primary flex-1 justify-center text-base py-4"
+                  className="btn-primary flex-1 justify-center text-base py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={quantity === 0}
+                  style={quantity === 0 ? { background: "var(--color-stone-400)", color: "white", borderColor: "transparent" } : {}}
                   onClick={() => {
+                    if (quantity === 0) return;
                     addItem(
                       {
                         slug: product.slug,
@@ -343,6 +347,7 @@ export default function ProductDetail({
                       },
                       quantity
                     );
+                    setQuantity(0);
                   }}
                 >
                   <ShoppingBag size={20} />

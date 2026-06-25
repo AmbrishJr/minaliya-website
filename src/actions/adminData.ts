@@ -125,6 +125,7 @@ export async function getAllOrders() {
     shippingAddress: order.shippingAddress as Record<string, string>,
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
+    awbNumber: order.awbNumber ?? null,
     customerName: (order.shippingAddress as Record<string, string>)?.name || "N/A",
     customerEmail: (order.shippingAddress as Record<string, string>)?.email || "N/A",
     customerPhone: (order.shippingAddress as Record<string, string>)?.phone || "N/A",
@@ -311,6 +312,28 @@ export async function updateOrderStatus(
   } catch (error) {
     console.error("Error updating order status:", error);
     return { success: false, error: "Failed to update order status." };
+  }
+}
+
+export async function updateOrderAwb(orderId: string, awbNumber: string) {
+  const { isAdmin } = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false, error: "Session expired. Please log in again." };
+  }
+
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { awbNumber: awbNumber.trim() || null },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating AWB number:", error);
+    const prismaError = error as { code?: string; meta?: { cause?: string } };
+    if (prismaError.code === "P2025") {
+      return { success: false, error: "Order not found. It may have been deleted." };
+    }
+    return { success: false, error: "Failed to save AWB number. Check your connection and try again." };
   }
 }
 

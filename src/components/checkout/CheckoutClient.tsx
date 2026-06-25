@@ -709,21 +709,31 @@ export default function CheckoutClient() {
               </h3>
             </div>
             
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[45vh] overflow-y-auto">
-              {items.map((item) => (
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[50vh] overflow-y-auto">
+              {items.map((item) => {
+                const amountInclGst = item.price * item.quantity;
+                const amountExGst = amountInclGst / 1.05;
+                const gstAmount = amountInclGst - amountExGst;
+                const pricePerUnitExGst = item.price / 1.05;
+
+                return (
                 <div key={`${item.slug}-${item.size}`} className="flex gap-4">
                   <div className="w-16 h-16 rounded-lg shrink-0 flex items-center justify-center border" style={{ background: "var(--color-cream-100)", borderColor: "var(--color-stone-100)" }}>
                     <Image src={item.image} alt={item.name} width={50} height={50} className="object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-bold truncate" style={{ color: "var(--color-stone-800)" }}>{item.name}</h4>
-                    <p className="text-xs text-stone-500 mt-0.5">{item.size} × {item.quantity}</p>
-                  </div>
-                  <div className="text-sm font-bold text-stone-900">
-                    ₹{item.price * item.quantity}
+                    <p className="text-xs text-stone-500 mt-0.5 mb-2">{item.size} × {item.quantity}</p>
+                    
+                    <div className="text-[10px] sm:text-xs text-stone-500 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 bg-stone-50 p-2 rounded-md border" style={{ borderColor: "var(--color-stone-100)" }}>
+                      <div className="flex justify-between"><span>Price/Unit:</span> <span className="font-medium text-stone-700">₹{pricePerUnitExGst.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span>Discount:</span> <span className="font-medium text-stone-700">₹0.00</span></div>
+                      <div className="flex justify-between"><span>GST (5%):</span> <span className="font-medium text-stone-700">₹{gstAmount.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span>Amount:</span> <span className="font-bold text-stone-800">₹{amountInclGst.toFixed(2)}</span></div>
+                    </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
 
             {/* Promo Code & Coupon section */}
@@ -892,40 +902,61 @@ export default function CheckoutClient() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 border-t bg-stone-50/50 space-y-4" style={{ borderColor: "var(--color-stone-200)" }}>
-              <div className="flex justify-between text-sm">
-                <span className="text-stone-500">Subtotal ({totalItems} items)</span>
-                <span className="font-bold text-stone-800">₹{totalPrice}</span>
-              </div>
-              
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-forest-700 font-medium animate-fade-in">
-                  <span className="flex items-center gap-1.5">
-                    <Tag size={14} /> Discount ({appliedCoupon?.code})
-                  </span>
-                  <span className="font-bold">-₹{discountAmount}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between text-sm">
-                <span className="text-stone-500">Shipping</span>
-                <span className="font-bold text-stone-800">
-                  {shippingCost === 0 ? (
-                    <span className="text-forest-600 flex items-center gap-1.5 font-semibold">
-                      Free {isFreeShipCoupon && <span className="text-[10px] font-bold bg-forest-100 px-1 py-0.2 rounded uppercase">Coupon</span>}
-                    </span>
-                  ) : (
-                    `₹${shippingCost}`
-                  )}
-                </span>
-              </div>
-              
-              <div className="pt-4 mt-2 border-t flex justify-between items-center" style={{ borderColor: "var(--color-stone-200)" }}>
-                <span className="text-base font-bold text-stone-900">Total</span>
-                <span className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}>
-                  ₹{finalTotal}
-                </span>
-              </div>
+            <div className="p-4 sm:p-6 border-t bg-stone-50/50 space-y-3" style={{ borderColor: "var(--color-stone-200)" }}>
+              {(() => {
+                const totalInclGst = totalPrice;
+                const totalExGst = items.reduce((acc, item) => acc + ((item.price * item.quantity) / 1.05), 0);
+                const totalGst = totalInclGst - totalExGst;
+                const cgst = totalGst / 2;
+                const sgst = totalGst / 2;
+                
+                const exactSubTotal = totalExGst;
+                const roundedTotal = Math.round(finalTotal);
+                const roundOff = roundedTotal - finalTotal;
+                
+                return (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-stone-500">Sub Total</span>
+                      <span className="font-bold text-stone-800">₹{exactSubTotal.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm">
+                      <span className="text-stone-500">Discount {appliedCoupon && <span className="text-xs">({appliedCoupon.code})</span>}</span>
+                      <span className="font-bold text-stone-800">₹{discountAmount.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm text-stone-500">
+                      <span>SGST@2.50%</span>
+                      <span className="font-medium text-stone-800">₹{sgst.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between text-sm text-stone-500">
+                      <span>CGST@2.50%</span>
+                      <span className="font-medium text-stone-800">₹{cgst.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm text-stone-500">
+                      <span>Shipping</span>
+                      <span className="font-medium text-stone-800">
+                        {shippingCost === 0 ? "₹0.00" : `₹${shippingCost.toFixed(2)}`}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-sm text-stone-500">
+                      <span>Round Off</span>
+                      <span className="font-medium text-stone-800">₹{roundOff.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="pt-4 mt-2 border-t flex justify-between items-center" style={{ borderColor: "var(--color-stone-200)" }}>
+                      <span className="text-sm font-bold text-stone-900">Total Amount</span>
+                      <span className="text-sm font-bold text-stone-800">
+                        ₹{roundedTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>

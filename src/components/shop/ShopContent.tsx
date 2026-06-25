@@ -25,7 +25,7 @@ const sortOptions = [
 function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(0);
   const [toast, setToast] = useState(false);
   const isWishlisted = isInWishlist(product.slug);
   const discount = Math.round(
@@ -176,9 +176,9 @@ function ProductCard({ product }: { product: Product }) {
               <div className="flex items-center border rounded-full overflow-hidden shrink-0" style={{ borderColor: "var(--color-stone-200)" }}>
                 <button
                   className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
-                  style={{ color: qty <= 1 ? "var(--color-stone-300)" : "var(--color-stone-600)" }}
-                  disabled={qty <= 1}
-                  onClick={(e) => { e.preventDefault(); setQty(Math.max(1, qty - 1)); }}
+                  style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-600)" }}
+                  disabled={qty <= 0}
+                  onClick={(e) => { e.preventDefault(); setQty(Math.max(0, qty - 1)); }}
                 >
                   −
                 </button>
@@ -194,14 +194,16 @@ function ProductCard({ product }: { product: Product }) {
                 </button>
               </div>
               <button
-                className="flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-full text-[10px] sm:text-xs font-semibold transition-all hover:shadow-md min-h-[36px] whitespace-nowrap cursor-pointer"
+                className="flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-full text-[10px] sm:text-xs font-semibold transition-all hover:shadow-md min-h-[36px] whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                  background: "var(--color-forest-600)",
+                  background: qty === 0 ? "var(--color-stone-400)" : "var(--color-forest-600)",
                   color: "white",
                 }}
+                disabled={qty === 0}
                 aria-label={`Add ${product.name} to cart`}
                 onClick={(e) => {
                   e.preventDefault();
+                  if (qty === 0) return;
                   for (let i = 0; i < qty; i++) {
                     addItem({
                       slug: product.slug,
@@ -211,7 +213,7 @@ function ProductCard({ product }: { product: Product }) {
                       size: product.sizes[product.sizes.length - 1],
                     }, 1, false);
                   }
-                  setQty(1);
+                  setQty(0);
                   setToast(true);
                   setTimeout(() => setToast(false), 2000);
                 }}

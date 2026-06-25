@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Edit, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, Eye, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Edit, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, Eye, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { useOrders } from "@/context/OrderContext";
 import { useAuth } from "@/context/AuthContext";
@@ -68,6 +68,16 @@ export default function AccountDashboard() {
   // Re-order feedback toast
   const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
   const reorderFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // AWB copy state
+  const [copiedAwbId, setCopiedAwbId] = useState<string | null>(null);
+
+  const handleCopyAwb = (orderId: string, awbNumber: string) => {
+    navigator.clipboard.writeText(awbNumber).then(() => {
+      setCopiedAwbId(orderId);
+      setTimeout(() => setCopiedAwbId(null), 2500);
+    });
+  };
 
   /** Re-order: adds all items from a past order to the cart */
   const handleReorder = (order: any) => {
@@ -146,7 +156,7 @@ export default function AccountDashboard() {
       setIsOrdersLoading(true);
       const res = await getUserOrders(user.email, user.mobile);
       if (res.success && res.orders) {
-        const combined = [...res.orders];
+        const combined: any[] = [...res.orders];
         const dbOrderIds = new Set(res.orders.map((o) => o.id));
         for (const localOrder of localOrders) {
           if (!dbOrderIds.has(localOrder.id)) {
@@ -776,18 +786,38 @@ export default function AccountDashboard() {
                           </div>
                         </div>
                         <div className="flex flex-col sm:items-end gap-2">
-                          <p className="text-sm text-stone-500 mb-0.5">Order # <span className="font-medium text-stone-900">{order.id}</span></p>
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-block" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}>{order.status}</span>
-                            <button
-                              onClick={() => handleReorder(order)}
-                              className="inline-flex items-center gap-1.5 py-1.5 px-4 text-xs font-semibold rounded-full whitespace-nowrap cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                              style={{ background: "var(--color-forest-600)", color: "white" }}
-                            >
-                              <RefreshCw size={12} /> Re-Order
-                            </button>
-                          </div>
-                        </div>
+                           <p className="text-sm text-stone-500 mb-0.5">Order # <span className="font-medium text-stone-900">{order.id}</span></p>
+                           <div className="flex items-center gap-2">
+                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-block" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}>{order.status}</span>
+                             <button
+                               onClick={() => handleReorder(order)}
+                               className="inline-flex items-center gap-1.5 py-1.5 px-4 text-xs font-semibold rounded-full whitespace-nowrap cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                               style={{ background: "var(--color-forest-600)", color: "white" }}
+                             >
+                               <RefreshCw size={12} /> Re-Order
+                             </button>
+                           </div>
+                           {/* AWB Number */}
+                           {order.awbNumber && (
+                             <div className="flex items-center gap-2 mt-1">
+                               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">AWB:</span>
+                               <span className="text-xs font-bold" style={{ color: "var(--color-forest-700)" }}>{order.awbNumber}</span>
+                               <button
+                                 onClick={() => handleCopyAwb(order.id, order.awbNumber)}
+                                 className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
+                                 style={copiedAwbId === order.id
+                                   ? { background: "var(--color-forest-600)", color: "white" }
+                                   : { background: "var(--color-stone-100)", color: "var(--color-stone-700)" }
+                                 }
+                                 title="Copy AWB to clipboard"
+                               >
+                                 {copiedAwbId === order.id
+                                   ? <><ClipboardCheck size={11} /> Copied!</>
+                                   : <><Clipboard size={11} /> Copy</>}
+                               </button>
+                             </div>
+                           )}
+                         </div>
                       </div>
                       <div className="p-5 space-y-4">
                         {order.items.map((item: any, i: number) => (
