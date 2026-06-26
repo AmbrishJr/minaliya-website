@@ -1,6 +1,7 @@
 "use server";
 
 import crypto from "crypto";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { isCompleteReturningUser, normalizeEmail, normalizePhone } from "@/lib/auth-utils";
 import { sendOtpEmail } from "@/lib/email";
@@ -293,8 +294,8 @@ export async function updateUserAction(
     mobile?: string;
     image?: string;
     newsletterSubscribed?: boolean;
-    addresses?: any;
-    cart?: any;
+    addresses?: Prisma.InputJsonValue;
+    cart?: Prisma.InputJsonValue;
   }
 ) {
   try {
@@ -362,11 +363,12 @@ export async function updateUserAction(
         cart: updatedUser.cart || [],
       } 
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[OTP] Error updating user profile in database:", error);
-    if (error.code === "P2002") {
+    const prismaError = error as { code?: string; message?: string };
+    if (prismaError.code === "P2002") {
       return { success: false, error: "A user with this mobile number or email already exists." };
     }
-    return { success: false, error: error.message || "Failed to update profile in database." };
+    return { success: false, error: prismaError.message || "Failed to update profile in database." };
   }
 }

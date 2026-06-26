@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { verifyAdminSession } from "@/actions/admin";
+import {
+  uploadImage,
+  validateImageFile,
+  MAX_IMAGES,
+  CloudinaryUploadResult,
+} from "@/lib/cloudinary";
 
 export async function POST(req: NextRequest) {
   const { isAdmin } = await verifyAdminSession();
@@ -17,29 +21,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    if (files.length > 4) {
-      return NextResponse.json({ error: "Maximum 4 images allowed" }, { status: 400 });
+    if (files.length > MAX_IMAGES) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_IMAGES} images allowed` },
+        { status: 400 }
+      );
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "products");
-    await mkdir(uploadDir, { recursive: true });
+    // Validate all files before uploading
+    for (const file of files) {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        return NextResponse.json({ error: validationError }, { status: 400 });
+      }
+    }
 
-    const savedUrls: string[] = [];
+    // Upload all files to Cloudinary
+    const results: CloudinaryUploadResult[] = [];
 
     for (const file of files) {
       const buffer = Buffer.from(await file.arrayBuffer());
-
-      const safeName = file.name
-        .replace(/[^a-zA-Z0-9._-]/g, "_")
-        .toLowerCase();
-
-      const uniqueName = `${Date.now()}-${safeName}`;
-      const filePath = path.join(uploadDir, uniqueName);
-      await writeFile(filePath, buffer);
-      savedUrls.push(`/products/${uniqueName}`);
+      const result = await uploadImage(buffer, "products");
+      results.push(result);
     }
 
-    return NextResponse.json({ urls: savedUrls });
+    return NextResponse.json({
+      urls: results.map((r) => r.secure_url),
+      publicIds: results.map((r) => r.public_id),
+    });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });

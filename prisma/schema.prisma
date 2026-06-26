@@ -49,6 +49,7 @@ model Product {
   discountPrice   Decimal? @db.Decimal(10, 2)
   stock           Int      @default(0)
   images          String[]
+  imagePublicIds  String[]  // Cloudinary public_ids, parallel to images[]
   isFeatured      Boolean  @default(false)
   categoryId      String
   category        Category @relation(fields: [categoryId], references: [id])
@@ -143,6 +144,7 @@ model HeroSlide {
   headline    Json     // Array of { text: string, style: "display" | "serif-italic" | "sans" }
   subtitle    String
   image       String
+  imagePublicId String?   // Cloudinary public_id for the banner image
   imageAlt    String
   accentColor String   @default("#C47700")
   badge       String?

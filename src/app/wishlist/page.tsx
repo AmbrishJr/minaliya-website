@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { HeartOff } from "lucide-react";
-import Link from "next/link";
 import WishlistClient from "./WishlistClient";
 
 export const metadata: Metadata = {

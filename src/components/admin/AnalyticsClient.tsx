@@ -106,7 +106,7 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
             Analytics Dashboard
           </h2>
           <p className="text-sm" style={{ color: "var(--color-stone-500)" }}>
-            Track your store's performance and growth
+            Track your store&apos;s performance and growth
           </p>
         </div>
         <div className="flex items-center gap-2">

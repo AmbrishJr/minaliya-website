@@ -57,7 +57,7 @@ export default function LoginModal() {
         if (adminRes.success) {
           resetForm();
           closeLoginModal();
-          window.location.href = "/admin";
+          window.location.assign("/admin");
           return;
         }
         setIsRedirectingToAdmin(false);

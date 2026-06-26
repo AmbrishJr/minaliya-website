@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
+import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductDetail from "@/components/shop/ProductDetail";
@@ -196,9 +197,9 @@ export default async function ProductPage({
           <p className="section-subtitle mx-auto mt-4">
             Sorry, we couldn&apos;t find the product you&apos;re looking for.
           </p>
-          <a href="/shop" className="btn-primary mt-8 inline-flex">
+          <Link href="/shop" className="btn-primary mt-8 inline-flex">
             Back to Shop
-          </a>
+          </Link>
         </main>
         <Footer />
       </>
@@ -236,6 +237,9 @@ export default async function ProductPage({
       { label: "1 Ltr", price: p.discountPrice ? Number(p.discountPrice) : Number(p.price), originalPrice: Number(p.price) },
     ],
     category: p.category.name,
+    benefits: [],
+    specifications: [],
+    usage: [],
   }));
 
   /* JSON-LD */
@@ -243,7 +247,7 @@ export default async function ProductPage({
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    image: `https://minaliya.com${product.images[0]}`,
+    image: product.images[0],
     description: product.description.slice(0, 200),
     brand: { "@type": "Brand", name: "Minaliya" },
     offers: {
@@ -269,7 +273,7 @@ export default async function ProductPage({
       <AnnouncementBar />
       <Navbar />
       <main id="main-content">
-        <ProductDetail product={product} related={related as any} />
+        <ProductDetail product={product} related={related} />
       </main>
       <Footer />
     </>

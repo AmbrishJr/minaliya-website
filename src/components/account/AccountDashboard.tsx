@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Edit, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, Eye, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useOrders } from "@/context/OrderContext";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
@@ -46,6 +47,22 @@ interface Address {
   isDefault: boolean;
 }
 
+interface DisplayOrder {
+  id: string;
+  date: string;
+  totalPrice: number;
+  status: string;
+  awbNumber?: string | null;
+  items: {
+    name: string;
+    slug: string;
+    image: string;
+    price: number;
+    quantity: number;
+    size: string;
+  }[];
+}
+
 // Preset Premium Avatars matching Minaliyaa wood-pressed oil brand aesthetic (warm gold, amber, herbal forest green gradients)
 const AVATAR_PRESETS = [
   "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", // Amber Cold-pressed
@@ -59,10 +76,10 @@ export default function AccountDashboard() {
   const [ordersSubTab, setOrdersSubTab] = useState<"standard" | "bulk">("standard");
   const { orders: localOrders } = useOrders();
   const { user, logout, updateUser } = useAuth();
-  const { addItem, openCart } = useCart();
+  const { addItem } = useCart();
 
   // Dynamic db orders state
-  const [displayOrders, setDisplayOrders] = useState<any[]>([]);
+  const [displayOrders, setDisplayOrders] = useState<DisplayOrder[]>([]);
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
 
   // Re-order feedback toast
@@ -80,7 +97,7 @@ export default function AccountDashboard() {
   };
 
   /** Re-order: adds all items from a past order to the cart */
-  const handleReorder = (order: any) => {
+  const handleReorder = (order: DisplayOrder) => {
     let addedCount = 0;
     for (const item of order.items) {
       // Look up current catalog product by slug for live pricing
@@ -139,6 +156,7 @@ export default function AccountDashboard() {
   // Initialize values when user loads or tab changes
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfileName(user.name || "");
       setProfileMobile(user.mobile || "");
       setProfileEmail(user.email || "");
@@ -156,7 +174,7 @@ export default function AccountDashboard() {
       setIsOrdersLoading(true);
       const res = await getUserOrders(user.email, user.mobile);
       if (res.success && res.orders) {
-        const combined: any[] = [...res.orders];
+        const combined: DisplayOrder[] = [...res.orders];
         const dbOrderIds = new Set(res.orders.map((o) => o.id));
         for (const localOrder of localOrders) {
           if (!dbOrderIds.has(localOrder.id)) {
@@ -177,6 +195,7 @@ export default function AccountDashboard() {
     const stored = localStorage.getItem("minaliya-payment-methods");
     if (stored) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPaymentMethods(JSON.parse(stored));
       } catch (e) {
         console.error("Failed to parse payment methods:", e);
@@ -615,7 +634,7 @@ export default function AccountDashboard() {
                   </div>
                 ) : (
                   <div className="divide-y" style={{ borderColor: "var(--color-stone-200)" }}>
-                    {displayOrders.slice(0, 3).map((order: any) => (
+                    {displayOrders.slice(0, 3).map((order: DisplayOrder) => (
                       <div key={order.id} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-stone-50 transition-colors">
                         <div>
                           <div className="flex items-center gap-3 mb-1">
@@ -668,7 +687,7 @@ export default function AccountDashboard() {
                 </div>
               ) : (
                 (() => {
-                  const defaultAddr = user.addresses.find((a: any) => a.isDefault) || user.addresses[0];
+                  const defaultAddr = user.addresses.find((a: Address) => a.isDefault) || user.addresses[0];
                   return (
                     <div
                       className="p-6 rounded-2xl border flex flex-col sm:flex-row gap-6 justify-between items-start"
@@ -764,7 +783,7 @@ export default function AccountDashboard() {
                     No orders yet
                   </h4>
                   <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--color-stone-500)" }}>
-                    You haven't placed any orders. Discover our cold-pressed oils.
+                    You haven&apos;t placed any orders. Discover our cold-pressed oils.
                   </p>
                   <Link href="/shop" className="btn-primary text-sm py-2.5">
                     Explore Shop
@@ -772,7 +791,7 @@ export default function AccountDashboard() {
                 </div>
               ) : (
                 <div className="space-y-6 font-sans">
-                  {displayOrders.map((order: any) => (
+                  {displayOrders.map((order: DisplayOrder) => (
                     <div key={order.id} className="rounded-xl border overflow-hidden" style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}>
                       <div className="p-5 border-b flex flex-col sm:flex-row justify-between sm:items-center gap-4" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
                         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
@@ -803,7 +822,7 @@ export default function AccountDashboard() {
                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">AWB:</span>
                                <span className="text-xs font-bold" style={{ color: "var(--color-forest-700)" }}>{order.awbNumber}</span>
                                <button
-                                 onClick={() => handleCopyAwb(order.id, order.awbNumber)}
+                                  onClick={() => handleCopyAwb(order.id, order.awbNumber!)}
                                  className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
                                  style={copiedAwbId === order.id
                                    ? { background: "var(--color-forest-600)", color: "white" }
@@ -820,10 +839,10 @@ export default function AccountDashboard() {
                          </div>
                       </div>
                       <div className="p-5 space-y-4">
-                        {order.items.map((item: any, i: number) => (
+                        {order.items.map((item: DisplayOrder["items"][number], i: number) => (
                           <div key={i} className="flex gap-4">
-                            <div className="w-20 h-20 rounded-lg bg-white border flex items-center justify-center shrink-0 p-2" style={{ borderColor: "var(--color-stone-200)" }}>
-                              <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                            <div className="w-20 h-20 rounded-lg bg-white border flex items-center justify-center shrink-0 p-2 relative" style={{ borderColor: "var(--color-stone-200)" }}>
+                              <Image src={item.image} alt={item.name} fill className="object-contain p-2" sizes="80px" />
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
                               <p className="font-bold text-stone-900 text-sm">{item.name}</p>

@@ -3,12 +3,27 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { AlertTriangle, CheckCircle, Edit, Trash2, Loader2, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, Edit, Trash2, Loader2 } from "lucide-react";
 import AddProductModal, { CategoryOption } from "./AddProductModal";
 import { deleteProduct } from "@/actions/adminData";
 
+interface ProductItem {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  discountPrice: number | null;
+  stock: number;
+  isFeatured: boolean;
+  categoryName: string;
+  images: string[];
+  categoryId: string;
+  description: string;
+  imagePublicIds: (string | undefined)[];
+}
+
 interface ProductsTableClientProps {
-  products: any[];
+  products: ProductItem[];
   categories: CategoryOption[];
 }
 
@@ -110,7 +125,7 @@ export default function ProductsTableClient({ products, categories }: ProductsTa
                           style={{ borderColor: "var(--color-forest-200)" }}
                         >
                           <Image
-                            src={product.images[0] || "/products/placeholder.jpg"}
+                            src={product.images[0] || "/logo.png"}
                             alt={product.name}
                             fill
                             sizes="48px"

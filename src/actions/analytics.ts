@@ -151,7 +151,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
   });
 
   const categoryRevenueMap = new Map<string, number>();
-  orderItemsWithCategory.forEach((item: any) => {
+  orderItemsWithCategory.forEach((item: { product: { category: { name: string }; name: string }; price: unknown; quantity: number }) => {
     const categoryName = item.product.category.name;
     const revenue = Number(item.price) * item.quantity;
     categoryRevenueMap.set(categoryName, (categoryRevenueMap.get(categoryName) || 0) + revenue);
@@ -168,7 +168,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
 
   // Top products
   const productSalesMap = new Map<string, { unitsSold: number; revenue: number; name: string }>();
-  orderItemsWithCategory.forEach((item: any) => {
+  orderItemsWithCategory.forEach((item: { product: { category: { name: string }; name: string }; price: unknown; quantity: number }) => {
     const productName = item.product.name;
     const units = item.quantity;
     const revenue = Number(item.price) * item.quantity;
@@ -191,7 +191,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     _count: true,
   });
 
-  const statusBreakdown = statusBreakdownRaw.map((s: any) => ({
+  const statusBreakdown = statusBreakdownRaw.map((s: { status: string; _count: number }) => ({
     status: s.status,
     count: s._count,
   }));
@@ -220,7 +220,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
   });
 
   const inquiryMap = new Map<string, { totalQuantity: number; count: number }>();
-  recentInquiries.forEach((inquiry: any) => {
+  recentInquiries.forEach((inquiry: { product: string; quantity: number }) => {
     const product = inquiry.product;
     const existing = inquiryMap.get(product) || { totalQuantity: 0, count: 0 };
     inquiryMap.set(product, {
@@ -236,11 +236,11 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
 
   // Generate recommendations
   const recommendations: AnalyticsData["recommendations"] = [];
-  const pendingOrders = statusBreakdown.find((s: any) => s.status === "PENDING")?.count || 0;
-  const processingOrders = statusBreakdown.find((s: any) => s.status === "PROCESSING")?.count || 0;
+  const pendingOrders = statusBreakdown.find((s: { status: string; count: number }) => s.status === "PENDING")?.count || 0;
+  const processingOrders = statusBreakdown.find((s: { status: string; count: number }) => s.status === "PROCESSING")?.count || 0;
   const totalPending = pendingOrders + processingOrders;
-  const cancelledOrders = statusBreakdown.find((s: any) => s.status === "CANCELLED")?.count || 0;
-  const totalOrders = statusBreakdown.reduce((sum: number, s: any) => sum + s.count, 0);
+  const cancelledOrders = statusBreakdown.find((s: { status: string; count: number }) => s.status === "CANCELLED")?.count || 0;
+  const totalOrders = statusBreakdown.reduce((sum: number, s: { status: string; count: number }) => sum + s.count, 0);
 
   // High priority recommendations
   if (totalPending > 0) {
@@ -254,7 +254,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     });
   }
 
-  const outOfStockProducts = inventoryAlerts.filter((p: any) => p.stock === 0);
+  const outOfStockProducts = inventoryAlerts.filter((p: { stock: number }) => p.stock === 0);
   if (outOfStockProducts.length > 0) {
     recommendations.push({
       id: "restock-products",
@@ -267,7 +267,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
   }
 
   // Medium priority recommendations
-  const lowStockProducts = inventoryAlerts.filter((p: any) => p.stock > 0 && p.stock <= 10);
+  const lowStockProducts = inventoryAlerts.filter((p: { stock: number }) => p.stock > 0 && p.stock <= 10);
   if (lowStockProducts.length > 0) {
     recommendations.push({
       id: "low-stock",

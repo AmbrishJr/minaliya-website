@@ -14,13 +14,31 @@ export interface CategoryOption {
 
 interface AddProductModalProps {
   categories: CategoryOption[];
-  product?: any;
+  product?: {
+    id: string;
+    name: string;
+    slug: string;
+    categoryId: string;
+    description: string;
+    price: number;
+    discountPrice: number | null;
+    isFeatured: boolean;
+    stock: number;
+    images: string[];
+    imagePublicIds: (string | undefined)[];
+  };
   triggerButton?: React.ReactNode;
   onSuccess?: () => void;
 }
 
 const inputClass =
   "w-full px-4 py-3 rounded-xl text-sm outline-none transition-all border border-stone-200 bg-white text-stone-800 focus:border-forest-400 focus:ring-2 focus:ring-forest-50";
+
+interface ImageItem {
+  url: string;
+  publicId?: string;
+  file?: File;
+}
 
 export default function AddProductModal({ categories, product, triggerButton, onSuccess }: AddProductModalProps) {
   const router = useRouter();
@@ -38,8 +56,8 @@ export default function AddProductModal({ categories, product, triggerButton, on
   const [discountPrice, setDiscountPrice] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   
-  // Custom representation of images: { url: string; file?: File }
-  const [images, setImages] = useState<{ url: string; file?: File }[]>([]);
+  // Custom representation of images: { url: string; publicId?: string; file?: File }
+  const [images, setImages] = useState<ImageItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = useCallback(() => {
@@ -52,7 +70,12 @@ export default function AddProductModal({ categories, product, triggerButton, on
       setPrice(product.price != null ? String(product.price) : "");
       setDiscountPrice(product.discountPrice != null ? String(product.discountPrice) : "");
       setIsFeatured(product.isFeatured ?? false);
-      setImages(product.images?.map((img: string) => ({ url: img })) ?? []);
+      // Map existing images with their public_ids
+      const existingImages: ImageItem[] = (product.images ?? []).map((img: string, i: number) => ({
+        url: img,
+        publicId: product.imagePublicIds?.[i] ?? undefined,
+      }));
+      setImages(existingImages);
     } else {
       setName("");
       setSlug("");
@@ -70,6 +93,7 @@ export default function AddProductModal({ categories, product, triggerButton, on
   // Sync state on open/reset
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       resetForm();
     }
   }, [open, resetForm]);
@@ -102,13 +126,28 @@ export default function AddProductModal({ categories, product, triggerButton, on
     setError("");
   }, [images.length]);
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const img = images[index];
+
+    // If this is an already-uploaded Cloudinary image, delete it from Cloudinary
+    if (img.publicId && !img.file) {
+      try {
+        await fetch("/api/admin/delete-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicId: img.publicId }),
+        });
+      } catch (err) {
+        console.error("Failed to delete image from Cloudinary:", err);
+      }
+    }
+
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const uploadNewImages = async (): Promise<string[] | null> => {
+  const uploadNewImages = async (): Promise<{ urls: string[]; publicIds: string[] } | null> => {
     const newFiles = images.filter((img) => img.file).map((img) => img.file as File);
-    if (newFiles.length === 0) return [];
+    if (newFiles.length === 0) return { urls: [], publicIds: [] };
 
     setUploading(true);
     try {
@@ -125,8 +164,8 @@ export default function AddProductModal({ categories, product, triggerButton, on
         throw new Error(data.error || "Upload failed");
       }
 
-      const { urls } = await res.json();
-      return urls;
+      const { urls, publicIds } = await res.json();
+      return { urls, publicIds };
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload images.");
       return null;
@@ -146,22 +185,29 @@ export default function AddProductModal({ categories, product, triggerButton, on
 
     setLoading(true);
 
-    const newUploadedUrls = await uploadNewImages();
-    if (!newUploadedUrls) {
+    const uploadResult = await uploadNewImages();
+    if (!uploadResult) {
       setLoading(false);
       return;
     }
 
-    // Map the local/existing images back to the database URLs
+    // Build final arrays by mapping each image to its final URL and publicId
     let newUrlIndex = 0;
-    const finalImages = images.map((img) => {
+    const finalImages: string[] = [];
+    const finalPublicIds: string[] = [];
+
+    for (const img of images) {
       if (img.file) {
-        const url = newUploadedUrls[newUrlIndex];
+        // This was a newly uploaded file
+        finalImages.push(uploadResult.urls[newUrlIndex]);
+        finalPublicIds.push(uploadResult.publicIds[newUrlIndex]);
         newUrlIndex++;
-        return url;
+      } else {
+        // This is an existing image
+        finalImages.push(img.url);
+        finalPublicIds.push(img.publicId ?? "");
       }
-      return img.url;
-    });
+    }
 
     try {
       const payload = {
@@ -173,6 +219,7 @@ export default function AddProductModal({ categories, product, triggerButton, on
         discountPrice: discountPrice ? parseFloat(discountPrice) : null,
         stock: product?.stock ?? 100,
         images: finalImages,
+        imagePublicIds: finalPublicIds,
         isFeatured,
       };
 

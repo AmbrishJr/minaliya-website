@@ -50,14 +50,16 @@ export default function TrustSection() {
                 aria-hidden="true"
               />
               <div className="relative transform hover:scale-105 transition-transform duration-700 ease-out">
-                <Image
-                  src="/products/all_three.png"
-                  alt="Minaliya Product Collection"
-                  width={600}
-                  height={700}
-                  className="w-full h-auto drop-shadow-2xl"
-                  priority
-                />
+                <div className="relative w-full aspect-auto">
+                  <Image
+                    src="/products/all_three.png"
+                    alt="Minaliya Product Collection"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+                    className="w-full h-auto drop-shadow-2xl object-contain"
+                    priority
+                  />
+                </div>
               </div>
             </div>
           </div>

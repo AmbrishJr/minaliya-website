@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -54,7 +55,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [current, goTo]);
+  }, [current, goTo, slides.length]);
 
   const prev = () => goTo((current - 1 + slides.length) % slides.length);
   const next = () => goTo((current + 1) % slides.length);
@@ -232,7 +233,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
 
                 {/* CTAs */}
                 <div className="flex flex-wrap gap-3 pt-2 justify-center lg:justify-start">
-                  <a
+                  <Link
                     href="/shop"
                     className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-full font-semibold text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5"
                     style={{
@@ -248,7 +249,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                       size={14}
                       className="transition-transform duration-300 group-hover:translate-x-1"
                     />
-                  </a>
+                  </Link>
                   <a
                     href="#process"
                     className="inline-flex items-center gap-2.5 px-6 py-3 rounded-full font-medium text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5"
@@ -323,7 +324,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                     src={slide.image}
                     alt={slide.imageAlt}
                     fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    sizes="(max-width: 640px) 220px, (max-width: 768px) 280px, (max-width: 1024px) 320px, (max-width: 1280px) 360px, 400px"
                     className="object-contain relative z-10"
                     style={{
                       filter: "drop-shadow(0 20px 30px rgba(0, 0, 0, 0.12))",
@@ -349,7 +350,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                         src={slide.image}
                         alt=""
                         fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        sizes="(max-width: 640px) 220px, (max-width: 768px) 280px, (max-width: 1024px) 320px, (max-width: 1280px) 360px, 400px"
                         className="object-contain"
                         quality={50}
                         aria-hidden="true"

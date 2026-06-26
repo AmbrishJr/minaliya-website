@@ -70,7 +70,7 @@ const AVAILABLE_COUPONS: Coupon[] = [
 
 export default function CheckoutClient() {
   const router = useRouter();
-  const { items, totalPrice, totalItems, clearCart } = useCart();
+  const { items, totalPrice, clearCart } = useCart();
   const { orders, addOrder } = useOrders();
   const { user, isAuthenticated, isAuthReady, openLoginModal } = useAuth();
 
@@ -126,6 +126,7 @@ export default function CheckoutClient() {
       : [];
     const defAddr = addrs.find((a) => a.isDefault) || addrs[0] || null;
     if (defAddr) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedSavedAddressId(defAddr.id);
       const nameParts = defAddr.name.trim().split(" ");
       setFirstName(nameParts[0] || "");
@@ -303,7 +304,7 @@ export default function CheckoutClient() {
           contact: phone.trim(),
         },
         theme: { color: "#072654" },
-        handler: async function (response: any) {
+        handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
           const verifyRes = await fetch("/api/razorpay/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -338,13 +339,14 @@ export default function CheckoutClient() {
         },
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", function () {
         router.push("/payment/failed");
       });
       rzp.open();
-    } catch (err: any) {
-      setRazorpayError(err.message || "Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      setRazorpayError((err as { message?: string }).message || "Something went wrong. Please try again.");
       setIsRazorpayLoading(false);
     }
   }, [finalTotal, firstName, lastName, email, phone, shippingState, address, city, postalCode, items, addOrder, clearCart, router]);

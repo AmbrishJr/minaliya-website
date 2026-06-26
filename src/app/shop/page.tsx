@@ -51,7 +51,7 @@ export default async function ShopPage() {
       id: p.id,
       name: p.name,
       slug: p.slug,
-      image: p.images[0] || "/products/placeholder.jpg",
+      image: p.images[0] || "/logo.png",
       price: p.discountPrice ? Number(p.discountPrice) : Number(p.price),
       originalPrice: Number(p.price),
       rating,

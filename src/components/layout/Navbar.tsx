@@ -320,13 +320,13 @@ export default function Navbar() {
                         onClick={() => setSearchOpen(false)}
                         className="block p-4 text-center text-sm font-bold text-forest-600 hover:bg-forest-50 transition-colors"
                       >
-                        View all results for "{searchQuery}"
+                        View all results for &ldquo;{searchQuery}&rdquo;
                       </Link>
                     </div>
                   ) : (
                     <div className="p-8 text-center">
                       <p className="text-sm text-stone-500">
-                        No products found for "<span className="font-bold text-stone-800">{searchQuery}</span>"
+                        No products found for &ldquo;<span className="font-bold text-stone-800">{searchQuery}</span>&rdquo;
                       </p>
                       <button 
                         onClick={() => setSearchQuery("")}

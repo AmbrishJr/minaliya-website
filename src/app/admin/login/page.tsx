@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { adminLogin } from "@/actions/admin";
 import { Lock, Mail, Phone, ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
 
@@ -213,15 +214,15 @@ export default function AdminLoginPage() {
 
         {/* Back to site */}
         <div className="text-center mt-6">
-          <a
+          <Link
             href="/"
             className="text-xs transition-colors font-medium"
             style={{ color: "var(--color-stone-500)" }}
-            onMouseEnter={(e) => ((e.currentTarget).style.color = "var(--color-forest-600)")}
-            onMouseLeave={(e) => ((e.currentTarget).style.color = "var(--color-stone-500)")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-forest-600)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--color-stone-500)")}
           >
             ← Back to Minaliya Store
-          </a>
+          </Link>
         </div>
       </div>
     </div>

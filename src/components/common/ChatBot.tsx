@@ -7,9 +7,6 @@ export default function ChatBot() {
   const pathname = usePathname();
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // Hide the WhatsApp float on specific pages (like chat/admin dashboards)
-  if (pathname === "/chat" || pathname.startsWith("/admin")) return null;
-
   // Show tooltip after a small delay to capture user attention (UX best practice)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -20,6 +17,9 @@ export default function ChatBot() {
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Hide the WhatsApp float on specific pages (like chat/admin dashboards)
+  if (pathname === "/chat" || pathname.startsWith("/admin")) return null;
 
   const phoneNumber = "917824807770";
   const message = "Hi";

@@ -1,8 +1,30 @@
 "use client";
 
+import type { Prisma } from "@prisma/client";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { updateUserAction } from "@/actions/auth";
+
+interface Address {
+  id: string;
+  name: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  isDefault: boolean;
+}
+
+interface CartItem {
+  slug: string;
+  name: string;
+  image: string;
+  price: number;
+  size: string;
+  quantity: number;
+}
 
 interface User {
   id?: string;
@@ -11,8 +33,8 @@ interface User {
   email?: string;
   image?: string;
   newsletterSubscribed?: boolean;
-  addresses?: any;
-  cart?: any;
+  addresses?: Address[];
+  cart?: CartItem[];
 }
 
 interface AuthContextType {
@@ -41,8 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(JSON.parse(stored));
-      } catch (e) {
+      } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
@@ -95,20 +118,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         mobile: userData.mobile,
         image: userData.image,
         newsletterSubscribed: userData.newsletterSubscribed,
-        addresses: userData.addresses,
-        cart: userData.cart,
+        addresses: userData.addresses as unknown as Prisma.InputJsonValue,
+        cart: userData.cart as unknown as Prisma.InputJsonValue,
       });
 
       if (response.success && response.user) {
         // Sync local state with actual verified details returned from Prisma
-        const finalUser = {
+        const finalUser: User = {
           name: response.user.name || updatedUser.name,
           mobile: response.user.mobile || updatedUser.mobile,
           email: response.user.email || updatedUser.email || undefined,
           image: response.user.image || updatedUser.image || undefined,
           newsletterSubscribed: response.user.newsletterSubscribed !== undefined ? response.user.newsletterSubscribed : updatedUser.newsletterSubscribed,
-          addresses: response.user.addresses || updatedUser.addresses || [],
-          cart: response.user.cart || updatedUser.cart || [],
+          addresses: (response.user.addresses || updatedUser.addresses || []) as Address[],
+          cart: (response.user.cart || updatedUser.cart || []) as CartItem[],
         };
         setUser(finalUser);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(finalUser));

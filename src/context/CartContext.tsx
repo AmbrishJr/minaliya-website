@@ -56,7 +56,7 @@ function saveCartToKey(key: string, items: CartItem[]) {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user, updateUser } = useAuth();
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => { if (typeof window === "undefined") return []; return loadCartFromKey(GUEST_CART_KEY); });
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -68,7 +68,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // 1. Initial Load: load the guest cart on mount (before we know who the user is)
   useEffect(() => {
-    setItems(loadCartFromKey(GUEST_CART_KEY));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -106,6 +106,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       // 4. Save merged cart to user's personal key and sync to DB
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setItems(merged);
       saveCartToKey(userKey, merged);
       updateUser({ cart: merged });

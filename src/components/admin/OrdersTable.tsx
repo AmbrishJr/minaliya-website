@@ -3,7 +3,7 @@
 import { Fragment, useState, useTransition } from "react";
 import { updateOrderStatus, deleteOrder, updateOrderAwb } from "@/actions/adminData";
 import OrderStatusBadge from "./OrderStatusBadge";
-import { ChevronDown, ChevronUp, Eye, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X, Pencil, Package } from "lucide-react";
+import { ChevronDown, ChevronUp, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X, Pencil, Package } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -112,7 +112,7 @@ export default function OrdersTable({
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     setUpdatingId(orderId);
     try {
-      const result = await updateOrderStatus(orderId, newStatus as any);
+      const result = await updateOrderStatus(orderId, newStatus as "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED");
       if (result.success) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>

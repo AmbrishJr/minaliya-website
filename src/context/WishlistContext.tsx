@@ -47,6 +47,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   // Load wishlist from localStorage on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(loadWishlist());
     setMounted(true);
   }, []);

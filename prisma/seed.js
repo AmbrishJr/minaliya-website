@@ -1,3 +1,4 @@
+/* eslint-disable */
 require("dotenv").config();
 const ws = require("ws");
 const { PrismaClient } = require("@prisma/client");

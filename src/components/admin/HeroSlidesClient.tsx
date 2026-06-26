@@ -11,7 +11,6 @@ import {
   EyeOff,
   ChevronUp,
   ChevronDown,
-  GripVertical,
   Upload,
   Loader2,
   X,
@@ -26,6 +25,7 @@ interface Slide {
   headline: HeadlinePart[];
   subtitle: string;
   image: string;
+  imagePublicId?: string | null;
   imageAlt: string;
   accentColor: string;
   badge: string | null;
@@ -63,7 +63,8 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     label: "",
     headlineParts: emptyHeadline.map((h) => ({ ...h })),
     subtitle: "",
-    image: "/products/placeholder.jpg",
+    image: "/logo.png",
+    imagePublicId: null as string | null,
     imageAlt: "",
     accentColor: "#C47700",
     badge: "",
@@ -78,7 +79,8 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
       label: "",
       headlineParts: emptyHeadline.map((h) => ({ ...h })),
       subtitle: "",
-      image: "/products/placeholder.jpg",
+      image: "/logo.png",
+      imagePublicId: null,
       imageAlt: "",
       accentColor: "#C47700",
       badge: "",
@@ -104,6 +106,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
       headlineParts: slide.headline.map((h) => ({ ...h })),
       subtitle: slide.subtitle,
       image: slide.image,
+      imagePublicId: slide.imagePublicId || null,
       imageAlt: slide.imageAlt,
       accentColor: slide.accentColor,
       badge: slide.badge ?? "",
@@ -125,14 +128,9 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     resetForm();
   }
 
-  function clearImage() {
-    setImageFile(null);
-    setImagePreview(null);
-  }
-
   function updateHeadline(index: number, field: keyof HeadlinePart, value: string) {
     const parts = [...form.headlineParts];
-    (parts[index] as any)[field] = value;
+    (parts[index] as Record<string, string>)[field] = value;
     setForm({ ...form, headlineParts: parts });
   }
 
@@ -145,7 +143,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     setForm({ ...form, headlineParts: parts.length ? parts : emptyHeadline });
   }
 
-  async function uploadImage(file: File): Promise<string | null> {
+  async function uploadImage(file: File): Promise<{ url: string; publicId: string } | null> {
     setUploading(true);
     try {
       const formData = new FormData();
@@ -161,8 +159,8 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
         throw new Error(data.error || "Upload failed");
       }
 
-      const { urls } = await res.json();
-      return urls[0];
+      const { urls, publicIds } = await res.json();
+      return { url: urls[0], publicId: publicIds[0] };
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload image.");
       return null;
@@ -182,11 +180,13 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
     if (!form.subtitle.trim()) { setError("Subtitle is required."); setSaving(false); return; }
 
     let imageUrl = form.image;
+    let imagePublicId = form.imagePublicId;
 
     if (imageFile) {
-      const uploadedUrl = await uploadImage(imageFile);
-      if (!uploadedUrl) { setSaving(false); return; }
-      imageUrl = uploadedUrl;
+      const uploadedResult = await uploadImage(imageFile);
+      if (!uploadedResult) { setSaving(false); return; }
+      imageUrl = uploadedResult.url;
+      imagePublicId = uploadedResult.publicId;
     }
 
     try {
@@ -196,6 +196,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
           headline,
           subtitle: form.subtitle,
           image: imageUrl,
+          imagePublicId: imagePublicId || undefined,
           imageAlt: form.imageAlt,
           accentColor: form.accentColor,
           badge: form.badge || undefined,
@@ -211,6 +212,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
           headline,
           subtitle: form.subtitle,
           image: imageUrl,
+          imagePublicId: imagePublicId || undefined,
           imageAlt: form.imageAlt,
           accentColor: form.accentColor,
           badge: form.badge || undefined,
@@ -574,14 +576,14 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
                       <div className="flex items-center gap-1.5">
                         <input
                           type="color"
-                          value={(form as any)[key]}
+                          value={(form as unknown as Record<string, string>)[key]}
                           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                           className="w-8 h-8 rounded border cursor-pointer"
                           style={{ borderColor: "var(--color-stone-200)" }}
                         />
                         <input
                           type="text"
-                          value={(form as any)[key]}
+                          value={(form as unknown as Record<string, string>)[key]}
                           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                           className="flex-1 px-2 py-1.5 rounded-lg border text-[10px]"
                           style={{ borderColor: "var(--color-stone-200)" }}

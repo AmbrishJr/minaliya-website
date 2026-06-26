@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
 
 const posts = [
@@ -48,13 +49,13 @@ export default function BlogPreview() {
               from the Minaliya team.
             </p>
           </div>
-          <a
+          <Link
             href="/blog"
             className="btn-secondary text-sm shrink-0 w-full sm:w-auto justify-center"
           >
             View All Articles
             <ArrowRight size={16} />
-          </a>
+          </Link>
         </div>
 
         {/* Blog Grid */}
@@ -100,7 +101,7 @@ export default function BlogPreview() {
                     color: "var(--color-stone-800)",
                   }}
                 >
-                  <a href={`/blog/${post.slug}`}>{post.title}</a>
+                  <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                 </h3>
                 <p
                   className="text-sm leading-relaxed"

@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { slugify } from "@/lib/product-utils";
 import { verifyAdminSession } from "./admin";
+import { deleteImages } from "@/lib/cloudinary";
 
 export type CreateProductInput = {
   name: string;
@@ -13,6 +14,7 @@ export type CreateProductInput = {
   discountPrice?: number | null;
   stock?: number;
   images: string[];
+  imagePublicIds?: string[];
   isFeatured?: boolean;
 };
 
@@ -132,7 +134,7 @@ export async function getAllOrders() {
     items: order.items.map((item) => ({
       id: item.id,
       productName: item.product.name,
-      productImage: item.product.images[0] || "/products/placeholder.jpg",
+      productImage: item.product.images[0] || "/logo.png",
       quantity: item.quantity,
       price: Number(item.price),
     })),
@@ -159,6 +161,8 @@ export async function getAllProducts() {
     discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
     stock: product.stock,
     images: product.images,
+    description: product.description,
+    imagePublicIds: product.imagePublicIds as (string | undefined)[],
     isFeatured: product.isFeatured,
     categoryName: product.category.name,
     categoryId: product.categoryId,
@@ -184,7 +188,7 @@ export async function createProduct(input: CreateProductInput) {
   const slug = slugify(input.slug || input.name || "");
   const description = input.description?.trim();
   const categoryId = input.categoryId?.trim();
-  const images = input.images?.filter((p) => p.startsWith("/"));
+  const images = input.images?.filter((p) => p.startsWith("https://") || p.startsWith("/"));
 
   if (!name || !slug || !description || !categoryId) {
     return {
@@ -257,6 +261,7 @@ export async function createProduct(input: CreateProductInput) {
         discountPrice: discountPrice ?? undefined,
         stock,
         images,
+        imagePublicIds: input.imagePublicIds ?? [],
         isFeatured: input.isFeatured ?? false,
       },
     });
@@ -284,7 +289,7 @@ export async function getAllInquiries() {
     },
   });
 
-  return inquiries.map((inquiry: any) => ({
+  return inquiries.map((inquiry: { id: string; name: string; company: string | null; email: string; phone: string; product: string; quantity: number; message: string | null; createdAt: Date }) => ({
     id: inquiry.id,
     name: inquiry.name,
     company: inquiry.company,
@@ -373,7 +378,7 @@ export async function updateProduct(id: string, input: CreateProductInput) {
   const slug = slugify(input.slug || input.name || "");
   const description = input.description?.trim();
   const categoryId = input.categoryId?.trim();
-  const images = input.images?.filter((p) => p.startsWith("/"));
+  const images = input.images?.filter((p) => p.startsWith("https://") || p.startsWith("/"));
 
   if (!name || !slug || !description || !categoryId) {
     return {
@@ -448,6 +453,7 @@ export async function updateProduct(id: string, input: CreateProductInput) {
         discountPrice: discountPrice ?? null,
         stock,
         images,
+        imagePublicIds: input.imagePublicIds ?? [],
         isFeatured: input.isFeatured ?? false,
       },
     });
@@ -463,6 +469,12 @@ export async function deleteProduct(id: string) {
   await requireAdmin();
 
   try {
+    // 0. Fetch the product to get Cloudinary public_ids
+    const productToDelete = await prisma.product.findUnique({
+      where: { id },
+      select: { imagePublicIds: true },
+    });
+
     // 1. Find all order items for this product
     const orderItems = await prisma.orderItem.findMany({
       where: { productId: id },
@@ -481,10 +493,16 @@ export async function deleteProduct(id: string) {
       where: { id: { in: orderIds } },
     });
 
-    // 4. Finally delete the product
+    // 4. Delete the product from DB
     await prisma.product.delete({
       where: { id },
     });
+
+    // 5. Delete images from Cloudinary (after DB success)
+    if (productToDelete?.imagePublicIds?.length) {
+      await deleteImages(productToDelete.imagePublicIds);
+    }
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error deleting product:", error);
@@ -566,6 +584,7 @@ export async function createHeroSlide(input: {
   headline: { text: string; style: "display" | "serif-italic" | "sans" }[];
   subtitle: string;
   image: string;
+  imagePublicId?: string;
   imageAlt: string;
   accentColor?: string;
   badge?: string;
@@ -601,6 +620,7 @@ export async function createHeroSlide(input: {
         headline,
         subtitle,
         image,
+        imagePublicId: input.imagePublicId ?? null,
         imageAlt,
         accentColor: input.accentColor ?? "#C47700",
         badge: input.badge ?? null,
@@ -624,6 +644,7 @@ export async function updateHeroSlide(
     headline?: { text: string; style: "display" | "serif-italic" | "sans" }[];
     subtitle?: string;
     image?: string;
+    imagePublicId?: string;
     imageAlt?: string;
     accentColor?: string;
     badge?: string;
@@ -637,6 +658,17 @@ export async function updateHeroSlide(
   await requireAdmin();
 
   try {
+    // If image is being replaced, delete the old one from Cloudinary
+    if (input.image !== undefined) {
+      const existing = await prisma.heroSlide.findUnique({
+        where: { id },
+        select: { imagePublicId: true },
+      });
+      if (existing?.imagePublicId) {
+        await deleteImages([existing.imagePublicId]);
+      }
+    }
+
     await prisma.heroSlide.update({
       where: { id },
       data: {
@@ -644,6 +676,7 @@ export async function updateHeroSlide(
         ...(input.headline !== undefined && { headline: input.headline }),
         ...(input.subtitle !== undefined && { subtitle: input.subtitle.trim() }),
         ...(input.image !== undefined && { image: input.image.trim() }),
+        ...(input.imagePublicId !== undefined && { imagePublicId: input.imagePublicId }),
         ...(input.imageAlt !== undefined && { imageAlt: input.imageAlt.trim() }),
         ...(input.accentColor !== undefined && { accentColor: input.accentColor }),
         ...(input.badge !== undefined && { badge: input.badge || null }),
@@ -665,7 +698,19 @@ export async function deleteHeroSlide(id: string) {
   await requireAdmin();
 
   try {
+    // Fetch the slide to get the Cloudinary public_id
+    const slide = await prisma.heroSlide.findUnique({
+      where: { id },
+      select: { imagePublicId: true },
+    });
+
     await prisma.heroSlide.delete({ where: { id } });
+
+    // Delete the image from Cloudinary after DB deletion
+    if (slide?.imagePublicId) {
+      await deleteImages([slide.imagePublicId]);
+    }
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error deleting hero slide:", error);

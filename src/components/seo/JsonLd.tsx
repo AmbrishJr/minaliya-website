@@ -43,7 +43,7 @@ export default function JsonLd() {
       "@context": "https://schema.org",
       "@type": "Product",
       name: "Cold Pressed Groundnut Oil",
-      image: "https://minaliya.com/products/Groundnut Oil 1 Ltr.jpg",
+      image: "https://minaliya.com/logo.png", // TODO: Update to primary Cloudinary product URL once populated
       description:
         "100% pure wooden cold pressed groundnut oil. Traditional Mara Chekku extraction preserves natural nutrients and authentic aroma.",
       brand: { "@type": "Brand", name: "Minaliya" },
@@ -64,7 +64,7 @@ export default function JsonLd() {
       "@context": "https://schema.org",
       "@type": "Product",
       name: "Cold Pressed Coconut Oil",
-      image: "https://minaliya.com/products/Coconut Oil 1 Ltr.jpg",
+      image: "https://minaliya.com/logo.png", // TODO: Update to primary Cloudinary product URL once populated
       description:
         "Pure wooden cold pressed coconut oil. Chemical-free extraction for cooking and hair care.",
       brand: { "@type": "Brand", name: "Minaliya" },
@@ -84,7 +84,7 @@ export default function JsonLd() {
       "@context": "https://schema.org",
       "@type": "Product",
       name: "Cold Pressed Sesame Oil",
-      image: "https://minaliya.com/products/Sesame Oil 1 Ltr.jpg",
+      image: "https://minaliya.com/logo.png", // TODO: Update to primary Cloudinary product URL once populated
       description:
         "Traditional cold pressed sesame (gingelly) oil. Rich in antioxidants and natural nutrients.",
       brand: { "@type": "Brand", name: "Minaliya" },

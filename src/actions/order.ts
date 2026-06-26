@@ -72,7 +72,7 @@ export async function createOrder(data: OrderInput & { paymentStatus?: string })
         data: {
           userId: data.userId || null,
           totalAmount: new Prisma.Decimal(data.totalAmount),
-          shippingAddress: data.shippingAddress as any,
+          shippingAddress: data.shippingAddress as Prisma.JsonObject,
           paymentMethod: data.paymentMethod.toUpperCase(),
           paymentStatus: data.paymentStatus || "PAID",
           status: "PENDING",
@@ -89,9 +89,10 @@ export async function createOrder(data: OrderInput & { paymentStatus?: string })
     });
 
     return { success: true, orderId: result.id };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating order:", error);
-    return { success: false, error: error.message || "Failed to place order. Please try again." };
+    const err = error as { message?: string };
+    return { success: false, error: err.message || "Failed to place order. Please try again." };
   }
 }
 
@@ -115,7 +116,7 @@ export async function getUserOrders(email?: string, phone?: string) {
     });
 
     const filteredOrders = dbOrders.filter((order) => {
-      const addr = order.shippingAddress as any;
+      const addr = order.shippingAddress as { email?: string; phone?: string };
       if (!addr) return false;
 
       const emailMatch = email && addr.email && addr.email.toLowerCase() === email.toLowerCase();
@@ -145,7 +146,7 @@ export async function getUserOrders(email?: string, phone?: string) {
         items: order.items.map((item) => ({
           name: item.product.name,
           slug: item.product.slug,
-          image: item.product.images[0] || "/products/placeholder.jpg",
+          image: item.product.images[0] || "/logo.png",
           price: Number(item.price),
           quantity: item.quantity,
           size: item.product.slug.includes("500ml") ? "500ml" : "1 Ltr",
@@ -154,9 +155,10 @@ export async function getUserOrders(email?: string, phone?: string) {
     });
 
     return { success: true, orders: mappedOrders };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching user orders:", error);
-    return { success: false, error: error.message || "Failed to fetch orders." };
+    const err = error as { message?: string };
+    return { success: false, error: err.message || "Failed to fetch orders." };
   }
 }
 

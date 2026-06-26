@@ -33,7 +33,7 @@ export default async function HomePage() {
     return {
       name: p.name,
       slug: p.slug,
-      image: p.images[0] || "/products/placeholder.jpg",
+      image: p.images[0] || "/logo.png",
       price: p.discountPrice ? Number(p.discountPrice) : Number(p.price),
       originalPrice: Number(p.price),
       rating,

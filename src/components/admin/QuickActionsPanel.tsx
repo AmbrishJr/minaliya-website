@@ -104,7 +104,7 @@ export default function QuickActionsPanel({
       </div>
 
       <div className="space-y-2 flex-1">
-        {actions.map((action, i) => {
+        {actions.map((action) => {
           const Icon = action.icon;
           const content = (
             <motion.div

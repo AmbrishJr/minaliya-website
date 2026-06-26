@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShoppingBag, Heart, Eye, SlidersHorizontal, Mail, Building, Phone, User, MessageSquare, ChevronRight, X, Sparkles, Check, AlertCircle, CircleCheck } from "lucide-react";
+import { Star, ShoppingBag, Heart, Eye, SlidersHorizontal, Mail, Building, Phone, User, MessageSquare, ChevronRight, X, Sparkles, Check, AlertCircle } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { Product } from "@/data/products";
@@ -36,13 +36,13 @@ function ProductCard({ product }: { product: Product }) {
     <Link href={`/shop/${product.slug}`} className="block">
       <article className="product-card group relative">
         {/* Image */}
-        <div className="product-image relative aspect-[3/4] p-3 sm:p-6 flex items-center justify-center">
+        <div className="product-image relative aspect-[4/3]">
           <Image
             src={product.image}
             alt={`${product.name} - Minaliya Mara Chekku Wood Pressed Oil`}
-            width={280}
-            height={380}
-            className="object-contain max-h-full w-auto"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover"
             loading="lazy"
             quality={85}
           />
@@ -50,7 +50,7 @@ function ProductCard({ product }: { product: Product }) {
           {/* Badge */}
           {product.badge && (
             <span
-              className="absolute top-2 sm:top-4 left-2 sm:left-4 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold"
+              className="absolute top-1 left-1 px-1 py-0.5 rounded-full text-[7px] font-semibold"
               style={{
                 background:
                   product.badge === "Bestseller"
@@ -68,7 +68,7 @@ function ProductCard({ product }: { product: Product }) {
           {/* Discount Badge */}
           {discount > 0 && (
             <span
-              className="absolute top-2 sm:top-4 right-2 sm:right-4 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold"
+              className="absolute top-1 right-1 px-1 py-0.5 rounded-full text-[7px] font-bold"
               style={{
                 background: "var(--color-terra-100)",
                 color: "var(--color-terra-500)",
@@ -79,9 +79,9 @@ function ProductCard({ product }: { product: Product }) {
           )}
 
           {/* Quick Actions */}
-          <div className="touch-action-show absolute right-2 sm:right-4 bottom-2 sm:bottom-4 flex flex-col gap-2 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+          <div className="touch-action-show absolute right-1 bottom-1 flex flex-col gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
             <button
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-md transition-colors"
+              className="w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
               style={{
                 background: "white",
                 color: isWishlisted ? "var(--color-terra-500)" : "var(--color-stone-600)"
@@ -98,29 +98,28 @@ function ProductCard({ product }: { product: Product }) {
                 });
               }}
             >
-              <Heart size={16} className="sm:w-[18px] sm:h-[18px]" fill={isWishlisted ? "currentColor" : "none"} />
+              <Heart size={11} fill={isWishlisted ? "currentColor" : "none"} />
             </button>
             <button
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-md transition-colors"
+              className="w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
               style={{ background: "white", color: "var(--color-stone-600)" }}
               aria-label="Quick view"
               onClick={(e) => e.preventDefault()}
             >
-              <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <Eye size={11} />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-3 sm:p-5 space-y-2 sm:space-y-3">
+        <div className="p-1 space-y-0.5">
           {/* Rating */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  size={12}
-                  className="sm:w-[13px] sm:h-[13px]"
+                  size={8}
                   fill={i < Math.floor(product.rating) ? "var(--color-amber-400)" : "none"}
                   stroke={
                     i < Math.floor(product.rating)
@@ -130,14 +129,14 @@ function ProductCard({ product }: { product: Product }) {
                 />
               ))}
             </div>
-            <span className="text-[10px] sm:text-xs font-medium" style={{ color: "var(--color-stone-400)" }}>
-              {product.rating} ({product.reviews})
+            <span className="text-[8px] font-medium" style={{ color: "var(--color-stone-400)" }}>
+              {product.rating}
             </span>
           </div>
 
           {/* Name */}
           <h3
-            className="text-sm sm:text-base font-semibold leading-snug line-clamp-2"
+            className="text-[10px] sm:text-xs font-semibold leading-snug line-clamp-2"
             style={{
               fontFamily: "var(--font-heading)",
               color: "var(--color-stone-800)",
@@ -147,11 +146,11 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
 
           {/* Sizes */}
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap gap-0.5">
             {product.sizes.map((size) => (
               <span
                 key={size}
-                className="text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full font-medium"
+                className="text-[8px] px-1 py-0.5 rounded-full font-medium"
                 style={{
                   background: "var(--color-cream-100)",
                   color: "var(--color-stone-600)",
@@ -163,30 +162,30 @@ function ProductCard({ product }: { product: Product }) {
           </div>
 
           {/* Price + CTA */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-1 gap-2 sm:gap-0">
-            <div className="flex items-baseline gap-1.5 sm:gap-2">
-              <span className="text-base sm:text-xl font-bold" style={{ color: "var(--color-stone-800)" }}>
+          <div className="flex flex-row items-center justify-between gap-1">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-[11px] sm:text-xs font-bold" style={{ color: "var(--color-stone-800)" }}>
                 ₹{product.price}
               </span>
-              <span className="text-xs sm:text-sm line-through" style={{ color: "var(--color-stone-400)" }}>
+              <span className="text-[8px] sm:text-[9px] line-through" style={{ color: "var(--color-stone-400)" }}>
                 ₹{product.originalPrice}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5">
               <div className="flex items-center border rounded-full overflow-hidden shrink-0" style={{ borderColor: "var(--color-stone-200)" }}>
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center text-[9px] font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
                   style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-600)" }}
                   disabled={qty <= 0}
                   onClick={(e) => { e.preventDefault(); setQty(Math.max(0, qty - 1)); }}
                 >
                   −
                 </button>
-                <span className="w-7 h-7 flex items-center justify-center text-xs font-semibold select-none" style={{ color: "var(--color-stone-700)" }}>
+                <span className="w-5 h-5 flex items-center justify-center text-[8px] font-semibold select-none" style={{ color: "var(--color-stone-700)" }}>
                   {qty}
                 </span>
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center text-[9px] font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
                   style={{ color: "var(--color-stone-600)" }}
                   onClick={(e) => { e.preventDefault(); setQty(qty + 1); }}
                 >
@@ -194,7 +193,7 @@ function ProductCard({ product }: { product: Product }) {
                 </button>
               </div>
               <button
-                className="flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-full text-[10px] sm:text-xs font-semibold transition-all hover:shadow-md min-h-[36px] whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-0.5 px-1.5 py-1 rounded-full text-[8px] font-semibold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: qty === 0 ? "var(--color-stone-400)" : "var(--color-forest-600)",
                   color: "white",
@@ -218,7 +217,7 @@ function ProductCard({ product }: { product: Product }) {
                   setTimeout(() => setToast(false), 2000);
                 }}
               >
-                <ShoppingBag size={14} />
+                <ShoppingBag size={10} />
                 Add
               </button>
             </div>
@@ -227,13 +226,13 @@ function ProductCard({ product }: { product: Product }) {
       </article>
       {toast && (
         <div
-          className="absolute top-2 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg animate-fade-in-up"
+          className="absolute top-1 left-1/2 -translate-x-1/2 z-20 px-2 py-1 rounded-full text-[10px] font-semibold shadow-lg animate-fade-in-up"
           style={{
             background: "var(--color-forest-600)",
             color: "white",
           }}
         >
-          Added to cart
+          Added
         </div>
       )}
     </Link>
@@ -356,7 +355,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
     <section className="section-padding" style={{ background: "var(--color-cream-50)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Filters Row */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           {/* Category Pills */}
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
@@ -403,16 +402,33 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
         </div>
 
         {/* Results count */}
-        <p className="text-sm mb-6" style={{ color: "var(--color-stone-400)" }}>
+        <p className="text-sm mb-2" style={{ color: "var(--color-stone-400)" }}>
           Showing {sorted.length} {sorted.length === 1 ? "product" : "products"}
           {activeCategory !== "All" && ` in ${activeCategory}`}
         </p>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-          {sorted.map((product) => (
-            <ProductCard key={product.slug} product={product} />
-          ))}
+        {/* Product Grid — 2 columns, rows grouped by category */}
+        <div className="space-y-2">
+          {(() => {
+            const grouped: { category: string; items: Product[] }[] = [];
+            const seen = new Set<string>();
+            sorted.forEach((p) => {
+              if (!seen.has(p.category)) {
+                seen.add(p.category);
+                grouped.push({ category: p.category, items: [p] });
+              } else {
+                const group = grouped.find((g) => g.category === p.category);
+                if (group) group.items.push(p);
+              }
+            });
+            return grouped.map((group) => (
+              <div key={group.category} className="grid grid-cols-2 gap-2">
+                {group.items.map((product) => (
+                  <ProductCard key={product.slug} product={product} />
+                ))}
+              </div>
+            ));
+          })()}
         </div>
 
         {/* Bulk Order Banner */}

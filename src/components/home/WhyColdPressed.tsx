@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, Droplets, FlaskConical, Flame, Leaf } from "lucide-react";
 
 const comparisons = [
@@ -169,10 +170,10 @@ export default function WhyColdPressed() {
 
         {/* CTA */}
         <div className="text-center mt-14">
-          <a href="/shop" className="btn-primary">
+          <Link href="/shop" className="btn-primary">
             Choose Your Pure Oil
             <ArrowRight size={18} />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

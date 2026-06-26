@@ -38,10 +38,11 @@ function useCountUp(target: number, duration = 800) {
 
   useEffect(() => {
     if (target === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCount(0);
       return;
     }
-    let start = 0;
+    const start = 0;
     const startTime = performance.now();
     const step = (now: number) => {
       const elapsed = now - startTime;
