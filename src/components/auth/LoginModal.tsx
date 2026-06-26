@@ -24,11 +24,11 @@ export default function LoginModal() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (channel === "email" && (!email.includes("@") || email.length < 5)) {
+    if (!email.includes("@") || email.length < 5) {
       setError("Please enter a valid email address");
       return;
     }
-    if (channel === "whatsapp" && mobile.length < 10) {
+    if (mobile.length < 10) {
       setError("Please enter a valid 10-digit mobile number");
       return;
     }
@@ -191,7 +191,7 @@ export default function LoginModal() {
       case "contact":
         return {
           title: "Welcome to Minaliya",
-          desc: "Enter your contact details to receive a secure login code.",
+          desc: "Enter your email and mobile number to receive a secure login code.",
         };
       case "otp": {
         const channelLabel = channel === "email" ? email : `+91 ${mobile}`;
@@ -249,42 +249,38 @@ export default function LoginModal() {
 
           {step === "contact" && (
             <form onSubmit={handleSendOtp} className="space-y-4">
-              {channel === "email" && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-stone-400">Email Address</label>
-                  <div className="relative mb-4">
-                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-300" />
-                    <input 
-                      required
-                      type="email" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email" 
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
-                      style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-50)" }}
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-stone-400">Email Address</label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-300" />
+                  <input 
+                    required
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email" 
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                    style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-50)" }}
+                  />
                 </div>
-              )}
+              </div>
 
-              {channel === "whatsapp" && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-stone-400">Mobile Number</label>
-                  <div className="relative">
-                    <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-300" />
-                    <span className="absolute left-10 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-400 border-r pr-2 mr-2" style={{ borderColor: "var(--color-stone-200)" }}>+91</span>
-                    <input 
-                      required
-                      type="tel" 
-                      value={mobile}
-                      onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      placeholder="9876543210" 
-                      className="w-full pl-20 pr-4 py-3.5 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
-                      style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-50)" }}
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-stone-400">Mobile Number</label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-300" />
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-400 border-r pr-2 mr-2" style={{ borderColor: "var(--color-stone-200)" }}>+91</span>
+                  <input 
+                    required
+                    type="tel" 
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="9876543210" 
+                    className="w-full pl-20 pr-4 py-3.5 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all"
+                    style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-50)" }}
+                  />
                 </div>
-              )}
+              </div>
 
               {/* OTP Channel Selection */}
               <div>
@@ -328,7 +324,7 @@ export default function LoginModal() {
                   ? isRedirectingToAdmin
                     ? "Redirecting to admin dashboard..."
                     : "Sending OTP..."
-                  : `Send OTP via ${channel === "email" ? "Email" : "WhatsApp"}`}
+                  : "Send OTP"}
               </button>
             </form>
           )}
