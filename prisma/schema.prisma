@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  name                 String?
+  email                String?   @unique
+  phoneNumber          String?   @unique
+  image                String?
+  newsletterSubscribed Boolean   @default(true)
+  addresses            Json?
+  cart                 Json?
+  role                 Role      @default(USER)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  orders               Order[]
+  subscriptions        Subscription[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String
+  price           Decimal  @db.Decimal(10, 2)
+  discountPrice   Decimal? @db.Decimal(10, 2)
+  stock           Int      @default(0)
+  images          String[]
+  isFeatured      Boolean  @default(false)
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  specifications  Json?    // For technical details like "Extraction Method", "Origin"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  orderItems      OrderItem[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id])
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  shippingAddress Json
+  paymentStatus   String      @default("PENDING")
+  paymentMethod   String
+  razorpayOrderId   String?   @unique
+  razorpayPaymentId String?
+  awbNumber       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+}
+
+model BulkInquiry {
+  id        String   @id @default(cuid())
+  name      String
+  company   String?
+  email     String
+  phone     String
+  product   String
+  quantity  Int
+  message   String?
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id             String           @id @default(cuid())
+  userId         String?
+  user           User?            @relation(fields: [userId], references: [id])
+  plan           SubscriptionPlan
+  status         SubscriptionStatus @default(ACTIVE)
+  oilPreference  String?          // "groundnut", "coconut", "sesame"
+  startDate      DateTime         @default(now())
+  nextDelivery   DateTime?
+  address        Json
+  phone          String
+  email          String?
+  razorpayOrderId   String?
+  razorpaySubscriptionId String?
+  totalAmount    Decimal          @db.Decimal(10, 2)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+model HeroSlide {
+  id          String   @id @default(cuid())
+  label       String
+  headline    Json     // Array of { text: string, style: "display" | "serif-italic" | "sans" }
+  subtitle    String
+  image       String
+  imageAlt    String
+  accentColor String   @default("#C47700")
+  badge       String?
+  bgPrimary   String   @default("#FFFFFF")
+  bgSecondary String   @default("#F9F9F9")
+  bgAccent    String   @default("#FFFFFF")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
