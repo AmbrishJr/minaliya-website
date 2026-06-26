@@ -35,7 +35,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
     <Link href={`/shop/${product.slug}`} className="block relative">
     <article className="product-card group relative">
       {/* Image */}
-      <div className="product-image relative aspect-[4/3]">
+      <div className="product-image relative w-full aspect-[4/3]">
         <Image
           src={product.image}
           alt={`${product.name} - Minaliya Mara Chekku Wood Pressed Oil`}
