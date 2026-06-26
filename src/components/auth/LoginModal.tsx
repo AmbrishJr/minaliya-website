@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { X, Phone, User, CheckCircle2, MessageSquare, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { sendOtpAction, verifyOtpAction } from "@/actions/auth";
+import { sendOtpAction, sendEmailOtpAction, verifyOtpAction } from "@/actions/auth";
 import { adminLogin } from "@/actions/admin";
 
 export default function LoginModal() {
   const { isLoginModalOpen, closeLoginModal, login } = useAuth();
   const [step, setStep] = useState<"contact" | "otp" | "name">("contact");
+  const [channel, setChannel] = useState<"whatsapp" | "email">("whatsapp");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
@@ -64,8 +65,11 @@ export default function LoginModal() {
         return;
       }
 
-      // 2. Trigger real WhatsApp OTP using sendOtpAction
-      const response = await sendOtpAction(existingName || "Minaliya Customer", mobile);
+      // 2. Send OTP via selected channel
+      const response = channel === "email"
+        ? await sendEmailOtpAction(existingName || "Minaliya Customer", email)
+        : await sendOtpAction(existingName || "Minaliya Customer", mobile);
+
       if (response.success && response.otpToken) {
         setOtpToken(response.otpToken);
         setStep("otp");
@@ -101,7 +105,7 @@ export default function LoginModal() {
       setIsReturningUser(data.exists === true);
 
       // Verify OTP — only skip name step for fully registered returning users
-      const response = await verifyOtpAction(mobile, otp, otpToken, email);
+      const response = await verifyOtpAction(mobile, otp, otpToken, email, channel);
       if (response.success) {
         const canLoginDirectly =
           isReturningUser &&
@@ -172,6 +176,7 @@ export default function LoginModal() {
   
   const resetForm = () => {
     setStep("contact");
+    setChannel("whatsapp");
     setEmail("");
     setMobile("");
     setOtp("");
@@ -188,11 +193,14 @@ export default function LoginModal() {
           title: "Welcome to Minaliya",
           desc: "Enter your contact details to receive a secure login code.",
         };
-      case "otp":
+      case "otp": {
+        const channelLabel = channel === "email" ? email : `+91 ${mobile}`;
+        const channelName = channel === "email" ? "Email" : "WhatsApp";
         return {
-          title: "Verify WhatsApp OTP",
-          desc: `We've sent a 6-digit code to +91 ${mobile}`,
+          title: `Verify ${channelName} OTP`,
+          desc: `We've sent a 6-digit code to ${channelLabel}`,
         };
+      }
       case "name":
         return {
           title: "Complete Registration",
@@ -229,7 +237,7 @@ export default function LoginModal() {
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
               style={{ background: "var(--color-forest-50)", color: "var(--color-forest-600)" }}
             >
-              <MessageSquare size={32} />
+              {step === "otp" && channel === "email" ? <Mail size={32} /> : <MessageSquare size={32} />}
             </div>
             <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
               {headerInfo.title}
@@ -274,6 +282,37 @@ export default function LoginModal() {
                 </div>
               </div>
 
+              {/* OTP Channel Selection */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-stone-400">Receive OTP via</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setChannel("whatsapp")}
+                    className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${
+                      channel === "whatsapp"
+                        ? "border-forest-500 bg-forest-50 text-forest-700"
+                        : "border-stone-200 bg-cream-50 text-stone-500 hover:border-stone-300"
+                    }`}
+                  >
+                    <MessageSquare size={18} />
+                    <span className="text-sm font-semibold">WhatsApp</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChannel("email")}
+                    className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${
+                      channel === "email"
+                        ? "border-forest-500 bg-forest-50 text-forest-700"
+                        : "border-stone-200 bg-cream-50 text-stone-500 hover:border-stone-300"
+                    }`}
+                  >
+                    <Mail size={18} />
+                    <span className="text-sm font-semibold">Email</span>
+                  </button>
+                </div>
+              </div>
+
               {error && <p className="text-xs font-medium text-red-500 mt-2">{error}</p>}
 
               <button 
@@ -285,7 +324,7 @@ export default function LoginModal() {
                   ? isRedirectingToAdmin
                     ? "Redirecting to admin dashboard..."
                     : "Sending OTP..."
-                  : "Send OTP via WhatsApp"}
+                  : `Send OTP via ${channel === "email" ? "Email" : "WhatsApp"}`}
               </button>
             </form>
           )}

@@ -2,49 +2,40 @@
 
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-import { isCompleteReturningUser, normalizePhone } from "@/lib/auth-utils";
+import { isCompleteReturningUser, normalizeEmail, normalizePhone } from "@/lib/auth-utils";
+import { sendOtpEmail } from "@/lib/email";
 
 const OTP_SECRET = process.env.OTP_SECRET || "minaliyaa-otp-secure-signing-key-32-chars-long";
 const AISENSY_API_KEY = process.env.AISENSY_API_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NGE2N2NhMmIyZDBmNTVkZGM5ZDRmMSIsIm5hbWUiOiJNaW5hbGl5YSBHb29kcyBBbmQgU2VydmljZXMiLCJhcHBOYW1lIjoiQWlTZW5zeSIsImNsaWVudElkIjoiNjg0YTY3Y2EyYjJkMGY1NWRkYzlkNGVhIiwiYWN0aXZlUGxhbiI6Ik5PTkUiLCJpYXQiOjE3NDk3MDY2OTh9.fTdJ31H_ROoT-M1RKE0AWV5Y4pnDdMSDISwNqm7TwIc";
 const AISENSY_CAMPAIGN_NAME = process.env.AISENSY_CAMPAIGN_NAME || "minaliyaloginotp";
 const AISENSY_USER_NAME = process.env.AISENSY_USER_NAME || "Minaliya Goods And Services";
 
-/**
- * Generates a Base64-encoded, HMAC-SHA256 cryptographically signed OTP token.
- * Contains the mobile number, the OTP code, and the expiration timestamp.
- */
-function generateOtpToken(mobile: string, otp: string, expiresAt: number): string {
-  const data = `${mobile}:${otp}:${expiresAt}`;
+function generateOtpToken(identifier: string, otp: string, expiresAt: number): string {
+  const data = `${identifier}:${otp}:${expiresAt}`;
   const signature = crypto.createHmac("sha256", OTP_SECRET).update(data).digest("hex");
   return Buffer.from(`${data}:${signature}`).toString("base64");
 }
 
-/**
- * Verifies a Base64 OTP token by checking the signature, expiration, and values.
- */
-function verifyOtpToken(mobile: string, otp: string, token: string): boolean {
+function verifyOtpToken(identifier: string, otp: string, token: string): boolean {
   try {
     const decoded = Buffer.from(token, "base64").toString("utf-8");
     const parts = decoded.split(":");
     if (parts.length !== 4) return false;
 
-    const [tokenMobile, tokenOtp, tokenExpiresAtStr, tokenSignature] = parts;
+    const [tokenIdentifier, tokenOtp, tokenExpiresAtStr, tokenSignature] = parts;
     const expiresAt = parseInt(tokenExpiresAtStr, 10);
 
-    // Check expiration
     if (Date.now() > expiresAt) {
-      console.warn(`[OTP] Token expired for ${mobile}`);
+      console.warn(`[OTP] Token expired for ${identifier}`);
       return false;
     }
 
-    // Check mobile and otp matching
-    if (tokenMobile !== mobile || tokenOtp !== otp) {
-      console.warn(`[OTP] Value mismatch for ${mobile}. Expected otp: ${tokenOtp}, received: ${otp}`);
+    if (tokenIdentifier !== identifier || tokenOtp !== otp) {
+      console.warn(`[OTP] Value mismatch for ${identifier}`);
       return false;
     }
 
-    // Validate cryptographic signature
-    const expectedData = `${tokenMobile}:${tokenOtp}:${tokenExpiresAtStr}`;
+    const expectedData = `${tokenIdentifier}:${tokenOtp}:${tokenExpiresAtStr}`;
     const expectedSignature = crypto.createHmac("sha256", OTP_SECRET).update(expectedData).digest("hex");
 
     return crypto.timingSafeEqual(
@@ -181,38 +172,100 @@ export async function sendOtpAction(name: string, mobile: string) {
 }
 
 /**
+ * Generates an OTP, signs it, and sends it via the Webaroo Email Gateway.
+ */
+export async function sendEmailOtpAction(customerName: string, email: string) {
+  try {
+    if (!email || !email.includes("@")) {
+      return { success: false, error: "Please enter a valid email address." };
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+    const otpToken = generateOtpToken(normalizedEmail, otp, expiresAt);
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`\n==============================================`);
+      console.log(`[Email OTP DEBUG] Generated OTP for ${normalizedEmail}: ${otp}`);
+      console.log(`==============================================\n`);
+    }
+
+    const sent = await sendOtpEmail(normalizedEmail, otp, customerName);
+    if (!sent) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[Email OTP] API returned failure, returning success token because NODE_ENV is development.");
+        return {
+          success: true,
+          otpToken,
+          debugMessage: "Development mode fallback: OTP printed in server console.",
+        };
+      }
+      return { success: false, error: "Failed to send OTP via email. Please try again later." };
+    }
+
+    console.log(`[Email OTP] Sent successfully to ${normalizedEmail}`);
+    return { success: true, otpToken };
+  } catch (error) {
+    console.error("[Email OTP] Exception occurred while sending:", error);
+    if (process.env.NODE_ENV !== "production") {
+      const normalizedEmail = normalizeEmail(email);
+      const mockOtp = "123456";
+      const expiresAt = Date.now() + 5 * 60 * 1000;
+      const otpToken = generateOtpToken(normalizedEmail, mockOtp, expiresAt);
+      console.log(`\n==============================================`);
+      console.log(`[Email OTP DEBUG FALLBACK] Mock OTP for ${normalizedEmail}: ${mockOtp}`);
+      console.log(`==============================================\n`);
+      return {
+        success: true,
+        otpToken,
+        debugMessage: "Network error fallback: OTP is 123456.",
+      };
+    }
+    return { success: false, error: "An unexpected connection error occurred. Please try again." };
+  }
+}
+
+/**
  * Validates the entered OTP code against the signed token.
- * Does not create DB users — registration (name + email) happens in /api/auth/register.
+ * Supports both WhatsApp (phone identifier) and Email (email identifier) OTPs.
  */
 export async function verifyOtpAction(
   mobile: string,
   otp: string,
   otpToken: string,
-  email: string
+  email: string,
+  channel?: "whatsapp" | "email"
 ) {
   try {
-    if (!mobile || !otp || !otpToken) {
+    if (!otp || !otpToken) {
       return { success: false, error: "Invalid submission data." };
     }
 
-    const phone = normalizePhone(mobile);
-    const isValid = verifyOtpToken(phone, otp, otpToken);
+    const useEmailChannel = channel === "email";
+    const identifier = useEmailChannel ? normalizeEmail(email) : normalizePhone(mobile);
+
+    if (!identifier) {
+      return { success: false, error: "Invalid identifier for OTP verification." };
+    }
+
+    const isValid = verifyOtpToken(identifier, otp, otpToken);
     if (!isValid) {
       return { success: false, error: "Invalid or expired OTP. Please try again." };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { phoneNumber: phone },
-    });
+    const user = useEmailChannel
+      ? await prisma.user.findUnique({ where: { email: identifier } })
+      : await prisma.user.findUnique({ where: { phoneNumber: identifier } });
 
-    if (user && isCompleteReturningUser(user, email, phone)) {
+    if (user && isCompleteReturningUser(user, email, mobile)) {
       return {
         success: true,
         needsRegistration: false,
         user: {
           id: user.id,
           name: user.name!,
-          mobile: user.phoneNumber || phone,
+          mobile: user.phoneNumber || normalizePhone(mobile),
           email: user.email || undefined,
           image: user.image || undefined,
           newsletterSubscribed: user.newsletterSubscribed,
@@ -224,7 +277,7 @@ export async function verifyOtpAction(
 
     return { success: true, needsRegistration: true };
   } catch (error) {
-    console.error("[OTP] Exception occurred while verifying WhatsApp OTP:", error);
+    console.error("[OTP] Exception occurred while verifying OTP:", error);
     return { success: false, error: "Failed to verify OTP. Please try again." };
   }
 }
