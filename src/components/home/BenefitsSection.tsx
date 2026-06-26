@@ -9,38 +9,38 @@ import {
 const benefits = [
   {
     icon: <Droplets size={32} />,
-    title: "Rich Natural Aroma",
-    desc: "Experience the true fragrance of pure oil — unmasked by deodorizers or artificial scents.",
+    title: "Pure & Authentic Aroma",
+    desc: "Experience the unadulterated fragrance of traditional wood-pressed oils. No deodorizers, no artificial scents—just nature's true essence.",
     stat: "100%",
-    statLabel: "Natural Fragrance",
+    statLabel: "Natural",
   },
   {
     icon: <Heart size={32} />,
-    title: "Better Nutrition",
-    desc: "Packed with Vitamin E, Omega-3 fatty acids, and natural antioxidants for complete well-being.",
-    stat: "3x",
-    statLabel: "More Nutrients",
+    title: "Maximum Nutrition",
+    desc: "Our low-temperature extraction preserves vital nutrients, Omega-3 fatty acids, and powerful antioxidants for your family's well-being.",
+    stat: "Zero",
+    statLabel: "Heat Applied",
   },
   {
     icon: <Shield size={32} />,
-    title: "Healthy Fats",
-    desc: "Rich in monounsaturated & polyunsaturated fats — the good fats your body needs daily.",
-    stat: "Zero",
+    title: "Heart-Healthy Fats",
+    desc: "Rich in essential monounsaturated and polyunsaturated fats, supporting healthy cholesterol levels and optimal cardiovascular health.",
+    stat: "0%",
     statLabel: "Trans Fats",
   },
   {
     icon: <Sparkles size={32} />,
-    title: "No Chemicals",
-    desc: "Free from hexane, bleaching agents, and preservatives. Pure oil, nothing else.",
+    title: "Chemical-Free",
+    desc: "We never use hexane, bleaching agents, or synthetic preservatives. From seed to bottle, our process remains entirely mechanical.",
     stat: "0%",
-    statLabel: "Chemical Content",
+    statLabel: "Chemicals",
   },
   {
     icon: <Cookie size={32} />,
-    title: "Authentic Taste",
-    desc: "The true taste of oil that enhances every dish — from sambar to sweets, the way it should be.",
+    title: "Unmatched Taste",
+    desc: "Elevate your everyday cooking. Our oils bring a rich, nutty flavor that enhances the authentic taste of your favorite dishes.",
     stat: "100%",
-    statLabel: "Pure Taste",
+    statLabel: "Flavor",
   },
 ];
 
@@ -90,56 +90,73 @@ export default function BenefitsSection() {
         </div>
 
         {/* Benefits Grid */}
-        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 overflow-x-auto pb-6 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory hide-scrollbar">
+        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8 overflow-x-auto pb-8 pt-4 sm:pb-0 sm:pt-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory hide-scrollbar">
           {benefits.map((item, i) => (
             <div
               key={i}
-              className="text-center p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] shrink-0 w-[260px] sm:w-auto snap-center"
+              className="group flex flex-col items-center text-center p-8 rounded-3xl transition-all duration-500 hover:-translate-y-2 shrink-0 w-[280px] sm:w-auto snap-center h-full relative overflow-hidden"
               style={{
-                background: "rgba(255, 255, 255, 0.06)",
+                background: "rgba(255, 255, 255, 0.03)",
                 border: "1px solid rgba(255, 255, 255, 0.1)",
-                backdropFilter: "blur(8px)",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+                backdropFilter: "blur(12px)",
               }}
             >
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              {/* Subtle hover gradient background */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"
                 style={{
-                  background: "rgba(255, 255, 255, 0.08)",
-                  color: "var(--color-amber-300)",
+                  background: "radial-gradient(circle at 50% 0%, var(--color-amber-400), transparent 70%)"
+                }}
+              />
+              
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500 group-hover:scale-110 shadow-inner"
+                style={{
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02))",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "var(--color-amber-400)",
                 }}
               >
                 {item.icon}
               </div>
-              <div
-                className="text-2xl font-bold mb-0.5"
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  color: "var(--color-amber-400)",
-                }}
-              >
-                {item.stat}
+              
+              <div className="flex-1 flex flex-col items-center">
+                <div className="flex flex-col items-center mb-5">
+                  <div
+                    className="text-3xl font-bold mb-1 tracking-tight"
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      color: "var(--color-amber-400)",
+                    }}
+                  >
+                    {item.stat}
+                  </div>
+                  <div
+                    className="text-[10px] uppercase tracking-[0.2em] font-bold"
+                    style={{ color: "rgba(255,255,255,0.6)" }}
+                  >
+                    {item.statLabel}
+                  </div>
+                </div>
+                
+                <h3
+                  className="text-xl font-bold mb-3 tracking-tight leading-snug"
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    color: "white",
+                  }}
+                >
+                  {item.title}
+                </h3>
+                
+                <p
+                  className="text-sm leading-relaxed font-medium"
+                  style={{ color: "rgba(255, 255, 255, 0.85)" }}
+                >
+                  {item.desc}
+                </p>
               </div>
-              <div
-                className="text-[10px] uppercase tracking-wider font-medium mb-3"
-                style={{ color: "var(--color-forest-200)" }}
-              >
-                {item.statLabel}
-              </div>
-              <h3
-                className="text-base font-semibold mb-2"
-                style={{
-                  fontFamily: "var(--font-heading)",
-                  color: "var(--color-cream-100)",
-                }}
-              >
-                {item.title}
-              </h3>
-              <p
-                className="text-xs leading-relaxed"
-                style={{ color: "var(--color-forest-200)" }}
-              >
-                {item.desc}
-              </p>
             </div>
           ))}
         </div>

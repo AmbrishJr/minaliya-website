@@ -36,24 +36,24 @@ const comparisons = [
 
 const benefits = [
   {
-    icon: <Droplets size={24} />,
+    icon: <Droplets size={28} />,
     title: "Nutrient Retention",
-    text: "Cold pressing at low temperatures preserves Vitamin E, Omega-3, and natural antioxidants that refined oils destroy.",
+    text: "Cold pressing at low temperatures preserves vital Vitamin E, Omega-3, and natural antioxidants that industrial refining completely destroys.",
   },
   {
-    icon: <Leaf size={24} />,
+    icon: <Leaf size={28} />,
     title: "No Chemical Processing",
-    text: "Unlike refined oils that use hexane solvent extraction, our oils are purely mechanically pressed from seeds.",
+    text: "Unlike refined oils that rely on hexane solvent extraction, our oils are purely mechanically pressed from sun-dried seeds.",
   },
   {
-    icon: <Flame size={24} />,
-    title: "Higher Smoke Point Safety",
-    text: "Traditional extraction maintains the oil's natural stability, making it safer for Indian cooking methods.",
+    icon: <Flame size={28} />,
+    title: "High Smoke Point Safety",
+    text: "Traditional wood pressing maintains the oil's natural structural stability, making it perfectly safe and ideal for high-heat Indian cooking.",
   },
   {
-    icon: <FlaskConical size={24} />,
+    icon: <FlaskConical size={28} />,
     title: "Better for Digestion",
-    text: "The natural enzymes and fatty acids in cold pressed oils aid digestion and nutrient absorption.",
+    text: "The intact natural enzymes and fatty acids in our cold-pressed oils actively aid digestion and improve daily nutrient absorption.",
   },
 ];
 
@@ -132,34 +132,45 @@ export default function WhyColdPressed() {
           {benefits.map((item, i) => (
             <div
               key={i}
-              className="flex gap-5 p-6 rounded-2xl transition-all duration-300 hover:shadow-md"
+              className="group flex flex-col h-full p-8 rounded-3xl transition-all duration-500 hover:-translate-y-2 relative overflow-hidden"
               style={{
-                background: "var(--color-cream-50)",
+                background: "white",
                 border: "1px solid var(--color-stone-200)",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.03)",
               }}
             >
-              <div
-                className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center"
+              {/* Subtle gradient hover background */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
                 style={{
-                  background: "var(--color-forest-50)",
-                  color: "var(--color-forest-500)",
+                  background: "linear-gradient(135deg, var(--color-forest-50) 0%, transparent 100%)"
+                }}
+              />
+              
+              <div
+                className="shrink-0 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500 group-hover:scale-110 shadow-sm"
+                style={{
+                  background: "white",
+                  border: "1px solid var(--color-forest-100)",
+                  color: "var(--color-forest-600)",
                 }}
               >
                 {item.icon}
               </div>
-              <div>
+              
+              <div className="flex-1 flex flex-col relative z-10">
                 <h3
-                  className="text-base font-semibold mb-1.5"
+                  className="text-xl font-bold mb-3 tracking-tight leading-snug"
                   style={{
                     fontFamily: "var(--font-heading)",
-                    color: "var(--color-stone-800)",
+                    color: "var(--color-stone-900)",
                   }}
                 >
                   {item.title}
                 </h3>
                 <p
-                  className="text-sm leading-relaxed"
-                  style={{ color: "var(--color-stone-500)" }}
+                  className="text-sm leading-[1.7] font-medium"
+                  style={{ color: "var(--color-stone-600)" }}
                 >
                   {item.text}
                 </p>

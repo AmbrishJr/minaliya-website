@@ -35,13 +35,13 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
     <Link href={`/shop/${product.slug}`} className="block relative">
     <article className="product-card group relative">
       {/* Image */}
-      <div className="product-image relative w-full aspect-[4/3]">
+      <div className="product-image relative w-full aspect-[4/5] bg-stone-50 overflow-hidden">
         <Image
           src={product.image}
           alt={`${product.name} - Minaliya Mara Chekku Wood Pressed Oil`}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover"
+          className="object-cover group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
           quality={85}
         />
@@ -112,27 +112,27 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
       </div>
 
         {/* Content */}
-        <div className="p-1 space-y-0.5">
+        <div className="p-3 sm:p-4 space-y-3 bg-white">
         {/* Rating */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-0.5">
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                size={8}
+                size={12}
                 fill={i < Math.floor(product.rating) ? "var(--color-amber-400)" : "none"}
                 stroke={i < Math.floor(product.rating) ? "var(--color-amber-400)" : "var(--color-stone-300)"}
               />
             ))}
           </div>
-          <span className="text-[8px] font-medium" style={{ color: "var(--color-stone-400)" }}>
+          <span className="text-xs font-medium" style={{ color: "var(--color-stone-500)" }}>
             {product.rating}
           </span>
         </div>
 
         {/* Name */}
         <h3
-          className="text-[10px] sm:text-xs font-semibold leading-snug line-clamp-2"
+          className="text-sm sm:text-base font-bold leading-snug line-clamp-2"
           style={{
             fontFamily: "var(--font-heading)",
             color: "var(--color-stone-800)",
@@ -142,14 +142,14 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
         </h3>
 
         {/* Sizes */}
-        <div className="flex flex-wrap gap-0.5">
+        <div className="flex flex-wrap gap-1.5">
           {product.sizes.map((size) => (
             <span
               key={size}
-              className="text-[8px] px-1 py-0.5 rounded-full font-medium"
+              className="text-xs px-2 py-1 rounded-md font-semibold"
               style={{
                 background: "var(--color-cream-100)",
-                color: "var(--color-stone-600)",
+                color: "var(--color-stone-700)",
               }}
             >
               {size}
@@ -158,44 +158,46 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
         </div>
 
         {/* Price + CTA */}
-        <div className="flex flex-row items-center justify-between gap-1">
-          <div className="flex items-baseline gap-0.5">
-            <span
-              className="text-[11px] sm:text-xs font-bold"
-              style={{ color: "var(--color-stone-800)" }}
-            >
-              ₹{product.price}
-            </span>
-            <span
-              className="text-[8px] sm:text-[9px] line-through"
-              style={{ color: "var(--color-stone-400)" }}
-            >
-              ₹{product.originalPrice}
-            </span>
+        <div className="flex flex-row items-center justify-between gap-2 pt-2 border-t border-stone-100">
+          <div className="flex flex-col">
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className="text-base sm:text-lg font-bold"
+                style={{ color: "var(--color-stone-900)" }}
+              >
+                ₹{product.price}
+              </span>
+              <span
+                className="text-xs font-medium line-through"
+                style={{ color: "var(--color-stone-400)" }}
+              >
+                ₹{product.originalPrice}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-0.5">
-            <div className="flex items-center border rounded-full overflow-hidden shrink-0" style={{ borderColor: "var(--color-stone-200)" }}>
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center border rounded-lg overflow-hidden shrink-0 shadow-sm" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
               <button
-                className="w-5 h-5 flex items-center justify-center text-[9px] font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
-                style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-600)" }}
+                className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
+                style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-700)" }}
                 disabled={qty <= 0}
                 onClick={(e) => { e.preventDefault(); setQty(Math.max(0, qty - 1)); }}
               >
                 −
               </button>
-              <span className="w-5 h-5 flex items-center justify-center text-[8px] font-semibold select-none" style={{ color: "var(--color-stone-700)" }}>
+              <span className="w-6 h-7 flex items-center justify-center text-xs font-bold select-none bg-stone-50/50" style={{ color: "var(--color-stone-800)" }}>
                 {qty}
               </span>
               <button
-                className="w-5 h-5 flex items-center justify-center text-[9px] font-semibold transition-colors hover:bg-stone-100 cursor-pointer"
-                style={{ color: "var(--color-stone-600)" }}
+                className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
+                style={{ color: "var(--color-stone-700)" }}
                 onClick={(e) => { e.preventDefault(); setQty(qty + 1); }}
               >
                 +
               </button>
             </div>
             <button
-              className="flex items-center justify-center gap-0.5 px-1.5 py-1 rounded-full text-[8px] font-semibold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: qty === 0 ? "var(--color-stone-400)" : "var(--color-forest-600)",
                 color: "white",
@@ -219,7 +221,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
                 setTimeout(() => setToast(false), 2000);
               }}
             >
-              <ShoppingBag size={10} />
+              <ShoppingBag size={14} />
               Add
             </button>
           </div>
