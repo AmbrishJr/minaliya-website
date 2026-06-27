@@ -39,7 +39,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { totalItems, openCart, addItem } = useCart();
   const { totalItems: wishlistTotal } = useWishlist();
-  const { isAuthenticated, isAuthReady, openLoginModal } = useAuth();
+  const { user, isAuthenticated, isAuthReady, openLoginModal } = useAuth();
   const { orders } = useOrders();
   const showLoginPrompt = isAuthReady && !isAuthenticated;
   const showReorder = isAuthenticated && orders.length > 0;
@@ -178,13 +178,17 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={handleProfileClick}
-                className="hidden sm:flex relative p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
-                aria-label={showLoginPrompt ? "Login now" : "Account"}
+                className="hidden sm:flex items-center gap-2 p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
+                aria-label={isAuthenticated ? "Account" : "Login now"}
               >
                 <User size={20} />
-                {showLoginPrompt && (
+                {isAuthenticated && user?.name ? (
+                  <span className="text-xs font-semibold max-w-[80px] truncate">
+                    {user.name}
+                  </span>
+                ) : showLoginPrompt && (
                   <span
-                    className="absolute -top-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide rounded-full whitespace-nowrap shadow-sm animate-pulse"
+                    className="px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide rounded-full shadow-sm animate-pulse"
                     style={{ background: "#FEF3C7", color: "#92400E" }}
                   >
                     Login now!
@@ -399,7 +403,12 @@ export default function Navbar() {
                 style={{ color: "var(--color-stone-700)" }}
               >
                 <span className="flex items-center gap-3">
-                  <User size={18} /> My Account
+                  <User size={18} />
+                  {isAuthenticated && user?.name ? (
+                    <span className="font-semibold truncate">{user.name}</span>
+                  ) : (
+                    "My Account"
+                  )}
                 </span>
                 {showLoginPrompt && (
                   <span

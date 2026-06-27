@@ -7,24 +7,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, mobile, name } = body;
 
-    if (!email || !mobile || !name) {
+    if (!mobile || !name) {
       return NextResponse.json(
-        { error: "Email, mobile, and name are required" },
+        { error: "Name and mobile number are required" },
         { status: 400 }
       );
     }
 
     const phone = normalizePhone(mobile);
-    const normalizedEmail = normalizeEmail(email);
     const trimmedName = name.trim();
+    const normalizedEmail = email ? normalizeEmail(email) : null;
 
     const existingByPhone = await prisma.user.findUnique({
       where: { phoneNumber: phone },
     });
 
-    const existingByEmail = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
+    const existingByEmail = normalizedEmail
+      ? await prisma.user.findUnique({ where: { email: normalizedEmail } })
+      : null;
 
     // Same account matched by phone and email
     if (
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, user });
     }
 
-    // Phone record exists — set email only if it is not owned by someone else
+    // Phone record exists
     if (existingByPhone) {
-      if (existingByEmail && existingByEmail.id !== existingByPhone.id) {
+      if (normalizedEmail && existingByEmail && existingByEmail.id !== existingByPhone.id) {
         return NextResponse.json(
           {
             error:
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         data: {
           name: trimmedName,
           phoneNumber: phone,
-          email: normalizedEmail,
+          ...(normalizedEmail ? { email: normalizedEmail } : {}),
         },
       });
       return NextResponse.json({ success: true, user });
@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name: trimmedName,
-        email: normalizedEmail,
         phoneNumber: phone,
+        ...(normalizedEmail ? { email: normalizedEmail } : {}),
       },
     });
 

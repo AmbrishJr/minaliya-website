@@ -3,7 +3,7 @@
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { isCompleteReturningUser, normalizeEmail, normalizePhone } from "@/lib/auth-utils";
+import { normalizeEmail, normalizePhone } from "@/lib/auth-utils";
 import { sendOtpEmail } from "@/lib/email";
 
 const OTP_SECRET = process.env.OTP_SECRET || "minaliyaa-otp-secure-signing-key-32-chars-long";
@@ -259,13 +259,13 @@ export async function verifyOtpAction(
       ? await prisma.user.findUnique({ where: { email: identifier } })
       : await prisma.user.findUnique({ where: { phoneNumber: identifier } });
 
-    if (user && isCompleteReturningUser(user, email, mobile)) {
+    if (user) {
       return {
         success: true,
         needsRegistration: false,
         user: {
           id: user.id,
-          name: user.name!,
+          name: user.name || "Valued Customer",
           mobile: user.phoneNumber || normalizePhone(mobile),
           email: user.email || undefined,
           image: user.image || undefined,

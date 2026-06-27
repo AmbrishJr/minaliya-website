@@ -1,50 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import {
-  isAdminCredentialsMatch,
-  isCompleteReturningUser,
-  normalizePhone,
-} from "@/lib/auth-utils";
+import { normalizePhone } from "@/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, mobile } = body;
 
-    if (!email && !mobile) {
+    let user;
+
+    if (mobile) {
+      const phone = normalizePhone(mobile);
+      user = await prisma.user.findUnique({ where: { phoneNumber: phone } });
+    } else if (email) {
+      user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    } else {
       return NextResponse.json(
-        { error: "Email or mobile is required" },
+        { error: "Email or mobile number is required" },
         { status: 400 }
       );
     }
 
-    // Check if the credentials match the admin credentials
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPhone = process.env.ADMIN_PHONE;
-
-    if (adminEmail && adminPhone && email && mobile) {
-      if (isAdminCredentialsMatch(email, mobile, adminEmail, adminPhone)) {
-        return NextResponse.json({
-          exists: true,
-          isAdmin: true,
-          user: {
-            id: "admin",
-            name: "Administrator",
-            email: adminEmail,
-            mobile: normalizePhone(adminPhone),
-          },
-        });
-      }
-    }
-
-    const phone = normalizePhone(mobile);
-    const user = await prisma.user.findUnique({
-      where: { phoneNumber: phone },
-    });
-
-    if (user && isCompleteReturningUser(user, email, mobile)) {
+    if (user) {
+      const isAdmin = user.role === "ADMIN";
       return NextResponse.json({
         exists: true,
+        isAdmin,
         user: {
           id: user.id,
           name: user.name,
