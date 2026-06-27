@@ -20,6 +20,13 @@ export const metadata: Metadata = {
   description:
     "Discover the story behind Minaliya — our mission to bring pure, traditional wooden cold pressed oils to modern Indian kitchens. Rooted in Tamil Nadu heritage.",
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Minaliya — Traditional Mara Chekku Oils",
+    description:
+      "Discover the story behind Minaliya — pure, traditional wooden cold pressed oils from Tamil Nadu.",
+    url: "https://minaliya.com/about",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "About Minaliya" }],
+  },
 };
 
 const values = [

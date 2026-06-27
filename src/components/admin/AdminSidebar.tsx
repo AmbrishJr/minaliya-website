@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   BarChart3,
   Image as ImageIcon,
+  PenLine,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -26,11 +27,12 @@ const menuItems = [
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { name: "Products", href: "/admin/products", icon: Leaf },
+  { name: "Blog", href: "/admin/blog", icon: PenLine },
   { name: "Hero Slides", href: "/admin/hero-slides", icon: ImageIcon },
   { name: "Inquiries", href: "/admin/inquiries", icon: MessageSquare },
 ];
 
-const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/hero-slides", "/admin/inquiries"];
+const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/blog", "/admin/hero-slides", "/admin/inquiries"];
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();

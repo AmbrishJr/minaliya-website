@@ -1,34 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Clock } from "lucide-react";
+import { getAllBlogs } from "@/lib/blog";
 
-const posts = [
-  {
-    title: "5 Amazing Benefits of Cold Pressed Groundnut Oil",
-    excerpt:
-      "Discover why cold pressed groundnut oil is the healthiest choice for Indian cooking and how it preserves essential nutrients.",
-    category: "Health & Nutrition",
-    readTime: "5 min read",
-    slug: "benefits-cold-pressed-groundnut-oil",
-  },
-  {
-    title: "Refined Oil vs Cold Pressed Oil: The Complete Guide",
-    excerpt:
-      "A detailed comparison of refined and cold pressed oils — understand what goes into your cooking oil and make an informed choice.",
-    category: "Education",
-    readTime: "7 min read",
-    slug: "refined-vs-cold-pressed-oil",
-  },
-  {
-    title: "The Ancient Art of Mara Chekku Oil Extraction",
-    excerpt:
-      "Learn about the traditional Tamil Nadu method of wooden cold pressing that has been used for centuries to extract pure oil.",
-    category: "Tradition",
-    readTime: "4 min read",
-    slug: "mara-chekku-oil-extraction",
-  },
-];
+function getExcerpt(blog: { content: { type: string; text?: string; items?: string[] }[] }): string {
+  const firstTextBlock = blog.content.find((c) => c.text);
+  if (!firstTextBlock?.text) return "";
+  const cleaned = firstTextBlock.text.replace(/<[^>]*>/g, "");
+  return cleaned.length > 150 ? cleaned.slice(0, 150) + "..." : cleaned;
+}
 
-export default function BlogPreview() {
+export default async function BlogPreview() {
+  const allPosts = await getAllBlogs();
+  const posts = allPosts.slice(0, 3);
+
   return (
     <section
       id="blog"
@@ -59,67 +44,79 @@ export default function BlogPreview() {
         </div>
 
         {/* Blog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {posts.map((post, i) => (
-            <article
-              key={i}
-              className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
-              style={{
-                background: "var(--color-cream-50)",
-                border: "1px solid var(--color-stone-200)",
-              }}
-            >
-              {/* Gradient Image Placeholder */}
-              <div
-                className="h-48 relative"
-                style={{
-                  background: [
-                    "linear-gradient(135deg, var(--color-forest-100) 0%, var(--color-cream-200) 100%)",
-                    "linear-gradient(135deg, var(--color-amber-100) 0%, var(--color-cream-200) 100%)",
-                    "linear-gradient(135deg, var(--color-wood-100) 0%, var(--color-cream-200) 100%)",
-                  ][i],
-                }}
-              >
-                <div
-                  className="absolute bottom-4 left-4 px-3 py-1 rounded-full text-xs font-semibold"
+        {posts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: "var(--color-cream-200)" }}>
+              <Clock size={20} style={{ color: "var(--color-stone-400)" }} />
+            </div>
+            <p className="text-sm" style={{ color: "var(--color-stone-400)" }}>
+              No articles yet. Check back soon!
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {posts.map((post) => {
+              const excerpt = getExcerpt(post);
+              return (
+                <article
+                  key={post.id}
+                  className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
                   style={{
-                    background: "rgba(255, 255, 255, 0.9)",
-                    color: "var(--color-forest-600)",
-                    backdropFilter: "blur(8px)",
+                    background: "var(--color-cream-50)",
+                    border: "1px solid var(--color-stone-200)",
                   }}
                 >
-                  {post.category}
-                </div>
-              </div>
+                  {/* Featured Image */}
+                  <div className="h-48 relative overflow-hidden">
+                    {post.images[0] ? (
+                      <Image
+                        src={post.images[0]}
+                        alt={post.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    ) : (
+                      <div className="w-full h-full" style={{ background: "linear-gradient(135deg, var(--color-forest-100) 0%, var(--color-cream-200) 100%)" }} />
+                    )}
+                  </div>
 
-              {/* Content */}
-              <div className="p-6 space-y-3">
-                <h3
-                  className="text-lg font-semibold leading-snug group-hover:underline decoration-1 underline-offset-4"
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    color: "var(--color-stone-800)",
-                  }}
-                >
-                  <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                </h3>
-                <p
-                  className="text-sm leading-relaxed"
-                  style={{ color: "var(--color-stone-500)" }}
-                >
-                  {post.excerpt}
-                </p>
-                <div
-                  className="flex items-center gap-1.5 text-xs font-medium pt-1"
-                  style={{ color: "var(--color-stone-400)" }}
-                >
-                  <Clock size={13} />
-                  {post.readTime}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+                  {/* Content */}
+                  <div className="p-6 space-y-3">
+                    <h3
+                      className="text-lg font-semibold leading-snug group-hover:underline decoration-1 underline-offset-4"
+                      style={{
+                        fontFamily: "var(--font-heading)",
+                        color: "var(--color-stone-800)",
+                      }}
+                    >
+                      <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                    </h3>
+                    {excerpt && (
+                      <p
+                        className="text-sm leading-relaxed"
+                        style={{ color: "var(--color-stone-500)" }}
+                      >
+                        {excerpt}
+                      </p>
+                    )}
+                    <div
+                      className="flex items-center gap-1.5 text-xs font-medium pt-1"
+                      style={{ color: "var(--color-stone-400)" }}
+                    >
+                      <Clock size={13} />
+                      {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

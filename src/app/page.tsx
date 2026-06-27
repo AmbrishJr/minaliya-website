@@ -11,7 +11,6 @@ import FAQSection from "@/components/home/FAQSection";
 import BlogPreview from "@/components/home/BlogPreview";
 import WhatsAppCTA from "@/components/home/WhatsAppCTA";
 import Footer from "@/components/layout/Footer";
-import JsonLd from "@/components/seo/JsonLd";
 import prisma from "@/lib/prisma";
 import { getActiveHeroSlides } from "@/actions/adminData";
 
@@ -49,7 +48,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <JsonLd />
       <AnnouncementBar />
       <Navbar />
 

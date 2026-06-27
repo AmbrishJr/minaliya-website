@@ -138,6 +138,19 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
+model Blog {
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  content        Json     // Array of { type: string, text?: string, items?: string[] }
+  images         String[] // Cloudinary URLs
+  imagePublicIds String[] // Cloudinary public_ids, parallel to images[]
+  author         String?
+  publishedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model HeroSlide {
   id          String   @id @default(cuid())
   label       String

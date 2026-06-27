@@ -1,81 +1,48 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Clock, ArrowRight } from "lucide-react";
+import { getAllBlogs } from "@/lib/blog";
 
 export const metadata: Metadata = {
   title: "Blog — Health Tips & Oil Education",
   description:
     "Read articles on cold pressed oils, healthy cooking tips, Ayurvedic wellness, and traditional oil extraction methods. From the Minaliya journal.",
   alternates: { canonical: "/blog" },
+  openGraph: {
+    title: "Minaliya Journal — Cold Pressed Oil & Wellness Blog",
+    description:
+      "Read articles on cold pressed oils, healthy cooking tips, Ayurvedic wellness, and traditional oil extraction methods.",
+    url: "https://minaliya.com/blog",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Minaliya Journal" }],
+  },
 };
 
-const posts = [
-  {
-    title: "5 Amazing Benefits of Cold Pressed Groundnut Oil",
-    excerpt:
-      "Discover why cold pressed groundnut oil is the healthiest choice for Indian cooking and how it preserves essential nutrients that refined oils destroy.",
-    category: "Health & Nutrition",
-    readTime: "5 min read",
-    date: "April 28, 2026",
-    slug: "benefits-cold-pressed-groundnut-oil",
-    gradient: "linear-gradient(135deg, var(--color-forest-100) 0%, var(--color-cream-200) 100%)",
-  },
-  {
-    title: "Refined Oil vs Cold Pressed Oil: The Complete Guide",
-    excerpt:
-      "A detailed comparison of refined and cold pressed oils — understand what goes into your cooking oil and make an informed, healthier choice for your family.",
-    category: "Education",
-    readTime: "7 min read",
-    date: "April 20, 2026",
-    slug: "refined-vs-cold-pressed-oil",
-    gradient: "linear-gradient(135deg, var(--color-amber-100) 0%, var(--color-cream-200) 100%)",
-  },
-  {
-    title: "The Ancient Art of Mara Chekku Oil Extraction",
-    excerpt:
-      "Learn about the traditional Tamil Nadu method of wooden cold pressing that has been used for centuries to extract pure oil from seeds.",
-    category: "Tradition",
-    readTime: "4 min read",
-    date: "April 12, 2026",
-    slug: "mara-chekku-oil-extraction",
-    gradient: "linear-gradient(135deg, var(--color-wood-100) 0%, var(--color-cream-200) 100%)",
-  },
-  {
-    title: "Why Sesame Oil is Called Liquid Gold in Ayurveda",
-    excerpt:
-      "Explore the ancient Ayurvedic significance of sesame oil (Nallennai) — from oil pulling to massage therapy, and why it's revered across South India.",
-    category: "Ayurveda",
-    readTime: "6 min read",
-    date: "March 30, 2026",
-    slug: "sesame-oil-ayurveda-benefits",
-    gradient: "linear-gradient(135deg, var(--color-terra-100) 0%, var(--color-cream-200) 100%)",
-  },
-  {
-    title: "Coconut Oil for Hair & Skin: A Complete Guide",
-    excerpt:
-      "From nourishing dry hair to moisturizing skin naturally — discover how virgin cold pressed coconut oil can replace chemical beauty products.",
-    category: "Beauty & Wellness",
-    readTime: "5 min read",
-    date: "March 22, 2026",
-    slug: "coconut-oil-hair-skin-guide",
-    gradient: "linear-gradient(135deg, var(--color-forest-100) 0%, var(--color-amber-50) 100%)",
-  },
-  {
-    title: "10 South Indian Recipes That Taste Better with Cold Pressed Oil",
-    excerpt:
-      "From crispy dosas to aromatic sambar — 10 classic recipes where cold pressed oil makes a noticeable difference in taste and nutrition.",
-    category: "Recipes",
-    readTime: "8 min read",
-    date: "March 14, 2026",
-    slug: "south-indian-recipes-cold-pressed-oil",
-    gradient: "linear-gradient(135deg, var(--color-amber-100) 0%, var(--color-terra-50) 100%)",
-  },
-];
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
-export default function BlogPage() {
+function stripHtml(text: string) {
+  return text.replace(/<[^>]*>/g, "");
+}
+
+function getExcerpt(blog: { content: { type: string; text?: string; items?: string[] }[] }): string {
+  const firstTextBlock = blog.content.find((c) => c.text);
+  if (!firstTextBlock?.text) return "";
+  const cleaned = stripHtml(firstTextBlock.text);
+  return cleaned.length > 160 ? cleaned.slice(0, 160) + "..." : cleaned;
+}
+
+export default async function BlogPage() {
+  const posts = await getAllBlogs();
+
   return (
     <>
       <AnnouncementBar />
@@ -119,77 +86,95 @@ export default function BlogPage() {
         {/* Blog Grid */}
         <section className="section-padding" style={{ background: "var(--color-cream-50)" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {posts.map((post, i) => (
-                <article
-                  key={i}
-                  className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
-                  style={{
-                    background: "white",
-                    border: "1px solid var(--color-stone-200)",
-                  }}
-                >
-                  {/* Gradient header */}
-                  <div
-                    className="h-52 relative"
-                    style={{ background: post.gradient }}
-                  >
-                    <div
-                      className="absolute bottom-4 left-4 px-3 py-1 rounded-full text-xs font-semibold"
+            {posts.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: "var(--color-cream-200)" }}>
+                  <Clock size={24} style={{ color: "var(--color-stone-400)" }} />
+                </div>
+                <h3 className="text-lg font-semibold mb-2" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-600)" }}>
+                  No articles yet
+                </h3>
+                <p className="text-sm" style={{ color: "var(--color-stone-400)" }}>
+                  Check back soon for new stories and insights from Minaliya.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {posts.map((post) => {
+                  const excerpt = getExcerpt(post);
+                  return (
+                    <article
+                      key={post.id}
+                      className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
                       style={{
-                        background: "rgba(255, 255, 255, 0.9)",
-                        color: "var(--color-forest-600)",
-                        backdropFilter: "blur(8px)",
+                        background: "white",
+                        border: "1px solid var(--color-stone-200)",
                       }}
                     >
-                      {post.category}
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6 space-y-3">
-                    <div
-                      className="text-xs font-medium"
-                      style={{ color: "var(--color-stone-400)" }}
-                    >
-                      {post.date}
-                    </div>
-                    <h2
-                      className="text-lg font-semibold leading-snug group-hover:underline decoration-1 underline-offset-4"
-                      style={{
-                        fontFamily: "var(--font-heading)",
-                        color: "var(--color-stone-800)",
-                      }}
-                    >
-                      <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                    </h2>
-                    <p
-                      className="text-sm leading-relaxed"
-                      style={{ color: "var(--color-stone-500)" }}
-                    >
-                      {post.excerpt}
-                    </p>
-                    <div className="flex items-center justify-between pt-2">
-                      <div
-                        className="flex items-center gap-1.5 text-xs font-medium"
-                        style={{ color: "var(--color-stone-400)" }}
-                      >
-                        <Clock size={13} />
-                        {post.readTime}
+                      {/* Featured Image */}
+                      <div className="h-52 relative overflow-hidden">
+                        {post.images[0] ? (
+                          <Image
+                            src={post.images[0]}
+                            alt={post.title}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          />
+                        ) : (
+                          <div className="w-full h-full" style={{ background: "linear-gradient(135deg, var(--color-forest-100) 0%, var(--color-cream-200) 100%)" }} />
+                        )}
                       </div>
-                      <Link
-                        href={`/blog/${post.slug}`}
-                        className="flex items-center gap-1 text-xs font-semibold transition-colors hover:gap-2"
-                        style={{ color: "var(--color-forest-600)" }}
-                      >
-                        Read More
-                        <ArrowRight size={14} />
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+
+                      {/* Content */}
+                      <div className="p-6 space-y-3">
+                        <div
+                          className="text-xs font-medium"
+                          style={{ color: "var(--color-stone-400)" }}
+                        >
+                          {formatDate(post.publishedAt)}
+                        </div>
+                        <h2
+                          className="text-lg font-semibold leading-snug group-hover:underline decoration-1 underline-offset-4"
+                          style={{
+                            fontFamily: "var(--font-heading)",
+                            color: "var(--color-stone-800)",
+                          }}
+                        >
+                          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                        </h2>
+                        {excerpt && (
+                          <p
+                            className="text-sm leading-relaxed"
+                            style={{ color: "var(--color-stone-500)" }}
+                          >
+                            {excerpt}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between pt-2">
+                          {post.author && (
+                            <div
+                              className="text-xs font-medium"
+                              style={{ color: "var(--color-stone-400)" }}
+                            >
+                              By {post.author}
+                            </div>
+                          )}
+                          <Link
+                            href={`/blog/${post.slug}`}
+                            className="flex items-center gap-1 text-xs font-semibold transition-colors hover:gap-2 ml-auto"
+                            style={{ color: "var(--color-forest-600)" }}
+                          >
+                            Read More
+                            <ArrowRight size={14} />
+                          </Link>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       </main>

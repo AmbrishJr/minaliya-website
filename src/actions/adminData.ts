@@ -527,6 +527,123 @@ export async function deleteOrder(orderId: string) {
   }
 }
 
+// ─── BLOG ────────────────────────────────────────────
+
+export type ContentBlock = {
+  type: "lead" | "h2" | "p" | "blockquote" | "ul" | "cta";
+  text?: string;
+  items?: string[];
+};
+
+export type CreateBlogInput = {
+  title: string;
+  slug: string;
+  content: ContentBlock[];
+  images: string[];
+  imagePublicIds?: string[];
+  author?: string;
+  publishedAt?: Date;
+};
+
+export async function createBlog(input: CreateBlogInput) {
+  await requireAdmin();
+
+  const title = input.title?.trim();
+  const slug = slugify(input.slug || input.title || "");
+  const content = input.content;
+
+  if (!title || !slug) {
+    return { success: false as const, error: "Title and slug are required." };
+  }
+
+  if (!content?.length) {
+    return { success: false as const, error: "At least one content block is required." };
+  }
+
+  if (!input.images?.length) {
+    return { success: false as const, error: "At least one image is required." };
+  }
+
+  const existingSlug = await prisma.blog.findUnique({ where: { slug } });
+  if (existingSlug) {
+    return { success: false as const, error: `A blog with slug "${slug}" already exists.` };
+  }
+
+  try {
+    const blog = await prisma.blog.create({
+      data: {
+        title,
+        slug,
+        content,
+        images: input.images,
+        imagePublicIds: input.imagePublicIds ?? [],
+        author: input.author?.trim() || null,
+        publishedAt: input.publishedAt || new Date(),
+      },
+    });
+    return { success: true as const, blogId: blog.id };
+  } catch (error: unknown) {
+    console.error("Error creating blog:", error);
+    return { success: false as const, error: "Failed to create blog post." };
+  }
+}
+
+export async function updateBlog(id: string, input: Partial<CreateBlogInput>) {
+  await requireAdmin();
+
+  const data: Record<string, unknown> = {};
+
+  if (input.title !== undefined) data.title = input.title.trim();
+  if (input.slug !== undefined) data.slug = slugify(input.slug);
+  if (input.content !== undefined) data.content = input.content;
+  if (input.images !== undefined) data.images = input.images;
+  if (input.imagePublicIds !== undefined) data.imagePublicIds = input.imagePublicIds;
+  if (input.author !== undefined) data.author = input.author?.trim() || null;
+
+  if (!data.title) return { success: false as const, error: "Title is required." };
+  if (!data.slug) return { success: false as const, error: "Slug is required." };
+
+  // Check slug uniqueness (excluding current blog)
+  if (data.slug) {
+    const existing = await prisma.blog.findFirst({
+      where: { slug: data.slug as string, id: { not: id } },
+    });
+    if (existing) {
+      return { success: false as const, error: `A blog with slug "${data.slug}" already exists.` };
+    }
+  }
+
+  try {
+    await prisma.blog.update({ where: { id }, data });
+    return { success: true as const };
+  } catch (error: unknown) {
+    console.error("Error updating blog:", error);
+    return { success: false as const, error: "Failed to update blog post." };
+  }
+}
+
+export async function deleteBlog(id: string) {
+  await requireAdmin();
+
+  try {
+    const blog = await prisma.blog.findUnique({
+      where: { id },
+      select: { imagePublicIds: true },
+    });
+
+    await prisma.blog.delete({ where: { id } });
+
+    if (blog?.imagePublicIds?.length) {
+      await deleteImages(blog.imagePublicIds);
+    }
+
+    return { success: true as const };
+  } catch (error: unknown) {
+    console.error("Error deleting blog:", error);
+    return { success: false as const, error: "Failed to delete blog post." };
+  }
+}
+
 export async function deleteInquiry(inquiryId: string) {
   await requireAdmin();
 

@@ -20,6 +20,7 @@ export default function AdminLayoutClient({
     if (path.startsWith("/admin/analytics")) return "Analytics Dashboard";
     if (path.startsWith("/admin/orders")) return "Order Management";
     if (path.startsWith("/admin/products")) return "Product Inventory";
+    if (path.startsWith("/admin/blog")) return "Blog Management";
     if (path.startsWith("/admin/hero-slides")) return "Hero Slides";
     if (path.startsWith("/admin/inquiries")) return "Bulk Inquiries";
     return "Admin Panel";

@@ -1,0 +1,23 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1A4A1A"/>
+      <stop offset="100%" stop-color="#2D6A2D"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#D4A047"/>
+      <stop offset="100%" stop-color="#C4893A"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1050" cy="100" r="300" fill="rgba(255,255,255,0.03)"/>
+  <circle cx="200" cy="500" r="250" fill="rgba(255,255,255,0.02)"/>
+  <text x="600" y="200" text-anchor="middle" font-family="Georgia, serif" font-size="72" font-weight="bold" fill="white">Minaliya</text>
+  <text x="600" y="260" text-anchor="middle" font-family="Georgia, serif" font-size="36" font-style="italic" fill="#D4A047">Pure Cold Pressed Oils</text>
+  <rect x="540" y="290" width="120" height="3" rx="2" fill="#D4A047"/>
+  <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="rgba(255,255,255,0.85)">100% Wooden Mara Chekku Extraction</text>
+  <text x="600" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="rgba(255,255,255,0.65)">Groundnut · Coconut · Sesame</text>
+  <text x="600" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="rgba(255,255,255,0.5)">minaliya.com</text>
+  <rect x="480" y="495" width="240" height="2" rx="1" fill="rgba(255,255,255,0.15)"/>
+  <text x="600" y="530" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="rgba(255,255,255,0.35)">Chennai, Tamil Nadu</text>
+</svg>

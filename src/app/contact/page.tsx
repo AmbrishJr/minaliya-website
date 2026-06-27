@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   description:
     "Get in touch with Minaliya for orders, queries, or feedback. WhatsApp, call, or email us. Based in Chennai, Tamil Nadu.",
   alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Minaliya",
+    description:
+      "Get in touch with Minaliya for orders, queries, or feedback. Call, WhatsApp, or email us.",
+    url: "https://minaliya.com/contact",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Contact Minaliya" }],
+  },
 };
 
 const contactInfo = [
