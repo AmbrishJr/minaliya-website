@@ -77,7 +77,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
         )}
 
         {/* Quick Actions */}
-        <div className="touch-action-show absolute right-1 bottom-1 flex flex-col gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+        <div className="absolute right-1 bottom-1 flex flex-col gap-1">
           <button
             className="w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
             style={{
@@ -141,55 +141,39 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
           {product.name}
         </h3>
 
-        {/* Sizes */}
-        <div className="flex flex-wrap gap-1.5">
-          {product.sizes.map((size) => (
-            <span
-              key={size}
-              className="text-xs px-2 py-1 rounded-md font-semibold"
-              style={{
-                background: "var(--color-cream-100)",
-                color: "var(--color-stone-700)",
-              }}
-            >
-              {size}
-            </span>
-          ))}
-        </div>
-
         {/* Price + CTA */}
-        <div className="flex flex-row items-center justify-between gap-2 pt-2 border-t border-stone-100">
-          <div className="flex flex-col">
-            <div className="flex items-baseline gap-1.5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-stone-100 min-w-0">
+          <div className="flex flex-col shrink min-w-0">
+            <div className="flex items-baseline gap-1">
               <span
-                className="text-base sm:text-lg font-bold"
+                className="text-sm sm:text-lg font-bold"
                 style={{ color: "var(--color-stone-900)" }}
               >
                 ₹{product.price}
               </span>
               <span
-                className="text-xs font-medium line-through"
+                className="text-[10px] sm:text-xs font-medium line-through"
                 style={{ color: "var(--color-stone-400)" }}
               >
                 ₹{product.originalPrice}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center border rounded-lg overflow-hidden shrink-0 shadow-sm" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
+          <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex items-center border rounded-md overflow-hidden shrink-0 shadow-sm" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
               <button
-                className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
+                className="w-7 h-7 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
                 style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-700)" }}
                 disabled={qty <= 0}
                 onClick={(e) => { e.preventDefault(); setQty(Math.max(0, qty - 1)); }}
               >
                 −
               </button>
-              <span className="w-6 h-7 flex items-center justify-center text-xs font-bold select-none bg-stone-50/50" style={{ color: "var(--color-stone-800)" }}>
+              <span className="w-6 h-7 sm:w-6 sm:h-7 flex items-center justify-center text-[10px] sm:text-xs font-bold select-none bg-stone-50/50" style={{ color: "var(--color-stone-800)" }}>
                 {qty}
               </span>
               <button
-                className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
+                className="w-7 h-7 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
                 style={{ color: "var(--color-stone-700)" }}
                 onClick={(e) => { e.preventDefault(); setQty(qty + 1); }}
               >
@@ -197,7 +181,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
               </button>
             </div>
             <button
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-1 px-3 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] sm:min-h-[44px] flex-1 sm:flex-none"
               style={{
                 background: qty === 0 ? "var(--color-stone-400)" : "var(--color-forest-600)",
                 color: "white",
@@ -221,8 +205,8 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
                 setTimeout(() => setToast(false), 2000);
               }}
             >
-              <ShoppingBag size={14} />
-              Add
+              <ShoppingBag size={12} />
+              <span className="hidden sm:inline">Add</span>
             </button>
           </div>
         </div>

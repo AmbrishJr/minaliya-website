@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, ShoppingBag, Heart, Eye, SlidersHorizontal, ChevronRight, X, Sparkles, Check, AlertCircle, Phone, Building, User, Mail, MessageSquare } from "lucide-react";
@@ -31,9 +31,6 @@ function ProductCard({ product }: { product: Product }) {
   const discount = Math.round(
     ((product.originalPrice - product.price) / product.originalPrice) * 100
   );
-
-  // Extract capacity from slug for mobile grouping label
-  const capacity = product.slug.includes("500ml") ? "500ml" : "1L";
 
   return (
     <Link href={`/shop/${product.slug}`} className="block">
@@ -82,7 +79,7 @@ function ProductCard({ product }: { product: Product }) {
           )}
 
           {/* Quick Actions */}
-          <div className="touch-action-show absolute right-1 bottom-1 flex flex-col gap-1 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+          <div className="absolute right-1 bottom-1 flex flex-col gap-1">
             <button
               className="w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
               style={{
@@ -148,37 +145,24 @@ function ProductCard({ product }: { product: Product }) {
             {product.name}
           </h3>
 
-          {/* Capacity badge — visible on mobile for category grouping */}
-          <div className="flex flex-wrap gap-1">
-            <span
-              className="text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide"
-              style={{
-                background: "var(--color-cream-100)",
-                color: "var(--color-stone-700)",
-              }}
-            >
-              {capacity}
-            </span>
-          </div>
-
           {/* Price + CTA — Fixed at bottom */}
-          <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-stone-100 mt-auto">
-            <div className="flex flex-col">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-base font-bold" style={{ color: "var(--color-stone-900)" }}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1.5 border-t border-stone-100 mt-auto min-w-0">
+            <div className="flex flex-col shrink min-w-0">
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm sm:text-base font-bold" style={{ color: "var(--color-stone-900)" }}>
                   ₹{product.price}
                 </span>
-                <span className="text-xs font-medium line-through" style={{ color: "var(--color-stone-400)" }}>
+                <span className="text-[10px] sm:text-xs font-medium line-through" style={{ color: "var(--color-stone-400)" }}>
                   ₹{product.originalPrice}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-end">
               {/* Quantity Selector */}
-              <div className="flex items-center border rounded-lg overflow-hidden shrink-0 shadow-sm" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
+              <div className="flex items-center border rounded-md overflow-hidden shrink-0 shadow-sm" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
+                  className="w-7 h-7 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
                   style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-700)" }}
                   disabled={qty <= 0}
                   onClick={(e) => { e.preventDefault(); setQty(Math.max(0, qty - 1)); }}
@@ -186,11 +170,11 @@ function ProductCard({ product }: { product: Product }) {
                 >
                   −
                 </button>
-                <span className="w-6 h-7 flex items-center justify-center text-xs font-bold select-none bg-stone-50/50" style={{ color: "var(--color-stone-800)" }}>
+                <span className="w-6 h-7 sm:w-6 sm:h-7 flex items-center justify-center text-[10px] sm:text-xs font-bold select-none bg-stone-50/50" style={{ color: "var(--color-stone-800)" }}>
                   {qty}
                 </span>
                 <button
-                  className="w-7 h-7 flex items-center justify-center text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
+                  className="w-7 h-7 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
                   style={{ color: "var(--color-stone-700)" }}
                   onClick={(e) => { e.preventDefault(); setQty(qty + 1); }}
                   aria-label="Increase quantity"
@@ -199,9 +183,9 @@ function ProductCard({ product }: { product: Product }) {
                 </button>
               </div>
 
-              {/* Add to Cart Button — 44px minimum touch target */}
+              {/* Add to Cart Button */}
               <button
-                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]"
+                className="flex items-center justify-center gap-1 px-3 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] sm:min-h-[44px] flex-1 sm:flex-none"
                 style={{
                   background: qty === 0 ? "var(--color-stone-400)" : "var(--color-forest-600)",
                   color: "white",
@@ -225,7 +209,7 @@ function ProductCard({ product }: { product: Product }) {
                   setTimeout(() => setToast(false), 2000);
                 }}
               >
-                <ShoppingBag size={13} />
+                <ShoppingBag size={12} />
                 <span className="hidden sm:inline">Add</span>
               </button>
             </div>
@@ -255,19 +239,6 @@ function ProductCard({ product }: { product: Product }) {
 export default function ShopContent({ initialProducts }: { initialProducts: Product[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("popular");
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-
-  // Detect viewport for responsive grouping
-  useEffect(() => {
-    const checkViewport = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1200);
-    };
-    checkViewport();
-    window.addEventListener("resize", checkViewport);
-    return () => window.removeEventListener("resize", checkViewport);
-  }, []);
 
   // Bulk Order Inquiry State
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -373,61 +344,16 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
     }
   });
 
-  // ─── Grouping Logic ───
-  // Desktop (≥1200px): Group by Capacity → 1L row, then 500ml row
-  // Tablet (768-1199px): 2 columns, simple grid
-  // Mobile (<768px): Group by Category → Groundnut, Sesame, Coconut (each with 500ml + 1L)
-
-  const getGroupedProducts = () => {
-    if (isMobile) {
-      // Mobile: Group by Category (Groundnut, Sesame, Coconut)
-      // Each category shows 500ml first, then 1L
-      const categoryOrder = ["Groundnut", "Sesame", "Coconut"];
-      const grouped: { category: string; items: Product[] }[] = [];
-
-      categoryOrder.forEach((cat) => {
-        const catProducts = sorted.filter((p) => p.category === cat);
-        if (catProducts.length > 0) {
-          // Sort by capacity: 500ml first, then 1L
-          catProducts.sort((a, b) => {
-            const aIs500 = a.slug.includes("500ml");
-            const bIs500 = b.slug.includes("500ml");
-            if (aIs500 && !bIs500) return -1;
-            if (!aIs500 && bIs500) return 1;
-            return 0;
-          });
-          grouped.push({ category: cat, items: catProducts });
-        }
-      });
-
-      return grouped;
-    } else if (isTablet) {
-      // Tablet: Simple 2-column grid, no special grouping needed
-      return [{ category: "All", items: sorted }];
-    } else {
-      // Desktop: Group by Capacity (1L first row, 500ml second row)
-      const capacityOrder = ["1 Ltr", "500ml"];
-      const grouped: { category: string; items: Product[] }[] = [];
-
-      capacityOrder.forEach((cap) => {
-        const capProducts = sorted.filter((p) => p.sizes.includes(cap));
-        if (capProducts.length > 0) {
-          // Sort by category order: Groundnut, Sesame, Coconut
-          const categoryOrder = ["Groundnut", "Sesame", "Coconut"];
-          capProducts.sort((a, b) => {
-            const aIdx = categoryOrder.indexOf(a.category);
-            const bIdx = categoryOrder.indexOf(b.category);
-            return aIdx - bIdx;
-          });
-          grouped.push({ category: cap, items: capProducts });
-        }
-      });
-
-      return grouped;
-    }
-  };
-
-  const groupedProducts = getGroupedProducts();
+  // Sort by category order then capacity: Groundnut 1L, Groundnut 500ml, Sesame 1L, Sesame 500ml, Coconut 1L, Coconut 500ml
+  const categoryOrder = ["Groundnut", "Sesame", "Coconut"];
+  const arranged = [...sorted].sort((a, b) => {
+    const aCat = categoryOrder.indexOf(a.category);
+    const bCat = categoryOrder.indexOf(b.category);
+    if (aCat !== bCat) return aCat - bCat;
+    const aIs1L = a.sizes.some((s) => s.includes("1 Ltr") || s.includes("1L") || s === "1 Ltr");
+    const bIs1L = b.sizes.some((s) => s.includes("1 Ltr") || s.includes("1L") || s === "1 Ltr");
+    return bIs1L ? -1 : aIs1L ? 1 : 0;
+  });
 
   return (
     <section className="section-padding" style={{ background: "var(--color-cream-50)" }} aria-label="Shop our oils">
@@ -487,22 +413,10 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
           {activeCategory !== "All" && ` in ${activeCategory}`}
         </p>
 
-        {/* Product Grid — Responsive Layout */}
-        <div className="product-grid">
-          {groupedProducts.map((group) => (
-            <div
-              key={group.category}
-              className="product-row-group"
-              style={{
-                gridColumn: "1 / -1",
-              }}
-            >
-              <div className="product-row-grid">
-                {group.items.map((product) => (
-                  <ProductCard key={product.slug} product={product} />
-                ))}
-              </div>
-            </div>
+        {/* Product Grid — 2 rows × 3 columns on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-5">
+          {arranged.map((product) => (
+            <ProductCard key={product.slug} product={product} />
           ))}
         </div>
 

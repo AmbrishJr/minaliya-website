@@ -204,12 +204,12 @@ export default function OrdersTable({
               </p>
             </div>
           </div>
-          {/* AWB Number */}
+          {/* ST Courier ID */}
           <div
             className="flex items-center gap-2 border-t pt-3"
             style={{ borderColor: "var(--color-stone-200)" }}
           >
-            <span className="font-bold text-stone-500 shrink-0 w-16">AWB No:</span>
+            <span className="font-bold text-stone-500 shrink-0 w-20">ST Courier ID:</span>
             {order.awbNumber ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold tracking-wider" style={{ background: "var(--color-forest-50)", color: "var(--color-forest-700)", border: "1px solid var(--color-forest-200)" }}>
                 <Package size={11} />
@@ -328,7 +328,7 @@ export default function OrdersTable({
                         setAwbEditingId(order.id);
                       }}
                       className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
-                      title="Edit AWB Number"
+                      title="Edit ST Courier ID"
                     >
                       <Pencil size={16} />
                     </button>
@@ -440,7 +440,7 @@ export default function OrdersTable({
                               setAwbEditingId(order.id);
                             }}
                             className="p-1.5 rounded-xl border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
-                            title="Edit AWB Number"
+                            title="Edit ST Courier ID"
                           >
                             <Pencil size={15} />
                           </button>
@@ -569,7 +569,7 @@ export default function OrdersTable({
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-stone-900" style={{ fontFamily: "var(--font-heading)" }}>
-                      AWB / Tracking Number
+                      ST Courier ID
                     </h3>
                     <p className="text-xs text-stone-500 mt-0.5">
                       Order #{awbEditingId.slice(-8).toUpperCase()}
@@ -586,14 +586,14 @@ export default function OrdersTable({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-2">
-                  Enter AWB Number
-                </label>
+                  <label className="block text-xs font-bold text-stone-600 uppercase tracking-wider mb-2">
+                    Enter ST Courier ID
+                  </label>
                 <input
                   type="text"
                   value={awbInput}
                   onChange={(e) => setAwbInput(e.target.value)}
-                  placeholder="e.g. 1234567890"
+                  placeholder="Enter ST Courier tracking ID"
                   className="w-full px-4 py-3 rounded-xl border text-sm font-medium focus:ring-2 focus:ring-forest-200 outline-none transition-all"
                   style={{ background: "white", borderColor: "var(--color-stone-200)" }}
                   autoFocus
@@ -622,11 +622,11 @@ export default function OrdersTable({
                   className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-75 transition-colors"
                   style={{ background: "var(--color-forest-600)" }}
                 >
-                  {awbSaving ? (
-                    <><Loader2 size={16} className="animate-spin" /> Saving...</>
-                  ) : (
-                    <><Package size={16} /> Save AWB</>
-                  )}
+                    {awbSaving ? (
+                      <><Loader2 size={16} className="animate-spin" /> Saving...</>
+                    ) : (
+                      <><Package size={16} /> Save</>
+                    )}
                 </button>
               </div>
             </div>

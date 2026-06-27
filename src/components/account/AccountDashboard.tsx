@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useOrders } from "@/context/OrderContext";
@@ -816,26 +816,35 @@ export default function AccountDashboard() {
                                <RefreshCw size={12} /> Re-Order
                              </button>
                            </div>
-                           {/* AWB Number */}
-                           {order.awbNumber && (
-                             <div className="flex items-center gap-2 mt-1">
-                               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">AWB:</span>
-                               <span className="text-xs font-bold" style={{ color: "var(--color-forest-700)" }}>{order.awbNumber}</span>
-                               <button
-                                  onClick={() => handleCopyAwb(order.id, order.awbNumber!)}
-                                 className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
-                                 style={copiedAwbId === order.id
-                                   ? { background: "var(--color-forest-600)", color: "white" }
-                                   : { background: "var(--color-stone-100)", color: "var(--color-stone-700)" }
-                                 }
-                                 title="Copy AWB to clipboard"
-                               >
-                                 {copiedAwbId === order.id
-                                   ? <><ClipboardCheck size={11} /> Copied!</>
-                                   : <><Clipboard size={11} /> Copy</>}
-                               </button>
-                             </div>
-                           )}
+                            {/* ST Courier ID */}
+                            {order.awbNumber && (
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Courier ID:</span>
+                                <span className="text-xs font-bold" style={{ color: "var(--color-forest-700)" }}>{order.awbNumber}</span>
+                                <button
+                                   onClick={() => handleCopyAwb(order.id, order.awbNumber!)}
+                                  className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
+                                  style={copiedAwbId === order.id
+                                    ? { background: "var(--color-forest-600)", color: "white" }
+                                    : { background: "var(--color-stone-100)", color: "var(--color-stone-700)" }
+                                  }
+                                  title="Copy Courier ID to clipboard"
+                                >
+                                  {copiedAwbId === order.id
+                                    ? <><ClipboardCheck size={11} /> Copied!</>
+                                    : <><Clipboard size={11} /> Copy</>}
+                                </button>
+                                <a
+                                  href="https://stcourier.com/track/shipment"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
+                                  style={{ background: "var(--color-forest-600)", color: "white" }}
+                                >
+                                  <ExternalLink size={11} /> Track Your Order
+                                </a>
+                              </div>
+                            )}
                          </div>
                       </div>
                       <div className="p-5 space-y-4">

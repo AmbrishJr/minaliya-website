@@ -427,7 +427,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 767px) {
   .product-card {
-    min-height: 280px;
+    min-height: 300px;
   }
 }
 
@@ -456,7 +456,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 767px) {
   .product-image {
-    aspect-ratio: 1 / 0.52;
+    aspect-ratio: 1 / 0.58;
   }
 }
 
@@ -489,7 +489,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 767px) {
   .product-card > div:last-child {
-    padding: 0.625rem 0.75rem;
+    padding: 0.5rem 0.5rem;
   }
 }
 

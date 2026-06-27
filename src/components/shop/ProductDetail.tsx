@@ -49,19 +49,17 @@ export default function ProductDetail({
   product: ProductData;
   related: ProductData[];
 }) {
-  const [selectedSize, setSelectedSize] = useState(product.sizes.length - 1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(0);
-  const [activeTab, setActiveTab] = useState<"description" | "benefits" | "specs" | "usage">(
-    "description"
+  const [activeTab, setActiveTab] = useState<"benefits" | "usage">(
+    "benefits"
   );
   const { addItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   
   const isWishlisted = isInWishlist(product.slug);
-  const currentSize = product.sizes[selectedSize];
   const discount = Math.round(
-    ((currentSize.originalPrice - currentSize.price) / currentSize.originalPrice) * 100
+    ((product.originalPrice - product.price) / product.originalPrice) * 100
   );
 
   return (
@@ -102,7 +100,7 @@ export default function ProductDetail({
       {/* Product Section */}
       <section
         className="py-12 lg:py-20"
-        style={{ background: "var(--color-cream-50)" }}
+        style={{ background: "white" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
@@ -112,7 +110,7 @@ export default function ProductDetail({
               <div
                 className="relative aspect-square rounded-2xl flex items-center justify-center p-8 overflow-hidden"
                 style={{
-                  background: "var(--color-cream-100)",
+                  background: "white",
                   border: "1px solid var(--color-stone-200)",
                 }}
               >
@@ -232,13 +230,13 @@ export default function ProductDetail({
                   className="text-3xl font-bold"
                   style={{ color: "var(--color-stone-900)" }}
                 >
-                  ₹{currentSize.price}
+                  ₹{product.price}
                 </span>
                 <span
                   className="text-lg line-through"
                   style={{ color: "var(--color-stone-400)" }}
                 >
-                  ₹{currentSize.originalPrice}
+                  ₹{product.originalPrice}
                 </span>
                 <span
                   className="px-3 py-1 rounded-full text-xs font-bold"
@@ -251,46 +249,17 @@ export default function ProductDetail({
                 </span>
               </div>
 
-              {/* Divider */}
-              <div
-                className="h-px"
-                style={{ background: "var(--color-stone-200)" }}
-              />
-
-              {/* Size Selector */}
-              <div>
-                <label
-                  className="text-sm font-semibold mb-3 block"
-                  style={{ color: "var(--color-stone-700)" }}
-                >
-                  Size
-                </label>
-                <div className="flex flex-wrap gap-2 sm:gap-3">
-                  {product.sizes.map((size, i) => (
-                    <button
-                      key={`${size.label}-${i}`}
-                      onClick={() => setSelectedSize(i)}
-                      className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-medium transition-all"
-                      style={{
-                        background:
-                          selectedSize === i
-                            ? "var(--color-forest-600)"
-                            : "white",
-                        color:
-                          selectedSize === i
-                            ? "white"
-                            : "var(--color-stone-700)",
-                        border: `1.5px solid ${
-                          selectedSize === i
-                            ? "var(--color-forest-600)"
-                            : "var(--color-stone-200)"
-                        }`,
-                      }}
-                    >
-                      {size.label} — ₹{size.price}
-                    </button>
-                  ))}
-                </div>
+              {/* Description */}
+              <div className="space-y-4">
+                {product.description.split("\n\n").map((para, i) => (
+                  <p
+                    key={i}
+                    className="text-base leading-relaxed"
+                    style={{ color: "var(--color-stone-600)" }}
+                  >
+                    {para}
+                  </p>
+                ))}
               </div>
 
               {/* Quantity */}
@@ -342,8 +311,8 @@ export default function ProductDetail({
                         slug: product.slug,
                         name: product.name,
                         image: product.images[0],
-                        price: currentSize.price,
-                        size: currentSize.label,
+                        price: product.price,
+                        size: product.sizes[product.sizes.length - 1].label,
                       },
                       quantity
                     );
@@ -351,7 +320,7 @@ export default function ProductDetail({
                   }}
                 >
                   <ShoppingBag size={20} />
-                  Add to Cart — ₹{currentSize.price * quantity}
+                  Add to Cart — ₹{product.price * quantity}
                 </button>
                 <button
                   className="w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-105"
@@ -366,8 +335,8 @@ export default function ProductDetail({
                       slug: product.slug,
                       name: product.name,
                       image: product.images[0],
-                      price: currentSize.price,
-                      originalPrice: currentSize.originalPrice,
+                      price: product.price,
+                      originalPrice: product.originalPrice,
                     });
                   }}
                 >
@@ -428,9 +397,7 @@ export default function ProductDetail({
           >
             {(
               [
-                { key: "description", label: "Description" },
                 { key: "benefits", label: "Benefits" },
-                { key: "specs", label: "Specifications" },
                 { key: "usage", label: "How to Use" },
               ] as const
             ).map((tab) => (
@@ -458,20 +425,6 @@ export default function ProductDetail({
 
           {/* Tab Content */}
           <div className="max-w-3xl">
-            {activeTab === "description" && (
-              <div className="space-y-4">
-                {product.description.split("\n\n").map((para, i) => (
-                  <p
-                    key={i}
-                    className="text-base leading-relaxed"
-                    style={{ color: "var(--color-stone-600)" }}
-                  >
-                    {para}
-                  </p>
-                ))}
-              </div>
-            )}
-
             {activeTab === "benefits" && (
               <ul className="space-y-4">
                 {product.benefits.map((b, i) => (
@@ -490,37 +443,6 @@ export default function ProductDetail({
                   </li>
                 ))}
               </ul>
-            )}
-
-            {activeTab === "specs" && (
-              <div
-                className="rounded-2xl overflow-hidden"
-                style={{ border: "1px solid var(--color-stone-200)" }}
-              >
-                {product.specifications.map((spec, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-2 text-sm border-b last:border-b-0"
-                    style={{
-                      borderColor: "var(--color-stone-100)",
-                      background: i % 2 === 0 ? "white" : "var(--color-cream-50)",
-                    }}
-                  >
-                    <div
-                      className="px-5 py-3.5 font-medium"
-                      style={{ color: "var(--color-stone-500)" }}
-                    >
-                      {spec.label}
-                    </div>
-                    <div
-                      className="px-5 py-3.5 font-medium"
-                      style={{ color: "var(--color-stone-800)" }}
-                    >
-                      {spec.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
 
             {activeTab === "usage" && (
