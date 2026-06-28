@@ -8,3 +8,9 @@ export function slugify(name: string): string {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+/** Format product name with the brand prefix */
+export function productDisplayName(name: string) {
+  const base = name.replace(/^Cold Pressed /i, '');
+  return `Minaliya Wooden Cold Pressed ${base}`;
+}

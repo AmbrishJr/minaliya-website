@@ -149,7 +149,7 @@ export async function getAllProducts() {
       category: true,
     },
     orderBy: {
-      createdAt: "desc",
+      sortOrder: "asc",
     },
   });
 
@@ -164,6 +164,7 @@ export async function getAllProducts() {
     description: product.description,
     imagePublicIds: product.imagePublicIds as (string | undefined)[],
     isFeatured: product.isFeatured,
+    sortOrder: product.sortOrder,
     categoryName: product.category.name,
     categoryId: product.categoryId,
     createdAt: product.createdAt.toISOString(),
@@ -250,6 +251,9 @@ export async function createProduct(input: CreateProductInput) {
     };
   }
 
+  const maxOrder = await prisma.product.aggregate({ _max: { sortOrder: true } });
+  const nextSortOrder = (maxOrder._max.sortOrder ?? -1) + 1;
+
   try {
     const product = await prisma.product.create({
       data: {
@@ -263,6 +267,7 @@ export async function createProduct(input: CreateProductInput) {
         images,
         imagePublicIds: input.imagePublicIds ?? [],
         isFeatured: input.isFeatured ?? false,
+        sortOrder: nextSortOrder,
       },
     });
 
@@ -524,6 +529,25 @@ export async function deleteOrder(orderId: string) {
   } catch (error: unknown) {
     console.error("Error deleting order:", error);
     return { success: false as const, error: "Failed to delete order." };
+  }
+}
+
+export async function reorderProducts(ids: string[]) {
+  await requireAdmin();
+
+  try {
+    await Promise.all(
+      ids.map((id, index) =>
+        prisma.product.update({
+          where: { id },
+          data: { sortOrder: index },
+        })
+      )
+    );
+    return { success: true as const };
+  } catch (error: unknown) {
+    console.error("Error reordering products:", error);
+    return { success: false as const, error: "Failed to reorder products." };
   }
 }
 
@@ -832,6 +856,86 @@ export async function deleteHeroSlide(id: string) {
   } catch (error: unknown) {
     console.error("Error deleting hero slide:", error);
     return { success: false as const, error: "Failed to delete hero slide." };
+  }
+}
+
+// ─── FOOTER SETTINGS ────────────────────────────────────
+
+export type FooterLink = {
+  name: string;
+  href: string;
+};
+
+export type SocialPlatform = {
+  url: string;
+  enabled: boolean;
+};
+
+export type FooterSettingsData = {
+  companyName: string;
+  logo: string;
+  description: string;
+  address: string;
+  phones: string[];
+  emails: string[];
+  businessHours: string;
+  copyright: string;
+  newsletter: {
+    title: string;
+    description: string;
+    enabled: boolean;
+  };
+  quickLinks: FooterLink[];
+  categories: FooterLink[];
+  legalLinks: FooterLink[];
+  socialMedia: {
+    facebook: SocialPlatform;
+    instagram: SocialPlatform;
+    youtube: SocialPlatform;
+    whatsapp: SocialPlatform;
+  };
+  googleMaps: {
+    embedUrl: string;
+    businessUrl: string;
+    lat: string;
+    lng: string;
+    enabled: boolean;
+  };
+  paymentMethods: string[];
+  showFields: {
+    description: boolean;
+    address: boolean;
+    phone: boolean;
+    email: boolean;
+    businessHours: boolean;
+    quickLinks: boolean;
+    categories: boolean;
+    legalLinks: boolean;
+    socialMedia: boolean;
+    newsletter: boolean;
+    googleMaps: boolean;
+    paymentMethods: boolean;
+  };
+};
+
+export async function updateFooterSettings(
+  data: FooterSettingsData
+) {
+  const { isAdmin } = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false as const, error: "Unauthorized." };
+  }
+
+  try {
+    await prisma.footerSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default", data },
+      update: { data },
+    });
+    return { success: true as const };
+  } catch (error) {
+    console.error("Error updating footer settings:", error);
+    return { success: false as const, error: "Failed to update footer settings." };
   }
 }
 

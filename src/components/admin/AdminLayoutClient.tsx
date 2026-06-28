@@ -23,6 +23,7 @@ export default function AdminLayoutClient({
     if (path.startsWith("/admin/blog")) return "Blog Management";
     if (path.startsWith("/admin/hero-slides")) return "Hero Slides";
     if (path.startsWith("/admin/inquiries")) return "Bulk Inquiries";
+    if (path.startsWith("/admin/footer")) return "Footer Settings";
     return "Admin Panel";
   };
 

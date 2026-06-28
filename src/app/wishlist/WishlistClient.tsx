@@ -4,6 +4,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { HeartOff, Heart } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { productDisplayName } from "@/lib/product-utils";
 
 export default function WishlistClient() {
   const { items, removeItem } = useWishlist();
@@ -85,13 +86,13 @@ export default function WishlistClient() {
               <div className="p-5 flex-1 flex flex-col">
                 <Link href={`/shop/${product.slug}`} className="block">
                   <h3
-                    className="text-base font-semibold mb-2"
+                    className="text-base font-semibold mb-2 line-clamp-2"
                     style={{
                       fontFamily: "var(--font-heading)",
                       color: "var(--color-stone-800)",
                     }}
                   >
-                    {product.name}
+                    {productDisplayName(product.name)}
                   </h3>
                 </Link>
                 

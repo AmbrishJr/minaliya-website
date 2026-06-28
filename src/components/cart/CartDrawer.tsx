@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { productDisplayName } from "@/lib/product-utils";
 import {
   X,
   Minus,
@@ -138,13 +139,13 @@ export default function CartDrawer() {
                   {/* Details */}
                   <div className="flex-1 min-w-0">
                     <h4
-                      className="text-sm font-semibold truncate"
+                      className="text-sm font-semibold leading-tight"
                       style={{
                         fontFamily: "var(--font-heading)",
                         color: "var(--color-stone-800)",
                       }}
                     >
-                      {item.name}
+                      {productDisplayName(item.name)}
                     </h4>
                     <p
                       className="text-xs mt-0.5"
@@ -228,7 +229,7 @@ export default function CartDrawer() {
             {/* Subtotal */}
             <div className="flex items-center justify-between">
               <span
-                className="text-sm font-medium"
+                className="text-sm"
                 style={{ color: "var(--color-stone-500)" }}
               >
                 Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})
@@ -236,13 +237,37 @@ export default function CartDrawer() {
               <span
                 className="text-xl font-bold"
                 style={{
-                  fontFamily: "var(--font-heading)",
+                  fontFamily: "var(--font-body)",
                   color: "var(--color-stone-900)",
                 }}
               >
                 ₹{totalPrice}
               </span>
             </div>
+
+            {/* Tax Breakup */}
+            {(() => {
+              const totalExGst = items.reduce((acc, item) => acc + ((item.price * item.quantity) / 1.05), 0);
+              const totalGst = totalPrice - totalExGst;
+              const sgst = totalGst / 2;
+              const cgst = totalGst / 2;
+              return (
+                <div className="space-y-1.5 pt-2 border-t" style={{ borderColor: "var(--color-stone-200)" }}>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: "var(--color-stone-400)" }}>Subtotal (excl. GST)</span>
+                    <span className="font-medium" style={{ color: "var(--color-stone-600)" }}>₹{totalExGst.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: "var(--color-stone-400)" }}>SGST @ 2.50%</span>
+                    <span className="font-medium" style={{ color: "var(--color-stone-600)" }}>₹{sgst.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span style={{ color: "var(--color-stone-400)" }}>CGST @ 2.50%</span>
+                    <span className="font-medium" style={{ color: "var(--color-stone-600)" }}>₹{cgst.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Free shipping note */}
             {totalPrice >= 499 ? (
@@ -272,6 +297,7 @@ export default function CartDrawer() {
               onClick={() => {
                 closeCart();
                 if (!isAuthenticated) {
+                  sessionStorage.setItem("redirectAfterLogin", "/checkout");
                   openLoginModal();
                 } else {
                   router.push("/checkout");

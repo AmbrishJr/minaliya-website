@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { productDisplayName } from "@/lib/product-utils";
 
 interface Size {
   label: string;
@@ -527,7 +528,7 @@ export default function ProductDetail({
                       color: "var(--color-stone-800)",
                     }}
                   >
-                    {item.name}
+                    {productDisplayName(item.name)}
                   </h3>
                   <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
                     <span

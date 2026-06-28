@@ -76,6 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
     setIsLoginModalOpen(false);
+
+    const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
+    if (redirectUrl) {
+      sessionStorage.removeItem("redirectAfterLogin");
+      router.push(redirectUrl);
+    }
   };
 
   const logout = () => {

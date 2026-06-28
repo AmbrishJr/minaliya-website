@@ -6,6 +6,7 @@ import { Star, ShoppingBag, Heart, Eye } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { productDisplayName } from "@/lib/product-utils";
 
 interface FeaturedProduct {
   name: string;
@@ -21,12 +22,6 @@ interface FeaturedProduct {
   description: string;
 }
 
-function oilNameFromProduct(name: string, slug: string) {
-  const base = name.replace(/^Cold Pressed /i, '');
-  const size = slug.includes('500ml') ? '500ml' : '1L';
-  return { line1: 'Minaliya', line2: 'Wooden Cold Pressed', line3: base };
-}
-
 function ProductCard({ product }: { product: FeaturedProduct }) {
   const { addItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -36,7 +31,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
   const discount = Math.round(
     ((product.originalPrice - product.price) / product.originalPrice) * 100
   );
-  const threeLine = oilNameFromProduct(product.name, product.slug);
+  const displayName = productDisplayName(product.name);
 
   return (
     <Link href={`/shop/${product.slug}`} className="block relative">
@@ -119,7 +114,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
       </div>
 
         {/* Content */}
-        <div   className="p-3 sm:p-4 space-y-3 max-sm:space-y-1 bg-white">
+        <div   className="p-3 sm:p-4 space-y-2 sm:space-y-3 bg-white">
         {/* Rating */}
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-0.5">
@@ -139,19 +134,17 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
 
         {/* Name */}
         <h3
-          className="text-[11px] sm:text-sm font-bold leading-tight"
+          className="text-[11px] sm:text-sm font-bold leading-tight line-clamp-2 sm:line-clamp-1"
           style={{
             fontFamily: "var(--font-heading)",
             color: "var(--color-stone-800)",
           }}
         >
-          <span className="block">{threeLine.line1}</span>
-          <span className="block">{threeLine.line2}</span>
-          <span className="block">{threeLine.line3}</span>
+          {displayName}
         </h3>
 
         {/* Price + CTA */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-stone-100 min-w-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-stone-100 min-w-0">
           <div className="flex flex-col shrink min-w-0">
             <div className="flex items-baseline gap-1">
               <span
@@ -236,7 +229,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
   );
 }
 
-export default function FeaturedProducts({ products }: { products: FeaturedProduct[] }) {
+export default function FeaturedProducts({ products, showHeader = true }: { products: FeaturedProduct[]; showHeader?: boolean }) {
   // Group products by category preserving display order
   const grouped: { category: string; items: FeaturedProduct[] }[] = [];
   const seen = new Set<string>();
@@ -257,20 +250,21 @@ export default function FeaturedProducts({ products }: { products: FeaturedProdu
       style={{ background: "var(--color-cream-50)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center space-y-2 mb-6">
-          <div className="divider-leaf mx-auto" />
-          <h2 className="section-title">Our Pure Cold Pressed Oils</h2>
-          <p className="section-subtitle mx-auto">
-            Handpicked seeds, traditional wooden press extraction, and fresh
-            bottling — experience the authentic taste of purity.
-          </p>
-        </div>
+        {showHeader && (
+          <div className="text-center space-y-2 mb-8 sm:mb-10">
+            <div className="divider-leaf mx-auto" />
+            <h2 className="section-title">Our Pure Cold Pressed Oils</h2>
+            <p className="section-subtitle mx-auto">
+              Handpicked seeds, traditional wooden press extraction, and fresh
+              bottling — experience the authentic taste of purity.
+            </p>
+          </div>
+        )}
 
         {/* Product Grid — 2 columns, rows grouped by category */}
-        <div className="space-y-2">
+        <div className="space-y-3 sm:space-y-4">
           {grouped.map((group) => (
-            <div key={group.category} className="grid grid-cols-2 gap-2">
+            <div key={group.category} className="grid grid-cols-2 gap-3 sm:gap-4">
               {group.items.map((product) => (
                 <ProductCard key={product.slug} product={product} />
               ))}
@@ -279,7 +273,7 @@ export default function FeaturedProducts({ products }: { products: FeaturedProdu
         </div>
 
         {/* View All */}
-        <div className="text-center mt-6">
+        <div className="text-center mt-8 sm:mt-10">
           <Link href="/shop" className="btn-secondary px-10 inline-flex">
             View All Products
           </Link>

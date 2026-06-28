@@ -74,69 +74,6 @@ export default function HeroSection({ slides }: HeroSectionProps) {
           style={{ backgroundColor: slide.bg.accent }}
         />
 
-        {/* Large blob — top right */}
-        <div
-          className="absolute rounded-full transition-all duration-[1200ms] ease-in-out"
-          style={{
-            width: "70vw",
-            height: "70vw",
-            maxWidth: 900,
-            maxHeight: 900,
-            top: "-15%",
-            right: "-10%",
-            background: `radial-gradient(circle, ${slide.bg.primary} 0%, ${slide.bg.secondary}80 50%, transparent 70%)`,
-          }}
-        />
-
-        {/* Smaller blob — bottom left */}
-        <div
-          className="absolute rounded-full transition-all duration-[1200ms] ease-in-out"
-          style={{
-            width: "50vw",
-            height: "50vw",
-            maxWidth: 650,
-            maxHeight: 650,
-            bottom: "-10%",
-            left: "-8%",
-            background: `radial-gradient(circle, ${slide.bg.secondary} 0%, ${slide.bg.primary}60 50%, transparent 70%)`,
-          }}
-        />
-
-        {/* Center wash */}
-        <div
-          className="absolute rounded-full transition-all duration-[1200ms] ease-in-out"
-          style={{
-            width: "40vw",
-            height: "40vw",
-            maxWidth: 500,
-            maxHeight: 500,
-            top: "30%",
-            left: "35%",
-            background: `radial-gradient(circle, ${slide.bg.accent}90 0%, transparent 70%)`,
-          }}
-        />
-
-
-
-        {/* Floating Organic Drops */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full hero-animate-float"
-              style={{
-                width: 12 + i * 8,
-                height: 12 + i * 8,
-                background: `radial-gradient(circle, ${slide.accentColor}30 0%, transparent 70%)`,
-                top: `${20 + i * 12}%`,
-                left: `${(i * 22 + 15) % 90}%`,
-                animationDelay: `${i * 0.9}s`,
-                filter: "blur(2px)",
-              }}
-            />
-          ))}
-        </div>
-
         {/* Subtle grain overlay */}
         <div
           className="absolute inset-0 opacity-[0.015]"
@@ -324,11 +261,12 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                     src={slide.image}
                     alt={slide.imageAlt}
                     fill
-                    sizes="(max-width: 640px) 220px, (max-width: 768px) 280px, (max-width: 1024px) 320px, (max-width: 1280px) 360px, 400px"
+                    sizes="(max-width: 640px) 440px, (max-width: 768px) 560px, (max-width: 1024px) 640px, (max-width: 1280px) 720px, 800px"
                     className="object-contain relative z-10"
                     style={{
                       filter: "drop-shadow(0 20px 30px rgba(0, 0, 0, 0.12))",
                     }}
+                    quality={100}
                     priority
                   />
 

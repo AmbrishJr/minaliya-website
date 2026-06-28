@@ -109,12 +109,22 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
 
   return (
     <>
-      <section className="pt-16 sm:pt-24 lg:pt-32 pb-0" style={{ background: "var(--color-cream-50)" }} aria-label="Shop our oils">
+      <section className="pt-20 sm:pt-28 lg:pt-32" style={{ background: "var(--color-cream-50)" }} aria-label="Shop our oils">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="sr-only">Shop Pure Cold Pressed Oils</h1>
 
+          {/* Heading */}
+          <div className="text-center space-y-2 mb-6 sm:mb-8">
+            <div className="divider-leaf mx-auto" />
+            <h2 className="section-title">Our Pure Cold Pressed Oils</h2>
+            <p className="section-subtitle mx-auto">
+              Handpicked seeds, traditional wooden press extraction, and fresh
+              bottling — experience the authentic taste of purity.
+            </p>
+          </div>
+
           {/* Category Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap sm:flex-wrap hide-scrollbar snap-x snap-mandatory mb-6">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap sm:flex-wrap hide-scrollbar snap-x snap-mandatory mb-8 sm:mb-10">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -138,7 +148,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
         </div>
       </section>
 
-      <FeaturedProducts products={filtered} />
+      <FeaturedProducts products={filtered} showHeader={false} />
 
       <section className="section-padding" style={{ background: "var(--color-cream-50)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

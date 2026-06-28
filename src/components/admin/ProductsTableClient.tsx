@@ -3,9 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { AlertTriangle, CheckCircle, Edit, Trash2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle, ChevronUp, ChevronDown, Edit, Trash2, Loader2 } from "lucide-react";
 import AddProductModal, { CategoryOption } from "./AddProductModal";
-import { deleteProduct } from "@/actions/adminData";
+import { deleteProduct, reorderProducts } from "@/actions/adminData";
 
 interface ProductItem {
   id: string;
@@ -15,6 +15,7 @@ interface ProductItem {
   discountPrice: number | null;
   stock: number;
   isFeatured: boolean;
+  sortOrder: number;
   categoryName: string;
   images: string[];
   categoryId: string;
@@ -27,11 +28,13 @@ interface ProductsTableClientProps {
   categories: CategoryOption[];
 }
 
-export default function ProductsTableClient({ products, categories }: ProductsTableClientProps) {
+export default function ProductsTableClient({ products: initialProducts, categories }: ProductsTableClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [products, setProducts] = useState(initialProducts);
+  const [reorderPending, setReorderPending] = useState(false);
 
   const getStockStatus = (stock: number) => {
     if (stock === 0) {
@@ -78,6 +81,24 @@ export default function ProductsTableClient({ products, categories }: ProductsTa
     });
   };
 
+  async function handleMove(id: string, direction: "up" | "down") {
+    const idx = products.findIndex((p) => p.id === id);
+    if (direction === "up" && idx === 0) return;
+    if (direction === "down" && idx === products.length - 1) return;
+
+    const newProducts = [...products];
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    [newProducts[idx], newProducts[swapIdx]] = [newProducts[swapIdx], newProducts[idx]];
+    setProducts(newProducts);
+    setReorderPending(true);
+
+    const result = await reorderProducts(newProducts.map((p) => p.id));
+    if (result.success) {
+      router.refresh();
+    }
+    setReorderPending(false);
+  }
+
   return (
     <>
       <div className="flex items-center justify-between mb-4">
@@ -98,7 +119,8 @@ export default function ProductsTableClient({ products, categories }: ProductsTa
                   color: "var(--color-forest-700)",
                 }}
               >
-                <th className="p-4 pl-6 text-xs uppercase tracking-wider">Product Info</th>
+                <th className="p-4 pl-6 text-xs uppercase tracking-wider w-10">Order</th>
+                <th className="p-4 text-xs uppercase tracking-wider">Product Info</th>
                 <th className="p-4 text-xs uppercase tracking-wider">Slug</th>
                 <th className="p-4 text-xs uppercase tracking-wider">Category</th>
                 <th className="p-4 text-xs uppercase tracking-wider">Price</th>
@@ -108,7 +130,7 @@ export default function ProductsTableClient({ products, categories }: ProductsTa
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: "var(--color-stone-100)" }}>
-              {products.map((product) => {
+              {products.map((product, idx) => {
                 const status = getStockStatus(product.stock);
                 const StatusIcon = status.icon;
 
@@ -118,6 +140,24 @@ export default function ProductsTableClient({ products, categories }: ProductsTa
                     className="hover:bg-forest-50/30 text-stone-600 transition-colors border-b"
                     style={{ borderColor: "var(--color-stone-100)" }}
                   >
+                    <td className="p-4 pl-6">
+                      <div className="flex flex-col gap-0.5 text-stone-300">
+                        <button
+                          onClick={() => handleMove(product.id, "up")}
+                          disabled={idx === 0 || reorderPending}
+                          className="disabled:opacity-20 hover:text-stone-500 cursor-pointer"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleMove(product.id, "down")}
+                          disabled={idx === products.length - 1 || reorderPending}
+                          className="disabled:opacity-20 hover:text-stone-500 cursor-pointer"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    </td>
                     <td className="p-4 pl-6">
                       <div className="flex items-center gap-3">
                         <div

@@ -20,7 +20,7 @@ export default async function HomePage() {
   const [dbProducts, heroSlides] = await Promise.all([
     prisma.product.findMany({
       include: { category: true },
-      orderBy: { createdAt: "asc" },
+      orderBy: { sortOrder: "asc" },
     }),
     getActiveHeroSlides(),
   ]);
