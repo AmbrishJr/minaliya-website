@@ -118,7 +118,7 @@ export default function Navbar() {
           boxShadow: scrolled ? "var(--shadow-soft)" : "none",
         }}
       >
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="max-w-8xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 lg:h-16">
             {/* Logo */}
             <Link
@@ -131,7 +131,7 @@ export default function Navbar() {
                 alt="Minaliya Logo"
                 width={48}
                 height={48}
-                className="h-12 w-auto object-contain"
+                className="h-10 sm:h-12 w-auto object-contain"
                 priority
               />
             </Link>
@@ -150,16 +150,16 @@ export default function Navbar() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-3 sm:gap-2">
               <button
                 onClick={() => {
                   setSearchOpen(!searchOpen);
                   if (!searchOpen) setSearchQuery("");
                 }}
-                className="p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
+                className="p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
                 aria-label="Search"
               >
-                <Search size={20} />
+                <Search size={18} />
               </button>
               <Link
                 href="/wishlist"
@@ -213,23 +213,28 @@ export default function Navbar() {
               )}
               <button
                 onClick={openCart}
-                className="relative p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
+                className="relative p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
                 aria-label="Cart"
               >
-                <ShoppingBag size={20} />
+                <ShoppingBag size={18} />
                 <span
-                  className="absolute -top-0.5 -right-0.5 w-5 h-5 text-[10px] font-bold rounded-full flex items-center justify-center"
+                  className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 text-[8px] sm:text-[10px] font-bold rounded-full flex items-center justify-center"
                   style={{ background: "white", color: "#8B1C1C" }}
                 >
                   {totalItems}
                 </span>
               </button>
+              {isAuthenticated && user?.name && (
+                <span className="lg:hidden text-[10px] sm:text-xs font-semibold text-white/90 max-w-[50px] sm:max-w-[60px] truncate">
+                  {user.name.split(' ')[0]}
+                </span>
+              )}
               <button
                 onClick={() => setMobileOpen(true)}
-                className="lg:hidden p-2.5 rounded-full transition-colors hover:bg-white/10 ml-1 text-white/90 hover:text-white"
+                className="lg:hidden p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 ml-0 sm:ml-1 text-white/90 hover:text-white"
                 aria-label="Menu"
               >
-                <Menu size={22} />
+                <Menu size={20} />
               </button>
             </div>
           </div>

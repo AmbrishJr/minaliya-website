@@ -34,7 +34,7 @@ export default async function ShopPage() {
   });
 
   // Map database entries to match the frontend Product interface structure
-  const products = dbProducts.map((p) => {
+  let products = dbProducts.map((p) => {
     // Standardized ratings & reviews count for visual premium experience
     let rating = 4.9;
     let reviews = 234;
@@ -61,6 +61,17 @@ export default async function ShopPage() {
       category: p.category.name,
       description: p.description,
     };
+  });
+
+  // Sort: Groundnut 1L, Groundnut 500ml, Sesame 1L, Sesame 500ml, Coconut 1L, Coconut 500ml
+  const catRank: Record<string, number> = { Groundnut: 0, Sesame: 1, Coconut: 2 };
+  products.sort((a, b) => {
+    const ac = catRank[a.category] ?? 99;
+    const bc = catRank[b.category] ?? 99;
+    if (ac !== bc) return ac - bc;
+    const aIs1L = a.sizes.some((s) => s.includes("1 Ltr") || s.includes("1L") || s === "1 Ltr");
+    const bIs1L = b.sizes.some((s) => s.includes("1 Ltr") || s.includes("1L") || s === "1 Ltr");
+    return aIs1L ? -1 : bIs1L ? 1 : 0;
   });
 
   return (

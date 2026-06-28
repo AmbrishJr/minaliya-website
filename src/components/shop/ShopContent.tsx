@@ -1,236 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Star, ShoppingBag, Heart, Eye, SlidersHorizontal, ChevronRight, X, Sparkles, Check, AlertCircle, Phone, Building, User, Mail, MessageSquare } from "lucide-react";
-import { useCart } from "@/context/CartContext";
-import { useWishlist } from "@/context/WishlistContext";
+import { ChevronRight, X, Sparkles, Check, AlertCircle, Phone, Building, User, Mail, MessageSquare } from "lucide-react";
 import { Product } from "@/data/products";
 import { submitInquiry } from "@/actions/inquiry";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
 
 
 const categories = ["All", "Groundnut", "Coconut", "Sesame"];
-const sortOptions = [
-  { value: "popular", label: "Most Popular" },
-  { value: "price-low", label: "Price: Low to High" },
-  { value: "price-high", label: "Price: High to Low" },
-  { value: "rating", label: "Highest Rated" },
-];
-
-/* ═══════════════════════════════════════════
-   PRODUCT CARD — Compact, Modern, Responsive
-   ═══════════════════════════════════════════ */
-
-function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCart();
-  const { toggleWishlist, isInWishlist } = useWishlist();
-  const [qty, setQty] = useState(0);
-  const [toast, setToast] = useState(false);
-  const isWishlisted = isInWishlist(product.slug);
-  const discount = Math.round(
-    ((product.originalPrice - product.price) / product.originalPrice) * 100
-  );
-
-  return (
-    <Link href={`/shop/${product.slug}`} className="block">
-      <article className="product-card group relative">
-        {/* Image — 55-60% of card height on desktop, 50-55% on mobile */}
-        <div className="product-image relative w-full overflow-hidden bg-stone-50">
-          <Image
-            src={product.image}
-            alt={`${product.name} - Minaliya Mara Chekku Wood Pressed Oil`}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            className="object-contain object-center group-hover:scale-[1.02] transition-transform duration-500"
-            loading="lazy"
-            quality={85}
-          />
-
-          {/* Badge */}
-          {product.badge && (
-            <span
-              className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[7px] font-semibold uppercase tracking-wide"
-              style={{
-                background:
-                  product.badge === "Bestseller"
-                    ? "var(--color-forest-600)"
-                    : product.badge === "Popular"
-                      ? "var(--color-amber-500)"
-                      : "var(--color-terra-400)",
-                color: "white",
-              }}
-            >
-              {product.badge}
-            </span>
-          )}
-
-          {/* Discount Badge */}
-          {discount > 0 && (
-            <span
-              className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full text-[7px] font-bold"
-              style={{
-                background: "var(--color-terra-100)",
-                color: "var(--color-terra-500)",
-              }}
-            >
-              -{discount}%
-            </span>
-          )}
-
-          {/* Quick Actions */}
-          <div className="absolute right-1 bottom-1 flex flex-col gap-1">
-            <button
-              className="w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
-              style={{
-                background: "white",
-                color: isWishlisted ? "var(--color-terra-500)" : "var(--color-stone-600)"
-              }}
-              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-              onClick={(e) => {
-                e.preventDefault();
-                toggleWishlist({
-                  slug: product.slug,
-                  name: product.name,
-                  image: product.image,
-                  price: product.price,
-                  originalPrice: product.originalPrice,
-                });
-              }}
-            >
-              <Heart size={11} fill={isWishlisted ? "currentColor" : "none"} />
-            </button>
-            <button
-              className="w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors"
-              style={{ background: "white", color: "var(--color-stone-600)" }}
-              aria-label="Quick view"
-              onClick={(e) => e.preventDefault()}
-            >
-              <Eye size={11} />
-            </button>
-          </div>
-        </div>
-
-        {/* Content — Compact padding, fixed bottom alignment */}
-        <div className="product-content p-3 space-y-2 bg-white">
-          {/* Rating */}
-          <div className="flex items-center gap-1">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  size={11}
-                  fill={i < Math.floor(product.rating) ? "var(--color-amber-400)" : "none"}
-                  stroke={
-                    i < Math.floor(product.rating)
-                      ? "var(--color-amber-400)"
-                      : "var(--color-stone-300)"
-                  }
-                />
-              ))}
-            </div>
-            <span className="text-xs font-medium" style={{ color: "var(--color-stone-500)" }}>
-              {product.rating}
-            </span>
-          </div>
-
-          {/* Name — 2 lines max with ellipsis */}
-          <h3
-            className="text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5rem]"
-            style={{
-              fontFamily: "var(--font-heading)",
-              color: "var(--color-stone-800)",
-            }}
-          >
-            {product.name}
-          </h3>
-
-          {/* Price + CTA — Fixed at bottom */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1.5 border-t border-stone-100 mt-auto min-w-0">
-            <div className="flex flex-col shrink min-w-0">
-              <div className="flex items-baseline gap-1">
-                <span className="text-sm sm:text-base font-bold" style={{ color: "var(--color-stone-900)" }}>
-                  ₹{product.price}
-                </span>
-                <span className="text-[10px] sm:text-xs font-medium line-through" style={{ color: "var(--color-stone-400)" }}>
-                  ₹{product.originalPrice}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 w-full sm:w-auto justify-between sm:justify-end">
-              {/* Quantity Selector */}
-              <div className="flex items-center border rounded-md overflow-hidden shrink-0 shadow-sm" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
-                <button
-                  className="w-7 h-7 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
-                  style={{ color: qty <= 0 ? "var(--color-stone-300)" : "var(--color-stone-700)" }}
-                  disabled={qty <= 0}
-                  onClick={(e) => { e.preventDefault(); setQty(Math.max(0, qty - 1)); }}
-                  aria-label="Decrease quantity"
-                >
-                  −
-                </button>
-                <span className="w-6 h-7 sm:w-6 sm:h-7 flex items-center justify-center text-[10px] sm:text-xs font-bold select-none bg-stone-50/50" style={{ color: "var(--color-stone-800)" }}>
-                  {qty}
-                </span>
-                <button
-                  className="w-7 h-7 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors hover:bg-stone-50 cursor-pointer"
-                  style={{ color: "var(--color-stone-700)" }}
-                  onClick={(e) => { e.preventDefault(); setQty(qty + 1); }}
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-
-              {/* Add to Cart Button */}
-              <button
-                className="flex items-center justify-center gap-1 px-3 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all hover:shadow-md whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px] sm:min-h-[44px] flex-1 sm:flex-none"
-                style={{
-                  background: qty === 0 ? "var(--color-stone-400)" : "var(--color-forest-600)",
-                  color: "white",
-                }}
-                disabled={qty === 0}
-                aria-label={`Add ${product.name} to cart`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (qty === 0) return;
-                  for (let i = 0; i < qty; i++) {
-                    addItem({
-                      slug: product.slug,
-                      name: product.name,
-                      image: product.image,
-                      price: product.price,
-                      size: product.sizes[product.sizes.length - 1],
-                    }, 1, false);
-                  }
-                  setQty(0);
-                  setToast(true);
-                  setTimeout(() => setToast(false), 2000);
-                }}
-              >
-                <ShoppingBag size={12} />
-                <span className="hidden sm:inline">Add</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </article>
-
-      {toast && (
-        <div
-          className="absolute top-1 left-1/2 -translate-x-1/2 z-20 px-2 py-1 rounded-full text-[10px] font-semibold shadow-lg animate-fade-in-up"
-          style={{
-            background: "var(--color-forest-600)",
-            color: "white",
-          }}
-        >
-          Added
-        </div>
-      )}
-    </Link>
-  );
-}
 
 /* ═══════════════════════════════════════════
    SHOP CONTENT — Responsive Grid Layout
@@ -238,8 +16,6 @@ function ProductCard({ product }: { product: Product }) {
 
 export default function ShopContent({ initialProducts }: { initialProducts: Product[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
-  const [sortBy, setSortBy] = useState("popular");
-
   // Bulk Order Inquiry State
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkName, setBulkName] = useState("");
@@ -331,44 +107,19 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
       ? initialProducts
       : initialProducts.filter((p) => p.category === activeCategory);
 
-  const sorted = [...filtered].sort((a, b) => {
-    switch (sortBy) {
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "rating":
-        return b.rating - a.rating;
-      default:
-        return b.reviews - a.reviews;
-    }
-  });
-
-  // Sort by category order then capacity: Groundnut 1L, Groundnut 500ml, Sesame 1L, Sesame 500ml, Coconut 1L, Coconut 500ml
-  const categoryOrder = ["Groundnut", "Sesame", "Coconut"];
-  const arranged = [...sorted].sort((a, b) => {
-    const aCat = categoryOrder.indexOf(a.category);
-    const bCat = categoryOrder.indexOf(b.category);
-    if (aCat !== bCat) return aCat - bCat;
-    const aIs1L = a.sizes.some((s) => s.includes("1 Ltr") || s.includes("1L") || s === "1 Ltr");
-    const bIs1L = b.sizes.some((s) => s.includes("1 Ltr") || s.includes("1L") || s === "1 Ltr");
-    return bIs1L ? -1 : aIs1L ? 1 : 0;
-  });
-
   return (
-    <section className="section-padding" style={{ background: "var(--color-cream-50)" }} aria-label="Shop our oils">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="sr-only">Shop Pure Cold Pressed Oils</h1>
+    <>
+      <section className="pt-16 sm:pt-24 lg:pt-32 pb-0" style={{ background: "var(--color-cream-50)" }} aria-label="Shop our oils">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="sr-only">Shop Pure Cold Pressed Oils</h1>
 
-        {/* Filters Row */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           {/* Category Pills */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap sm:flex-wrap hide-scrollbar snap-x snap-mandatory mb-6">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className="px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300"
+                className="shrink-0 snap-start px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 whitespace-nowrap"
                 style={{
                   background:
                     activeCategory === cat ? "var(--color-forest-600)" : "white",
@@ -384,88 +135,60 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
               </button>
             ))}
           </div>
-
-          {/* Sort */}
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={16} style={{ color: "var(--color-stone-400)" }} />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="text-sm font-medium outline-none cursor-pointer px-3 py-2 rounded-lg border"
-              style={{
-                background: "white",
-                color: "var(--color-stone-700)",
-                borderColor: "var(--color-stone-200)",
-              }}
-            >
-              {sortOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
+      </section>
 
-        {/* Results count */}
-        <p className="text-sm mb-4" style={{ color: "var(--color-stone-400)" }}>
-          Showing {sorted.length} {sorted.length === 1 ? "product" : "products"}
-          {activeCategory !== "All" && ` in ${activeCategory}`}
-        </p>
+      <FeaturedProducts products={filtered} />
 
-        {/* Product Grid — 2 rows × 3 columns on desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-5">
-          {arranged.map((product) => (
-            <ProductCard key={product.slug} product={product} />
-          ))}
-        </div>
-
-        {/* Bulk Order Banner */}
-        <div
-          className="mt-16 p-6 sm:p-12 rounded-3xl border flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 relative overflow-hidden shadow-soft transition-all hover:shadow-medium"
-          style={{
-            background: "linear-gradient(135deg, var(--color-forest-900) 0%, var(--color-forest-950) 100%)",
-            borderColor: "var(--color-forest-800)",
-          }}
-        >
-          {/* Decorative leaf background */}
+      <section className="section-padding" style={{ background: "var(--color-cream-50)" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Bulk Order Banner */}
           <div
-            className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-10 translate-x-1/4 -translate-y-1/4"
-            style={{ background: "radial-gradient(circle, var(--color-cream-100), transparent 70%)" }}
-            aria-hidden="true"
-          />
+            className="p-6 sm:p-12 rounded-3xl border flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 relative overflow-hidden shadow-soft transition-all hover:shadow-medium"
+            style={{
+              background: "linear-gradient(135deg, var(--color-forest-900) 0%, var(--color-forest-950) 100%)",
+              borderColor: "var(--color-forest-800)",
+            }}
+          >
+            {/* Decorative leaf background */}
+            <div
+              className="absolute top-0 right-0 w-80 h-80 rounded-full opacity-10 translate-x-1/4 -translate-y-1/4"
+              style={{ background: "radial-gradient(circle, var(--color-cream-100), transparent 70%)" }}
+              aria-hidden="true"
+            />
 
-          <div className="space-y-4 max-w-2xl relative z-10 text-center md:text-left">
-            <span
-              className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-              style={{ background: "rgba(255,255,255,0.08)", color: "var(--color-amber-200)" }}
-            >
-              B2B & Wholesale Custom Pricing
-            </span>
-            <h3
-              className="text-3xl sm:text-4xl font-bold leading-tight text-white"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Interested in Bulk Quantities?
-            </h3>
-            <p className="text-sm sm:text-base leading-relaxed text-forest-200">
-              Whether you are a retail shop, organic store, hotel, or require bulk extraction for private labeling, get custom wooden cold pressed pricing with specialized logistical support.
-            </p>
-          </div>
+            <div className="space-y-4 max-w-2xl relative z-10 text-center md:text-left">
+              <span
+                className="px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                style={{ background: "rgba(255,255,255,0.08)", color: "var(--color-amber-200)" }}
+              >
+                B2B & Wholesale Custom Pricing
+              </span>
+              <h3
+                className="text-3xl sm:text-4xl font-bold leading-tight text-white"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                Interested in Bulk Quantities?
+              </h3>
+              <p className="text-sm sm:text-base leading-relaxed text-forest-200">
+                Whether you are a retail shop, organic store, hotel, or require bulk extraction for private labeling, get custom wooden cold pressed pricing with specialized logistical support.
+              </p>
+            </div>
 
-          <div className="relative z-10 shrink-0">
-            <button
-              onClick={() => {
-                setIsBulkModalOpen(true);
-                setIsInquirySubmitted(false);
-              }}
-              className="btn-primary py-4 px-8 text-sm font-bold tracking-wide rounded-full border border-transparent shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 text-stone-900"
-            >
-              Get Custom Bulk Quote <ChevronRight size={16} />
-            </button>
+            <div className="relative z-10 shrink-0">
+              <button
+                onClick={() => {
+                  setIsBulkModalOpen(true);
+                  setIsInquirySubmitted(false);
+                }}
+                className="btn-primary py-4 px-8 text-sm font-bold tracking-wide rounded-full border border-transparent shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 cursor-pointer bg-amber-500 hover:bg-amber-600 text-stone-900"
+              >
+                Get Custom Bulk Quote <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Bulk Order Inquiry Modal */}
       {isBulkModalOpen && (
@@ -677,6 +400,6 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 }

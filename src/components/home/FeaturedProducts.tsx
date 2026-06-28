@@ -21,6 +21,12 @@ interface FeaturedProduct {
   description: string;
 }
 
+function oilNameFromProduct(name: string, slug: string) {
+  const base = name.replace(/^Cold Pressed /i, '');
+  const size = slug.includes('500ml') ? '500ml' : '1L';
+  return { line1: 'Minaliya', line2: 'Wooden Cold Pressed', line3: base };
+}
+
 function ProductCard({ product }: { product: FeaturedProduct }) {
   const { addItem } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -30,6 +36,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
   const discount = Math.round(
     ((product.originalPrice - product.price) / product.originalPrice) * 100
   );
+  const threeLine = oilNameFromProduct(product.name, product.slug);
 
   return (
     <Link href={`/shop/${product.slug}`} className="block relative">
@@ -112,7 +119,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
       </div>
 
         {/* Content */}
-        <div className="p-3 sm:p-4 space-y-3 bg-white">
+        <div   className="p-3 sm:p-4 space-y-3 max-sm:space-y-1 bg-white">
         {/* Rating */}
         <div className="flex items-center gap-1.5">
           <div className="flex items-center gap-0.5">
@@ -132,13 +139,15 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
 
         {/* Name */}
         <h3
-          className="text-sm sm:text-base font-bold leading-snug line-clamp-2"
+          className="text-[11px] sm:text-sm font-bold leading-tight"
           style={{
             fontFamily: "var(--font-heading)",
             color: "var(--color-stone-800)",
           }}
         >
-          {product.name}
+          <span className="block">{threeLine.line1}</span>
+          <span className="block">{threeLine.line2}</span>
+          <span className="block">{threeLine.line3}</span>
         </h3>
 
         {/* Price + CTA */}
