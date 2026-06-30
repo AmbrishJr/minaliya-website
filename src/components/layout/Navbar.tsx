@@ -119,13 +119,6 @@ export default function Navbar() {
               />
             </Link>
 
-            {/* Mobile: centered user name */}
-            {isAuthenticated && user?.name && (
-              <span className="lg:hidden flex-1 text-center text-xs font-semibold text-white/90 truncate px-2">
-                {user.name.split(' ')[0]}
-              </span>
-            )}
-
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
@@ -141,6 +134,11 @@ export default function Navbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-3 sm:gap-2">
+              {isAuthenticated && user?.name && (
+                <span className="lg:hidden text-xs font-semibold text-white/90 truncate max-w-[60px]">
+                  {user.name.split(' ')[0]}
+                </span>
+              )}
               <button
                 onClick={handleProfileClick}
                 className="flex items-center gap-2 p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
