@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { slugify } from "@/lib/product-utils";
 import { verifyAdminSession } from "./admin";
 import { deleteImages } from "@/lib/cloudinary";
+import { sendShipmentEmail } from "@/lib/email";
 
 export type CreateProductInput = {
   name: string;
@@ -317,10 +318,18 @@ export async function updateOrderStatus(
   await requireAdmin();
 
   try {
-    await prisma.order.update({
+    const order = await prisma.order.update({
       where: { id: orderId },
       data: { status: newStatus },
     });
+
+    // Auto-send shipment email when status changes to SHIPPED
+    if (newStatus === "SHIPPED") {
+      sendShipmentEmail(order).catch(err =>
+        console.error("Failed to send shipment email for order", orderId, err)
+      );
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Error updating order status:", error);
@@ -335,10 +344,18 @@ export async function updateOrderAwb(orderId: string, awbNumber: string) {
   }
 
   try {
-    await prisma.order.update({
+    const order = await prisma.order.update({
       where: { id: orderId },
       data: { awbNumber: awbNumber.trim() || null },
     });
+
+    // If order is already shipped but AWB was just added, send shipment email
+    if (awbNumber.trim() && order.status === "SHIPPED") {
+      sendShipmentEmail(order).catch(err =>
+        console.error("Failed to send shipment email for order", orderId, err)
+      );
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Error updating AWB number:", error);

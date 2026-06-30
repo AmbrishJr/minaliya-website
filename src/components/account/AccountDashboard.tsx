@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck, ExternalLink, FileText, Send } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck, ExternalLink, FileText, Send, Truck } from "lucide-react";
 import OrderStatusBadge from "@/components/shared/OrderStatusBadge";
 import OrderStatusTimeline from "@/components/shared/OrderStatusTimeline";
 import Link from "next/link";
@@ -835,10 +835,39 @@ export default function AccountDashboard() {
                               </div>
                             </div>
                           </div>
-                       <div className="px-5 py-4 border-b" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
-                         <OrderStatusTimeline status={order.status} />
-                       </div>
-                      <div className="p-5 space-y-4">
+                        <div className="px-5 py-4 border-b" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
+                          <OrderStatusTimeline status={order.status} />
+                        </div>
+                        {order.awbNumber && (
+                          <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-50)" }}>
+                            <div className="flex items-center gap-2">
+                              <Truck size={16} className="text-forest-600" />
+                              <span className="text-sm font-medium text-stone-700">Tracking:</span>
+                              <span className="text-sm font-bold text-stone-900 font-mono">{order.awbNumber}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleCopyAwb(order.id, order.awbNumber!)}
+                                className="text-xs flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors"
+                                style={{ borderColor: "var(--color-stone-200)", color: "var(--color-stone-600)" }}
+                              >
+                                {copiedAwbId === order.id ? <ClipboardCheck size={14} className="text-green-600" /> : <Clipboard size={14} />}
+                                {copiedAwbId === order.id ? "Copied" : "Copy"}
+                              </button>
+                              <a
+                                href={`https://www.stcourier.com/tracking/${order.awbNumber}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors"
+                                style={{ borderColor: "var(--color-stone-200)", color: "var(--color-forest-600)" }}
+                              >
+                                <ExternalLink size={14} />
+                                Track
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                       <div className="p-5 space-y-4">
                         {order.items.map((item: DisplayOrder["items"][number], i: number) => (
                           <div key={i} className="flex gap-4">
                             <div className="w-20 h-20 rounded-lg bg-white border flex items-center justify-center shrink-0 p-2 relative" style={{ borderColor: "var(--color-stone-200)" }}>

@@ -112,7 +112,7 @@ export default function OrdersTable({
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     setUpdatingId(orderId);
     try {
-      const result = await updateOrderStatus(orderId, newStatus as "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED");
+      const result = await updateOrderStatus(orderId, newStatus as "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED" | "RETURNED");
       if (result.success) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
@@ -303,17 +303,20 @@ export default function OrdersTable({
                       onChange={(e) => handleStatusChange(order.id, e.target.value)}
                       className="flex-1 px-2.5 py-2 rounded-xl text-xs bg-white text-stone-700 border border-stone-200 outline-none"
                     >
-                      <option value="PENDING">Pending</option>
-                      <option value="PROCESSING">Processing</option>
-                      <option value="SHIPPED">Shipped</option>
-                      <option value="DELIVERED">Delivered</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteError(null);
-                        setDeletingId(order.id);
+                       <option value="PENDING">Pending</option>
+                       <option value="CONFIRMED">Confirmed</option>
+                       <option value="PROCESSING">Processing</option>
+                       <option value="SHIPPED">Shipped</option>
+                       <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                       <option value="DELIVERED">Delivered</option>
+                       <option value="CANCELLED">Cancelled</option>
+                       <option value="RETURNED">Returned</option>
+                     </select>
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setDeleteError(null);
+                         setDeletingId(order.id);
                       }}
                       className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
                       title="Delete Order"
@@ -427,10 +430,13 @@ export default function OrdersTable({
                             className="px-2.5 py-1.5 rounded-xl text-xs bg-white text-stone-700 border border-stone-200 outline-none cursor-pointer focus:border-forest-500 transition-colors shadow-sm"
                           >
                             <option value="PENDING">Pending</option>
+                            <option value="CONFIRMED">Confirmed</option>
                             <option value="PROCESSING">Processing</option>
                             <option value="SHIPPED">Shipped</option>
+                            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
                             <option value="DELIVERED">Delivered</option>
                             <option value="CANCELLED">Cancelled</option>
+                            <option value="RETURNED">Returned</option>
                           </select>
                           <button
                             type="button"
