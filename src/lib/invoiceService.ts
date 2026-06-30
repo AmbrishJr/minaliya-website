@@ -44,8 +44,8 @@ const CHROME_PATHS = [
 async function ensureStorageDir() {
   try {
     await fs.mkdir(INVOICE_STORAGE_PATH, { recursive: true });
-  } catch (error) {
-    console.error('Failed to create invoice storage directory', error);
+  } catch {
+    console.error('Failed to create invoice storage directory');
   }
 }
 
@@ -66,7 +66,7 @@ async function findChromeExecutable(): Promise<string | undefined> {
       try {
         await fs.access(edgePath);
         return edgePath;
-      } catch { }
+      } catch {}
     }
   }
   return undefined;
@@ -126,7 +126,6 @@ export async function generateInvoicePDF(
     const items: InvoiceItem[] = order.items.map((item, index) => {
       const hsn = getHsnCode(item.product.name);
       const lineTotal = Number(item.price) * item.quantity;
-      const gstAmount = Math.round((lineTotal * GST_RATE) / 100 * 100) / 100;
       return {
         sno: index + 1,
         productName: item.product.name,
@@ -195,6 +194,10 @@ export async function generateInvoicePDF(
       }
     } else {
       executablePath = await chromium.executablePath();
+    }
+
+    if (!executablePath) {
+      return { success: false, error: 'Chrome/Chromium executable not found. Install Google Chrome or set CHROME_PATH env var.' };
     }
 
     const launchOptions: Record<string, unknown> = {
