@@ -20,11 +20,11 @@ function getHsnCode(productName: string): string {
   return '';
 }
 
-const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Minaliya Goods And Services, Chennai, Tamil Nadu, India';
+const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Old No 87, New No 78, Shop No 3, Kodambakkam Road,<br>Mettupalayam, West Mambalam, Chennai – 600033,<br>Tamil Nadu, India';
 const COMPANY_PHONE = process.env.COMPANY_PHONE || '+91 98414 22998';
-const COMPANY_EMAIL = process.env.ADMIN_EMAIL || 'support@minaliya.in';
-const COMPANY_GST = process.env.COMPANY_GST || 'Pending';
-const COMPANY_FSSAI = process.env.COMPANY_FSSAI || 'Pending';
+const COMPANY_EMAIL = process.env.ADMIN_EMAIL || 'mailme@minaliya.in';
+const COMPANY_GST = process.env.COMPANY_GST || '33APKPD8864Q3Z3';
+const COMPANY_FSSAI = process.env.COMPANY_FSSAI || '12423002001621';
 const LOGO_URL = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/logo.png`;
 
 const INVOICE_STORAGE_PATH = process.env.INVOICE_STORAGE_PATH || path.join(process.cwd(), 'public', 'invoices');
@@ -66,7 +66,7 @@ async function findChromeExecutable(): Promise<string | undefined> {
       try {
         await fs.access(edgePath);
         return edgePath;
-      } catch {}
+      } catch { }
     }
   }
   return undefined;
