@@ -154,7 +154,7 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
 
     const browser = await puppeteer.launch({
         args: isLocal ? [] : chromium.args,
-        defaultViewport: chromium.defaultViewport,
+        defaultViewport: { width: 1280, height: 720 },
         executablePath,
         headless: chromium.headless,
     });
