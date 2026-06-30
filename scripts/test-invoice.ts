@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import prisma from '../src/lib/prisma';
-import { processInvoice } from '../src/lib/invoiceService';
+import { processInvoice, generateInvoicePDF } from '../src/lib/invoiceService';
 
 async function main() {
   const orderId = process.argv[2];
