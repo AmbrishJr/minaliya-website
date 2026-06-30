@@ -855,14 +855,14 @@ export default function AccountDashboard() {
                                 {copiedAwbId === order.id ? "Copied" : "Copy"}
                               </button>
                               <a
-                                href={`https://www.stcourier.com/tracking/${order.awbNumber}`}
+                                href="https://stcourier.com/track/shipment"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors"
                                 style={{ borderColor: "var(--color-stone-200)", color: "var(--color-forest-600)" }}
                               >
                                 <ExternalLink size={14} />
-                                Track
+                                Track Now
                               </a>
                             </div>
                           </div>

@@ -294,7 +294,7 @@ export async function sendShipmentEmail(order: any): Promise<boolean> {
 
     const orderId = order.id.slice(-8).toUpperCase();
     const awbNumber = order.awbNumber || "—";
-    const trackingUrl = `https://www.stcourier.com/tracking/${awbNumber}`;
+    const trackingUrl = `https://stcourier.com/track/shipment`;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.minaliya.in";
     const orderUrl = `${baseUrl}/account?tab=orders`;
 
