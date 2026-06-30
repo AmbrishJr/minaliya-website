@@ -45,9 +45,11 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Process invoice for each matched order
+        // Process invoices asynchronously — webhook returns 200 immediately
         for (const order of updatedOrders) {
-          await processInvoice(order.id);
+          processInvoice(order.id).catch((err) =>
+            console.error(`Background invoice processing failed for order ${order.id}:`, err)
+          );
         }
         break;
       }

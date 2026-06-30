@@ -27,10 +27,10 @@ async function sendEmail(
   recipientEmail: string,
   subject: string,
   content: string
-): Promise<boolean> {
+): Promise<{ success: boolean; messageId?: string }> {
   if (!EMAIL_CONFIG_OK) {
     console.error(`[Email] Cannot send to ${recipientEmail}: EMAIL_OTP_* env vars not configured`);
-    return false;
+    return { success: false };
   }
 
   try {
@@ -54,10 +54,69 @@ async function sendEmail(
     const text = await response.text();
     const success = response.ok && text.toLowerCase().startsWith("success");
     console.log(`[Email] ${success ? "Sent" : "Failed"} to ${recipientEmail}, response: ${text}`);
-    return success;
+
+    return { success, messageId: success ? text.trim() : undefined };
   } catch (error) {
     console.error(`[Email] Failed to send to ${recipientEmail}:`, error);
-    return false;
+    return { success: false };
+  }
+}
+
+async function sendEmailWithAttachment(
+  recipientEmail: string,
+  subject: string,
+  content: string,
+  filename: string,
+  fileBuffer: Buffer,
+  mimeType = "application/pdf"
+): Promise<{ success: boolean; messageId?: string }> {
+  if (!EMAIL_CONFIG_OK) {
+    console.error(`[Email] Cannot send to ${recipientEmail}: EMAIL_OTP_* env vars not configured`);
+    return { success: false };
+  }
+
+  try {
+    const boundary = `----FormBoundary${Date.now()}`;
+    const parts: Buffer[] = [];
+
+    const appendField = (name: string, value: string) => {
+      parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
+    };
+
+    appendField("method", "EMS_POST_CAMPAIGN");
+    appendField("userid", EMAIL_USERID);
+    appendField("password", EMAIL_PASSWORD);
+    appendField("v", "1.1");
+    appendField("name", EMAIL_FROM_NAME);
+    appendField("recipients", recipientEmail);
+    appendField("subject", subject);
+    appendField("content", content);
+    appendField("content_type", "text/html");
+    appendField("file", filename); // required by Webaroo for filename reference
+
+    // File attachment part
+    parts.push(Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\nContent-Transfer-Encoding: base64\r\n\r\n${fileBuffer.toString("base64")}\r\n`
+    ));
+
+    parts.push(Buffer.from(`--${boundary}--\r\n`));
+
+    const body = Buffer.concat(parts);
+
+    const response = await fetch(EMAIL_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+      body,
+    });
+
+    const text = await response.text();
+    const success = response.ok && text.toLowerCase().startsWith("success");
+    console.log(`[Email][Attachment] ${success ? "Sent" : "Failed"} to ${recipientEmail}, response: ${text}`);
+
+    return { success, messageId: success ? text.trim() : undefined };
+  } catch (error) {
+    console.error(`[Email][Attachment] Failed to send to ${recipientEmail}:`, error);
+    return { success: false };
   }
 }
 
@@ -179,10 +238,14 @@ export async function sendOtpEmail(
 </body>
 </html>`;
 
-  return sendEmail(recipientEmail, subject, content);
+  const result = await sendEmail(recipientEmail, subject, content);
+  return result.success;
 }
 
-export async function sendInvoiceEmail(order: any): Promise<boolean> {
+export async function sendInvoiceEmail(
+  order: any,
+  pdfBuffer?: Buffer | null
+): Promise<{ success: boolean; messageId?: string }> {
   try {
     const shippingAddress = order.shippingAddress as Record<string, string>;
     const recipientEmail = shippingAddress?.email;
@@ -190,7 +253,7 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
 
     if (!recipientEmail) {
       console.log(`[Email Invoice] No email address provided for order ${order.id}`);
-      return false;
+      return { success: false };
     }
 
     const orderId = order.id.slice(-8).toUpperCase();
@@ -202,6 +265,8 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
     const downloadLink = `${baseUrl}/api/orders/${order.id}/invoice`;
 
     const subject = `Your Minaliya Order Confirmation & Invoice (#${orderId})`;
+
+    const hasDownload = pdfBuffer && pdfBuffer.length > 0;
 
     const content = `<!DOCTYPE html>
 <html>
@@ -239,6 +304,10 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
                   </td>
                 </tr>
               </table>
+              ${hasDownload ? `
+              <p style="margin:0 0 16px 0;font-size:14px;color:#4b5563;line-height:1.6;">
+                Your invoice PDF is attached to this email. You can also download it anytime from your account dashboard.
+              </p>` : `
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
                   <td align="center">
@@ -249,7 +318,7 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
               <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;line-height:1.6;">
                 If the button above does not work, you can also download your invoice using this link: <br/>
                 <a href="${downloadLink}" style="color:#2d3e2f;word-break:break-all;">${downloadLink}</a>
-              </p>
+              </p>`}
               <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;line-height:1.6;">
                 <strong>Note:</strong> If you have any questions, please contact us at
                 <a href="tel:+919841422998" style="color:#2d3e2f;font-weight:600;text-decoration:none;">+91 98414 22998</a>
@@ -274,10 +343,27 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
 </body>
 </html>`;
 
-    return sendEmail(recipientEmail, subject, content);
+    // Try attachment-first approach if PDF buffer is available
+    if (hasDownload) {
+      const attachmentResult = await sendEmailWithAttachment(
+        recipientEmail,
+        subject,
+        content,
+        `invoice_${order.invoiceNumber || order.id.slice(-8)}.pdf`,
+        pdfBuffer!
+      );
+      if (attachmentResult.success) {
+        return attachmentResult;
+      }
+      console.warn(`[Email Invoice] Attachment send failed, falling back to link-only for order ${order.id}`);
+    }
+
+    // Fallback: link-only email
+    const result = await sendEmail(recipientEmail, subject, content);
+    return result;
   } catch (error) {
     console.error("[Email Invoice] Failed to send email:", error);
-    return false;
+    return { success: false };
   }
 }
 
@@ -364,7 +450,8 @@ export async function sendShipmentEmail(order: any): Promise<boolean> {
 </body>
 </html>`;
 
-    return sendEmail(recipientEmail, subject, content);
+    const result = await sendEmail(recipientEmail, subject, content);
+    return result.success;
   } catch (error) {
     console.error("[Email Shipment] Failed to send email:", error);
     return false;

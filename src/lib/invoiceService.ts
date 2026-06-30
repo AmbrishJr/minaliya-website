@@ -238,8 +238,9 @@ export async function processInvoice(orderId: string): Promise<void> {
       return;
     }
 
-    if (order.invoiceSent) {
-      console.log(`Invoice already sent for order ${orderId}, skipping`);
+    // Idempotency: skip if invoice email already sent successfully
+    if (order.invoiceEmailStatus === 'SENT') {
+      console.log(`Invoice email already sent for order ${orderId}, skipping`);
       return;
     }
 
@@ -255,10 +256,6 @@ export async function processInvoice(orderId: string): Promise<void> {
 
     // Generate PDF (may fail on serverless if Chrome unavailable — that's ok)
     const pdfResult = await generateInvoicePDF(orderId);
-    if (!pdfResult.success) {
-      console.error(`PDF generation failed for order ${orderId}, will retry later:`, pdfResult.error);
-      // Don't return — try sending email anyway; the download link will work once PDF is generated
-    }
 
     // Re-fetch the updated order
     const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
@@ -267,21 +264,79 @@ export async function processInvoice(orderId: string): Promise<void> {
       return;
     }
 
-    const emailResult = await sendInvoiceEmail(updatedOrder);
-    if (emailResult) {
+    // Read PDF file as buffer if generation succeeded
+    let pdfBuffer: Buffer | null = null;
+    if (pdfResult.success && pdfResult.url) {
+      try {
+        const pdfPath = pdfResult.url.startsWith('/')
+          ? path.join(process.cwd(), 'public', pdfResult.url)
+          : pdfResult.url;
+        pdfBuffer = await fs.readFile(pdfPath);
+      } catch (readErr) {
+        console.warn(`Could not read PDF file for order ${orderId}:`, readErr);
+      }
+    }
+
+    // Mark as PENDING before attempting send
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { invoiceEmailStatus: 'PENDING' },
+    });
+
+    // Send email with PDF attachment (falls back to link-only if no PDF)
+    const emailResult = await sendInvoiceEmail(updatedOrder, pdfBuffer);
+
+    if (emailResult.success) {
+      const updateData: Record<string, any> = {
+        invoiceEmailStatus: 'SENT',
+        invoiceEmailSentAt: new Date(),
+        invoiceSent: true,
+      };
+      if (emailResult.messageId) {
+        updateData.invoiceEmailMessageId = emailResult.messageId;
+      }
       await prisma.order.update({
         where: { id: orderId },
-        data: { invoiceSent: true },
+        data: updateData,
       });
       console.log(`Invoice email sent successfully for order ${orderId}`);
     } else {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceEmailStatus: 'FAILED' },
+      });
       console.error(`Failed to send invoice email for order ${orderId}`);
-      // Check if email env vars are configured
       if (!process.env.EMAIL_OTP_API_URL || !process.env.EMAIL_OTP_USERID || !process.env.EMAIL_OTP_PASSWORD) {
         console.error('EMAIL_OTP_* environment variables are not set in production');
       }
     }
   } catch (error) {
     console.error('Error processing invoice for order:', orderId, error);
+    // Ensure status is marked FAILED on error
+    try {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceEmailStatus: 'FAILED' },
+      });
+    } catch { /* ignore secondary error */ }
+  }
+}
+
+export async function retryFailedInvoiceEmail(orderId: string): Promise<boolean> {
+  try {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      console.error('Order not found for retry:', orderId);
+      return false;
+    }
+    if (order.invoiceEmailStatus !== 'FAILED') {
+      console.log(`Order ${orderId} status is ${order.invoiceEmailStatus}, not retrying`);
+      return false;
+    }
+    await processInvoice(orderId);
+    return true;
+  } catch (error) {
+    console.error('Error retrying invoice email for order:', orderId, error);
+    return false;
   }
 }

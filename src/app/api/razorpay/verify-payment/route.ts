@@ -36,11 +36,19 @@ export async function POST(req: NextRequest) {
           razorpayPaymentId: razorpay_payment_id,
         },
       });
-
-      await processInvoice(orderId);
     }
 
-    return NextResponse.json({ success: true });
+    // Return response immediately — invoice email is sent asynchronously
+    const response = NextResponse.json({ success: true });
+
+    if (orderId) {
+      // Fire-and-forget: Vercel keeps the function alive for the grace period
+      processInvoice(orderId).catch((err) =>
+        console.error(`Background invoice processing failed for order ${orderId}:`, err)
+      );
+    }
+
+    return response;
   } catch (error) {
     console.error("Error verifying payment:", error);
     return NextResponse.json(

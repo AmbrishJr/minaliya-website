@@ -76,6 +76,9 @@ model Order {
   invoiceUrl       String?
   invoiceGenerated Boolean   @default(false)
   invoiceSent      Boolean   @default(false)
+  invoiceEmailStatus     String?   @default("PENDING")
+  invoiceEmailSentAt     DateTime?
+  invoiceEmailMessageId  String?
   invoiceDate      DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
