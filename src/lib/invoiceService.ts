@@ -232,54 +232,73 @@ export async function generateInvoicePDF(
 
 export async function processInvoice(orderId: string): Promise<void> {
   try {
+    // 1. Initial Idempotency check: fetch order
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) {
       console.error('Order not found for invoice processing:', orderId);
       return;
     }
 
-    // Idempotency: skip if invoice email already sent
-    if (order.invoiceEmailStatus === 'SENT') {
-      console.log(`Invoice email already sent for order ${orderId}, skipping`);
+    if (order.invoiceSent) {
+      console.log(`Invoice already sent for order ${orderId}, skipping`);
       return;
     }
 
-    // 1. Generate invoice PDF — must succeed before email is sent
+    if (order.invoiceEmailStatus === 'PROCESSING') {
+      console.log(`Invoice is currently being processed for order ${orderId}, skipping duplicate call`);
+      return;
+    }
+
+    // Mark as processing to prevent race conditions from duplicate webhooks
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { invoiceEmailStatus: 'PROCESSING' },
+    });
+
+    // 2. Generate invoice number first if not already assigned
+    let invoiceNumber = order.invoiceNumber;
+    if (!invoiceNumber) {
+      invoiceNumber = await generateInvoiceNumber();
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceNumber, invoiceDate: new Date() },
+      });
+    }
+
+    // 3. Generate PDF - Wait until PDF is fully created
     const pdfResult = await generateInvoicePDF(orderId);
-    if (!pdfResult.success) {
+    
+    if (!pdfResult.success || !pdfResult.url) {
       console.error(`PDF generation failed for order ${orderId}, not sending email:`, pdfResult.error);
       await prisma.order.update({
         where: { id: orderId },
         data: { invoiceEmailStatus: 'FAILED' },
       });
-      return;
+      return; // DO NOT SEND EMAIL
     }
 
-    // 2. Verify PDF file exists on disk before sending email
-    const pdfUrl = pdfResult.url!;
+    // 4. Verify PDF file exists on disk
+    const pdfUrl = pdfResult.url;
     const pdfPath = pdfUrl.startsWith('/')
       ? path.join(process.cwd(), 'public', pdfUrl)
       : pdfUrl;
+
+    let pdfBuffer: Buffer | null = null;
     try {
       await fs.access(pdfPath);
+      pdfBuffer = await fs.readFile(pdfPath);
     } catch {
       console.error(`PDF file not found on disk for order ${orderId}, not sending email`);
       await prisma.order.update({
         where: { id: orderId },
         data: { invoiceEmailStatus: 'FAILED' },
       });
-      return;
+      return; // DO NOT SEND EMAIL
     }
 
-    // 3. Re-fetch order — now has invoiceNumber, invoiceGenerated=true, invoiceUrl
+    // 5. Re-fetch the updated order to get the latest invoice URL and status
     const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!updatedOrder) {
-      console.error('Order disappeared after PDF generation:', orderId);
-      return;
-    }
-
-    // Verify invoice is marked as generated in DB
-    if (!updatedOrder.invoiceGenerated || !updatedOrder.invoiceNumber) {
+    if (!updatedOrder || !updatedOrder.invoiceGenerated || !updatedOrder.invoiceNumber) {
       console.error(`Invoice metadata missing in DB for order ${orderId}, not sending email`);
       await prisma.order.update({
         where: { id: orderId },
@@ -288,21 +307,7 @@ export async function processInvoice(orderId: string): Promise<void> {
       return;
     }
 
-    // 4. Read PDF buffer for email attachment
-    let pdfBuffer: Buffer | null = null;
-    try {
-      pdfBuffer = await fs.readFile(pdfPath);
-    } catch (readErr) {
-      console.warn(`Could not read PDF file for order ${orderId}:`, readErr);
-    }
-
-    // 5. Mark as PENDING before attempting send
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { invoiceEmailStatus: 'PENDING' },
-    });
-
-    // 6. Send email with PDF attachment (includes download link in email body)
+    // 6. Send email with PDF attachment
     const emailResult = await sendInvoiceEmail(updatedOrder, pdfBuffer);
 
     if (emailResult.success) {
@@ -320,14 +325,11 @@ export async function processInvoice(orderId: string): Promise<void> {
       });
       console.log(`Invoice email sent successfully for order ${orderId}`);
     } else {
+      console.error(`Failed to send invoice email for order ${orderId}`);
       await prisma.order.update({
         where: { id: orderId },
         data: { invoiceEmailStatus: 'FAILED' },
       });
-      console.error(`Failed to send invoice email for order ${orderId}`);
-      if (!process.env.EMAIL_OTP_API_URL || !process.env.EMAIL_OTP_USERID || !process.env.EMAIL_OTP_PASSWORD) {
-        console.error('EMAIL_OTP_* environment variables are not set in production');
-      }
     }
   } catch (error) {
     console.error('Error processing invoice for order:', orderId, error);
