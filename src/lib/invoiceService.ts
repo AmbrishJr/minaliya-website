@@ -238,52 +238,71 @@ export async function processInvoice(orderId: string): Promise<void> {
       return;
     }
 
-    // Idempotency: skip if invoice email already sent successfully
+    // Idempotency: skip if invoice email already sent
     if (order.invoiceEmailStatus === 'SENT') {
       console.log(`Invoice email already sent for order ${orderId}, skipping`);
       return;
     }
 
-    // Generate invoice number first if not already assigned
-    let invoiceNumber = order.invoiceNumber;
-    if (!invoiceNumber) {
-      invoiceNumber = await generateInvoiceNumber();
+    // 1. Generate invoice PDF — must succeed before email is sent
+    const pdfResult = await generateInvoicePDF(orderId);
+    if (!pdfResult.success) {
+      console.error(`PDF generation failed for order ${orderId}, not sending email:`, pdfResult.error);
       await prisma.order.update({
         where: { id: orderId },
-        data: { invoiceNumber, invoiceDate: new Date() },
+        data: { invoiceEmailStatus: 'FAILED' },
       });
-    }
-
-    // Generate PDF (may fail on serverless if Chrome unavailable — that's ok)
-    const pdfResult = await generateInvoicePDF(orderId);
-
-    // Re-fetch the updated order
-    const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!updatedOrder) {
-      console.error('Order disappeared after processing:', orderId);
       return;
     }
 
-    // Read PDF file as buffer if generation succeeded
-    let pdfBuffer: Buffer | null = null;
-    if (pdfResult.success && pdfResult.url) {
-      try {
-        const pdfPath = pdfResult.url.startsWith('/')
-          ? path.join(process.cwd(), 'public', pdfResult.url)
-          : pdfResult.url;
-        pdfBuffer = await fs.readFile(pdfPath);
-      } catch (readErr) {
-        console.warn(`Could not read PDF file for order ${orderId}:`, readErr);
-      }
+    // 2. Verify PDF file exists on disk before sending email
+    const pdfUrl = pdfResult.url!;
+    const pdfPath = pdfUrl.startsWith('/')
+      ? path.join(process.cwd(), 'public', pdfUrl)
+      : pdfUrl;
+    try {
+      await fs.access(pdfPath);
+    } catch {
+      console.error(`PDF file not found on disk for order ${orderId}, not sending email`);
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceEmailStatus: 'FAILED' },
+      });
+      return;
     }
 
-    // Mark as PENDING before attempting send
+    // 3. Re-fetch order — now has invoiceNumber, invoiceGenerated=true, invoiceUrl
+    const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!updatedOrder) {
+      console.error('Order disappeared after PDF generation:', orderId);
+      return;
+    }
+
+    // Verify invoice is marked as generated in DB
+    if (!updatedOrder.invoiceGenerated || !updatedOrder.invoiceNumber) {
+      console.error(`Invoice metadata missing in DB for order ${orderId}, not sending email`);
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceEmailStatus: 'FAILED' },
+      });
+      return;
+    }
+
+    // 4. Read PDF buffer for email attachment
+    let pdfBuffer: Buffer | null = null;
+    try {
+      pdfBuffer = await fs.readFile(pdfPath);
+    } catch (readErr) {
+      console.warn(`Could not read PDF file for order ${orderId}:`, readErr);
+    }
+
+    // 5. Mark as PENDING before attempting send
     await prisma.order.update({
       where: { id: orderId },
       data: { invoiceEmailStatus: 'PENDING' },
     });
 
-    // Send email with PDF attachment (falls back to link-only if no PDF)
+    // 6. Send email with PDF attachment (includes download link in email body)
     const emailResult = await sendInvoiceEmail(updatedOrder, pdfBuffer);
 
     if (emailResult.success) {
@@ -312,7 +331,6 @@ export async function processInvoice(orderId: string): Promise<void> {
     }
   } catch (error) {
     console.error('Error processing invoice for order:', orderId, error);
-    // Ensure status is marked FAILED on error
     try {
       await prisma.order.update({
         where: { id: orderId },
