@@ -185,18 +185,31 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
 
 export async function processInvoice(orderId: string): Promise<void> {
   try {
+      const order = await prisma.order.findUnique({ where: { id: orderId }});
+      if (!order) {
+        console.error('Order not found for invoice processing:', orderId);
+        return;
+      }
+
+      if (order.invoiceSent) {
+        console.log(`Invoice already sent for order ${orderId}, skipping`);
+        return;
+      }
+
       const pdfResult = await generateInvoicePDF(orderId);
       if (pdfResult.success) {
-          const order = await prisma.order.findUnique({ where: { id: orderId }});
-          if (order) {
-            const emailResult = await sendInvoiceEmail(order);
-            if (emailResult) {
-                await prisma.order.update({
-                    where: { id: orderId },
-                    data: { invoiceSent: true }
-                });
-            }
+          const emailResult = await sendInvoiceEmail(order);
+          if (emailResult) {
+              await prisma.order.update({
+                  where: { id: orderId },
+                  data: { invoiceSent: true }
+              });
+              console.log(`Invoice sent successfully for order ${orderId}`);
+          } else {
+              console.error(`Failed to send invoice email for order ${orderId}`);
           }
+      } else {
+          console.error(`Failed to generate invoice PDF for order ${orderId}:`, pdfResult.error);
       }
   } catch (error) {
       console.error('Error processing invoice for order:', orderId, error);
