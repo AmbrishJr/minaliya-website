@@ -119,6 +119,13 @@ export default function Navbar() {
               />
             </Link>
 
+            {/* Mobile: centered user name */}
+            {isAuthenticated && user?.name && (
+              <span className="lg:hidden flex-1 text-center text-xs font-semibold text-white/90 truncate px-2">
+                {user.name.split(' ')[0]}
+              </span>
+            )}
+
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
@@ -191,11 +198,6 @@ export default function Navbar() {
                   {totalItems}
                 </span>
               </button>
-              {isAuthenticated && user?.name && (
-                <span className="lg:hidden text-[10px] sm:text-xs font-semibold text-white/90 max-w-[50px] sm:max-w-[60px] truncate">
-                  {user.name.split(' ')[0]}
-                </span>
-              )}
               <button
                 onClick={() => setMobileOpen(true)}
                 className="lg:hidden p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 ml-0 sm:ml-1 text-white/90 hover:text-white"
