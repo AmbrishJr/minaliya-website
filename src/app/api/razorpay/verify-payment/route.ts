@@ -37,11 +37,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Fire invoice processing in background — on Vercel Pro this completes
-      // within the 60s limit. The webhook is the fallback if it times out.
-      processInvoice(orderId).catch(err =>
-        console.error("Invoice processing failed for order", orderId, err)
-      );
+      await processInvoice(orderId);
     }
 
     return NextResponse.json({ success: true });

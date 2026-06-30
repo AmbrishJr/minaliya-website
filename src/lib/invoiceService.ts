@@ -243,16 +243,27 @@ export async function processInvoice(orderId: string): Promise<void> {
       return;
     }
 
-    const pdfResult = await generateInvoicePDF(orderId);
-    if (!pdfResult.success) {
-      console.error(`Failed to generate invoice PDF for order ${orderId}:`, pdfResult.error);
-      return;
+    // Generate invoice number first if not already assigned
+    let invoiceNumber = order.invoiceNumber;
+    if (!invoiceNumber) {
+      invoiceNumber = await generateInvoiceNumber();
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceNumber, invoiceDate: new Date() },
+      });
     }
 
-    // Re-fetch the updated order (with invoiceNumber/invoiceUrl set)
+    // Generate PDF (may fail on serverless if Chrome unavailable — that's ok)
+    const pdfResult = await generateInvoicePDF(orderId);
+    if (!pdfResult.success) {
+      console.error(`PDF generation failed for order ${orderId}, will retry later:`, pdfResult.error);
+      // Don't return — try sending email anyway; the download link will work once PDF is generated
+    }
+
+    // Re-fetch the updated order
     const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
     if (!updatedOrder) {
-      console.error('Order disappeared after PDF generation:', orderId);
+      console.error('Order disappeared after processing:', orderId);
       return;
     }
 
@@ -262,9 +273,13 @@ export async function processInvoice(orderId: string): Promise<void> {
         where: { id: orderId },
         data: { invoiceSent: true },
       });
-      console.log(`Invoice sent successfully for order ${orderId}`);
+      console.log(`Invoice email sent successfully for order ${orderId}`);
     } else {
       console.error(`Failed to send invoice email for order ${orderId}`);
+      // Check if email env vars are configured
+      if (!process.env.EMAIL_OTP_API_URL || !process.env.EMAIL_OTP_USERID || !process.env.EMAIL_OTP_PASSWORD) {
+        console.error('EMAIL_OTP_* environment variables are not set in production');
+      }
     }
   } catch (error) {
     console.error('Error processing invoice for order:', orderId, error);

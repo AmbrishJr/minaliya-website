@@ -45,12 +45,9 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Process invoice for each matched order — processInvoice guards
-        // against duplicate sends via the invoiceSent check.
+        // Process invoice for each matched order
         for (const order of updatedOrders) {
-          processInvoice(order.id).catch(err =>
-            console.error("Invoice processing failed for order", order.id, err)
-          );
+          await processInvoice(order.id);
         }
         break;
       }
