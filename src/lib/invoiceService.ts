@@ -6,6 +6,20 @@ import prisma from './prisma';
 import { generateInvoiceHTML, InvoiceData, InvoiceItem } from './invoiceTemplate';
 import { sendInvoiceEmail } from './email';
 
+const PRODUCT_HSN: Record<string, string> = {
+  'groundnut oil': '15089091',
+  'sesame oil': '15155091',
+  'coconut oil': '15131100',
+};
+
+function getHsnCode(productName: string): string {
+  const key = productName.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+  for (const [name, hsn] of Object.entries(PRODUCT_HSN)) {
+    if (key.includes(name)) return hsn;
+  }
+  return '';
+}
+
 // Make sure to define these environment variables or use fallback values
 const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Minaliya Goods And Services, Chennai, Tamil Nadu, India';
 const COMPANY_PHONE = process.env.COMPANY_PHONE || '+91 98414 22998';
@@ -88,10 +102,12 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
 
     const shippingAddress = order.shippingAddress as Record<string, string>;
     const items: InvoiceItem[] = order.items.map((item, index) => {
+        const hsn = getHsnCode(item.product.name);
         return {
             sno: index + 1,
             productName: item.product.name,
             productImage: item.product.images[0] || "",
+            hsnSac: hsn || undefined,
             quantity: item.quantity,
             unit: "NOS",
             pricePerUnit: Number(item.price),
