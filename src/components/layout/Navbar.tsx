@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
-import { useOrders } from "@/context/OrderContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -18,7 +17,7 @@ import {
   Heart,
   ChevronRight,
   Phone,
-  RefreshCw,
+
 } from "lucide-react";
 
 const navLinks = [
@@ -37,27 +36,11 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { totalItems, openCart, addItem } = useCart();
+  const { totalItems, openCart } = useCart();
   const { totalItems: wishlistTotal } = useWishlist();
   const { user, isAuthenticated, isAuthReady, openLoginModal } = useAuth();
-  const { orders } = useOrders();
   const showLoginPrompt = isAuthReady && !isAuthenticated;
-  const showReorder = isAuthenticated && orders.length > 0;
   const router = useRouter();
-
-  /** Quickly re-order the most recent order */
-  const handleQuickReorder = () => {
-    if (orders.length === 0) return;
-    const latestOrder = orders[0];
-    for (const item of latestOrder.items) {
-      const catalogProduct = allProducts.find((p) => p.slug === item.slug);
-      const price = catalogProduct ? catalogProduct.price : item.price;
-      const image = catalogProduct ? catalogProduct.image : item.image;
-      const name = catalogProduct ? catalogProduct.name : item.name;
-      const size = item.size || (catalogProduct?.sizes?.[0] ?? "1 Ltr");
-      addItem({ slug: item.slug, name, image, price, size }, item.quantity);
-    }
-  };
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -152,6 +135,25 @@ export default function Navbar() {
             {/* Actions */}
             <div className="flex items-center gap-3 sm:gap-2">
               <button
+                onClick={handleProfileClick}
+                className="flex items-center gap-2 p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
+                aria-label={isAuthenticated ? "Account" : "Login now"}
+              >
+                <User size={18} />
+                {isAuthenticated && user?.name ? (
+                  <span className="hidden sm:inline text-xs font-semibold max-w-[80px] truncate">
+                    {user.name}
+                  </span>
+                ) : showLoginPrompt && (
+                  <span
+                    className="hidden sm:inline px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide rounded-full shadow-sm animate-pulse"
+                    style={{ background: "#FEF3C7", color: "#92400E" }}
+                  >
+                    Login now!
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => {
                   setSearchOpen(!searchOpen);
                   if (!searchOpen) setSearchQuery("");
@@ -176,41 +178,6 @@ export default function Navbar() {
                   </span>
                 )}
               </Link>
-              <button
-                onClick={handleProfileClick}
-                className="hidden sm:flex items-center gap-2 p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
-                aria-label={isAuthenticated ? "Account" : "Login now"}
-              >
-                <User size={20} />
-                {isAuthenticated && user?.name ? (
-                  <span className="text-xs font-semibold max-w-[80px] truncate">
-                    {user.name}
-                  </span>
-                ) : showLoginPrompt && (
-                  <span
-                    className="px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide rounded-full shadow-sm animate-pulse"
-                    style={{ background: "#FEF3C7", color: "#92400E" }}
-                  >
-                    Login now!
-                  </span>
-                )}
-              </button>
-              {showReorder && (
-                <button
-                  onClick={handleQuickReorder}
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                  style={{
-                    background: "rgba(255,255,255,0.15)",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.25)",
-                    backdropFilter: "blur(6px)",
-                  }}
-                  aria-label="Re-Order last order"
-                  title="Re-order your last order"
-                >
-                  <RefreshCw size={13} /> Re-Order
-                </button>
-              )}
               <button
                 onClick={openCart}
                 className="relative p-2 sm:p-2.5 rounded-full transition-colors hover:bg-white/10 text-white/90 hover:text-white"
@@ -424,18 +391,6 @@ export default function Navbar() {
                   </span>
                 )}
               </button>
-              {showReorder && (
-                <button
-                  onClick={() => {
-                    setMobileOpen(false);
-                    handleQuickReorder();
-                  }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg hover:bg-stone-100 text-sm font-medium"
-                  style={{ color: "var(--color-forest-700)" }}
-                >
-                  <RefreshCw size={18} /> Re-Order Last
-                </button>
-              )}
               <Link
                 href="/wishlist"
                 className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-stone-100 text-sm font-medium"
