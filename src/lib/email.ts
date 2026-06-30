@@ -244,7 +244,7 @@ export async function sendOtpEmail(
 
 export async function sendInvoiceEmail(
   order: any,
-  pdfBuffer?: Buffer | null
+  orderItems?: any[],
 ): Promise<{ success: boolean; messageId?: string }> {
   try {
     const shippingAddress = order.shippingAddress as Record<string, string>;
@@ -256,109 +256,76 @@ export async function sendInvoiceEmail(
       return { success: false };
     }
 
-    const orderId = order.id.slice(-8).toUpperCase();
+    const orderIdShort = order.id.slice(-8).toUpperCase();
     const invoiceNumber = order.invoiceNumber || "Pending";
-    const amount = Number(order.totalAmount).toLocaleString("en-IN", { style: "currency", currency: "INR" });
-    const paymentMethod = order.paymentMethod;
+
+    const subject = `Your Minaliya Order Confirmation & Invoice (#${orderIdShort})`;
+
+    // Build items for the email template
+    const items = (orderItems || []).map((item: any) => ({
+      productName: item.product?.name || item.productName || 'Product',
+      productImage: item.product?.images?.[0] || item.productImage || '',
+      quantity: item.quantity,
+      unit: 'NOS',
+      pricePerUnit: Number(item.price),
+      hsnSac: item.hsnSac || '',
+      discount: 0,
+      gstPercent: 5,
+      totalPrice: Number(item.price) * item.quantity,
+    }));
+
+    const subtotal = Number(order.totalAmount);
+    const gstRate = 5;
+    const gstTotal = items.reduce((sum: number, item: any) => {
+      return sum + Math.round((item.totalPrice * gstRate) / 100 * 100) / 100;
+    }, 0);
+    const cgst = gstTotal / 2;
+    const sgst = gstTotal / 2;
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.minaliya.in";
-    const downloadLink = `${baseUrl}/api/orders/${order.id}/invoice`;
+    const logoUrl = `${baseUrl}/logo.png`;
 
-    const subject = `Your Minaliya Order Confirmation & Invoice (#${orderId})`;
+    // Import the email template generator
+    const { generateInvoiceEmailHTML } = await import('./invoiceEmailTemplate');
 
-    const hasDownload = pdfBuffer && pdfBuffer.length > 0;
+    const content = generateInvoiceEmailHTML({
+      companyName: 'Minaliya Goods And Services',
+      companyAddress: process.env.COMPANY_ADDRESS || 'Old No 87, New No 78, Shop No 3, Kodambakkam Road,<br>Mettupalayam, West Mambalam, Chennai – 600033,<br>Tamil Nadu, India',
+      companyPhone: process.env.COMPANY_PHONE || '+91 98414 22998',
+      companyEmail: process.env.ADMIN_EMAIL || 'mailme@minaliya.in',
+      companyGst: process.env.COMPANY_GST || '33APKPD8864Q3Z3',
+      companyFssai: process.env.COMPANY_FSSAI || '12423002001621',
+      logoUrl,
+      orderId: order.id,
+      orderIdShort,
+      invoiceNumber,
+      orderDate: (order.invoiceDate || order.createdAt)
+        ? new Date(order.invoiceDate || order.createdAt).toLocaleDateString('en-IN', {
+            day: '2-digit', month: 'short', year: 'numeric',
+          })
+        : new Date().toLocaleDateString('en-IN'),
+      razorpayPaymentId: order.razorpayPaymentId || '',
+      paymentMethod: order.paymentMethod || 'Online',
+      paymentStatus: order.paymentStatus === 'PAID' ? 'Paid' : 'Pending',
+      customerName,
+      customerEmail: shippingAddress?.email || '',
+      customerPhone: shippingAddress?.phone || '',
+      billingAddress: shippingAddress?.address || '',
+      shippingAddress: shippingAddress?.address || '',
+      customerState: shippingAddress?.state || '',
+      customerPincode: shippingAddress?.pinCode || '',
+      items,
+      subtotal,
+      couponDiscount: 0,
+      shippingCharges: 0,
+      cgst,
+      sgst,
+      igst: 0,
+      grandTotal: subtotal,
+      ordersPageUrl: `${baseUrl}/account?tab=orders`,
+    });
 
-    const content = `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background-color:#f4f3ef;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f3ef;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">
-          <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <table cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="background:#2d3e2f;border-radius:8px;padding:10px 28px;">
-                    <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">MINALIYA</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#ffffff;border-radius:16px;padding:40px 36px 32px;text-align:left;">
-              <p style="margin:0 0 6px 0;font-size:14px;color:#6b7280;">Dear ${customerName},</p>
-              <p style="margin:0 0 20px 0;font-size:18px;font-weight:600;color:#2d3e2f;">Thank you for shopping with Minaliya.</p>
-              <p style="margin:0 0 16px 0;font-size:14px;color:#4b5563;line-height:1.6;">
-                Your order has been successfully placed. Please find your order details and invoice below.
-              </p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;border-radius:12px;padding:24px;margin-bottom:24px;">
-                <tr>
-                  <td>
-                    <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;">Order Number: <strong style="color:#2d3e2f;">${orderId}</strong></p>
-                    <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;">Invoice Number: <strong style="color:#2d3e2f;">${invoiceNumber}</strong></p>
-                    <p style="margin:0 0 8px 0;font-size:13px;color:#6b7280;">Order Total: <strong style="color:#2d3e2f;">${amount}</strong></p>
-                    <p style="margin:0;font-size:13px;color:#6b7280;">Payment Method: <strong style="color:#2d3e2f;">${paymentMethod}</strong></p>
-                  </td>
-                </tr>
-              </table>
-              ${hasDownload ? `
-              <p style="margin:0 0 16px 0;font-size:14px;color:#4b5563;line-height:1.6;">
-                Your invoice PDF is attached to this email. You can also download it anytime from your account dashboard.
-              </p>` : `
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-                <tr>
-                  <td align="center">
-                    <a href="${downloadLink}" style="display:inline-block;background-color:#2d3e2f;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px;letter-spacing:0.5px;">Download Invoice PDF</a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;line-height:1.6;">
-                If the button above does not work, you can also download your invoice using this link: <br/>
-                <a href="${downloadLink}" style="color:#2d3e2f;word-break:break-all;">${downloadLink}</a>
-              </p>`}
-              <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;line-height:1.6;">
-                <strong>Note:</strong> If you have any questions, please contact us at
-                <a href="tel:+919841422998" style="color:#2d3e2f;font-weight:600;text-decoration:none;">+91 98414 22998</a>
-                or write to us at
-                <a href="mailto:mailme@minaliya.in" style="color:#2d3e2f;font-weight:600;text-decoration:none;">mailme@minaliya.in</a>.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#ffffff;border-radius:0 0 16px 16px;padding:0 36px 32px;margin-top:-1px;">
-              <div style="border-top:1px solid #e5e4e0;padding-top:20px;">
-                <p style="margin:0 0 4px 0;font-size:14px;color:#2d3e2f;font-weight:600;">Regards,</p>
-                <p style="margin:0 0 2px 0;font-size:14px;color:#4b5563;font-weight:600;">Team Minaliya</p>
-                <p style="margin:0 0 2px 0;font-size:12px;color:#6b7280;">Minaliya Goods And Services</p>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-    // Try attachment-first approach if PDF buffer is available
-    if (hasDownload) {
-      const attachmentResult = await sendEmailWithAttachment(
-        recipientEmail,
-        subject,
-        content,
-        `invoice_${order.invoiceNumber || order.id.slice(-8)}.pdf`,
-        pdfBuffer!
-      );
-      if (attachmentResult.success) {
-        return attachmentResult;
-      }
-      console.warn(`[Email Invoice] Attachment send failed, falling back to link-only for order ${order.id}`);
-    }
-
-    // Fallback: link-only email
+    // Send as plain HTML email (no PDF attachment)
     const result = await sendEmail(recipientEmail, subject, content);
     return result;
   } catch (error) {
@@ -366,6 +333,7 @@ export async function sendInvoiceEmail(
     return { success: false };
   }
 }
+
 
 export async function sendShipmentEmail(order: any): Promise<boolean> {
   try {

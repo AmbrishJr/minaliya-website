@@ -29,19 +29,18 @@ export async function resendInvoiceEmailAction(orderId: string) {
     try {
       const order = await prisma.order.findUnique({
         where: { id: orderId },
+        include: {
+          items: { include: { product: true } },
+        },
       });
   
       if (!order) {
         return { success: false, error: "Order not found" };
       }
   
-      if (!order.invoiceGenerated) {
-        return { success: false, error: "Invoice not generated yet" };
-      }
-  
-      const emailResult = await sendInvoiceEmail(order);
+      const emailResult = await sendInvoiceEmail(order, order.items);
       
-      if (emailResult) {
+      if (emailResult?.success) {
         await prisma.order.update({
           where: { id: orderId },
           data: { invoiceSent: true }

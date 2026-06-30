@@ -232,8 +232,13 @@ export async function generateInvoicePDF(
 
 export async function processInvoice(orderId: string): Promise<void> {
   try {
-    // 1. Initial Idempotency check: fetch order
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    // 1. Initial Idempotency check: fetch order with items
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { include: { product: true } },
+      },
+    });
     if (!order) {
       console.error('Order not found for invoice processing:', orderId);
       return;
@@ -265,50 +270,26 @@ export async function processInvoice(orderId: string): Promise<void> {
       });
     }
 
-    // 3. Generate PDF - Wait until PDF is fully created
-    const pdfResult = await generateInvoicePDF(orderId);
-    
-    if (!pdfResult.success || !pdfResult.url) {
-      console.error(`PDF generation failed for order ${orderId}, not sending email:`, pdfResult.error);
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { invoiceEmailStatus: 'FAILED' },
-      });
-      return; // DO NOT SEND EMAIL
-    }
+    // 3. Generate PDF in background (for later download from Orders page)
+    //    This does NOT block the email — email is self-contained HTML
+    generateInvoicePDF(orderId).catch((err) =>
+      console.error(`Background PDF generation failed for order ${orderId}:`, err)
+    );
 
-    // 4. Verify PDF file exists on disk
-    const pdfUrl = pdfResult.url;
-    const pdfPath = pdfUrl.startsWith('/')
-      ? path.join(process.cwd(), 'public', pdfUrl)
-      : pdfUrl;
-
-    let pdfBuffer: Buffer | null = null;
-    try {
-      await fs.access(pdfPath);
-      pdfBuffer = await fs.readFile(pdfPath);
-    } catch {
-      console.error(`PDF file not found on disk for order ${orderId}, not sending email`);
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { invoiceEmailStatus: 'FAILED' },
-      });
-      return; // DO NOT SEND EMAIL
-    }
-
-    // 5. Re-fetch the updated order to get the latest invoice URL and status
-    const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!updatedOrder || !updatedOrder.invoiceGenerated || !updatedOrder.invoiceNumber) {
-      console.error(`Invoice metadata missing in DB for order ${orderId}, not sending email`);
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { invoiceEmailStatus: 'FAILED' },
-      });
+    // 4. Re-fetch the updated order (now with invoiceNumber set)
+    const updatedOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { include: { product: true } },
+      },
+    });
+    if (!updatedOrder) {
+      console.error('Order disappeared after processing:', orderId);
       return;
     }
 
-    // 6. Send email with PDF attachment
-    const emailResult = await sendInvoiceEmail(updatedOrder, pdfBuffer);
+    // 5. Send responsive HTML invoice email (no PDF attachment needed)
+    const emailResult = await sendInvoiceEmail(updatedOrder, updatedOrder.items);
 
     if (emailResult.success) {
       const updateData: Record<string, any> = {
