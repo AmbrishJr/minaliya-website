@@ -3,6 +3,15 @@ const EMAIL_USERID = process.env.EMAIL_OTP_USERID || "";
 const EMAIL_PASSWORD = process.env.EMAIL_OTP_PASSWORD || "";
 const EMAIL_FROM_NAME = process.env.EMAIL_OTP_FROM_NAME || "Minaliya";
 
+const EMAIL_CONFIG_OK = !!(EMAIL_API_URL && EMAIL_USERID && EMAIL_PASSWORD);
+
+if (!EMAIL_CONFIG_OK) {
+  console.warn(
+    "[Email] MISSING EMAIL_OTP_* environment variables — emails will not be sent. " +
+    "Set EMAIL_OTP_API_URL, EMAIL_OTP_USERID, EMAIL_OTP_PASSWORD in your .env"
+  );
+}
+
 function formatExpiryTime(): string {
   const now = new Date();
   const expiry = new Date(now.getTime() + 5 * 60 * 1000);
@@ -14,18 +23,54 @@ function formatExpiryTime(): string {
   });
 }
 
+async function sendEmail(
+  recipientEmail: string,
+  subject: string,
+  content: string
+): Promise<boolean> {
+  if (!EMAIL_CONFIG_OK) {
+    console.error(`[Email] Cannot send to ${recipientEmail}: EMAIL_OTP_* env vars not configured`);
+    return false;
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append("method", "EMS_POST_CAMPAIGN");
+    params.append("userid", EMAIL_USERID);
+    params.append("password", EMAIL_PASSWORD);
+    params.append("v", "1.1");
+    params.append("name", EMAIL_FROM_NAME);
+    params.append("recipients", recipientEmail);
+    params.append("subject", subject);
+    params.append("content", content);
+    params.append("content_type", "text/html");
+
+    const response = await fetch(EMAIL_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+
+    const text = await response.text();
+    const success = response.ok && text.toLowerCase().startsWith("success");
+    console.log(`[Email] ${success ? "Sent" : "Failed"} to ${recipientEmail}, response: ${text}`);
+    return success;
+  } catch (error) {
+    console.error(`[Email] Failed to send to ${recipientEmail}:`, error);
+    return false;
+  }
+}
+
 export async function sendOtpEmail(
   recipientEmail: string,
   otp: string,
   customerName?: string
 ): Promise<boolean> {
-  try {
-    const name = customerName?.trim() || "Customer";
-    const validityDuration = "5";
-    const expiryTime = formatExpiryTime();
+  const name = customerName?.trim() || "Customer";
+  const expiryTime = formatExpiryTime();
 
-    const subject = "Your Minaliya Login OTP";
-    const content = `<!DOCTYPE html>
+  const subject = "Your Minaliya Login OTP";
+  const content = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background-color:#f4f3ef;font-family:'Segoe UI',Arial,sans-serif;">
@@ -33,7 +78,6 @@ export async function sendOtpEmail(
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">
-          <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:24px;">
               <table cellpadding="0" cellspacing="0">
@@ -45,18 +89,13 @@ export async function sendOtpEmail(
               </table>
             </td>
           </tr>
-          <!-- Card -->
           <tr>
             <td style="background:#ffffff;border-radius:16px;padding:40px 36px 32px;text-align:left;">
-              <!-- Greeting -->
               <p style="margin:0 0 6px 0;font-size:14px;color:#6b7280;">Dear Customer,</p>
               <p style="margin:0 0 20px 0;font-size:18px;font-weight:600;color:#2d3e2f;">${name},</p>
-
               <p style="margin:0 0 16px 0;font-size:14px;color:#4b5563;line-height:1.6;">
                 This email is in reference to your request on <strong>Minaliya</strong>.
               </p>
-
-              <!-- OTP Box -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;border-radius:12px;padding:24px;margin-bottom:20px;">
                 <tr>
                   <td align="center">
@@ -65,16 +104,10 @@ export async function sendOtpEmail(
                   </td>
                 </tr>
               </table>
-
-              <p style="margin:0 0 16px 0;font-size:13px;color:#6b7280;line-height:1.6;">
-                The same has also been sent to your registered WhatsApp number.
-              </p>
-
+              <p style="margin:0 0 16px 0;font-size:13px;color:#6b7280;line-height:1.6;">The same has also been sent to your registered WhatsApp number.</p>
               <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;line-height:1.6;">
-                This OTP is valid for <strong style="color:#2d3e2f;">${validityDuration} minutes</strong> until <strong style="color:#2d3e2f;">${expiryTime}</strong>. Upon expiry, kindly regenerate the OTP.
+                This OTP is valid for <strong style="color:#2d3e2f;">5 minutes</strong> until <strong style="color:#2d3e2f;">${expiryTime}</strong>. Upon expiry, kindly regenerate the OTP.
               </p>
-
-              <!-- Security Notice -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef8e7;border-left:4px solid #eab308;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
                 <tr>
                   <td>
@@ -84,20 +117,15 @@ export async function sendOtpEmail(
                   </td>
                 </tr>
               </table>
-
               <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;line-height:1.6;">
                 <strong>Note:</strong> If you have not initiated this request, please contact us immediately at
                 <a href="tel:+919841422998" style="color:#2d3e2f;font-weight:600;text-decoration:none;">+91 98414 22998</a>
                 or write to us at
                 <a href="mailto:mailme@minaliya.in" style="color:#2d3e2f;font-weight:600;text-decoration:none;">mailme@minaliya.in</a>.
               </p>
-
-              <p style="margin:20px 0 0 0;font-size:12px;color:#9ca3af;font-style:italic;">
-                This is a system-generated email. Please do not reply to this message.
-              </p>
+              <p style="margin:20px 0 0 0;font-size:12px;color:#9ca3af;font-style:italic;">This is a system-generated email. Please do not reply to this message.</p>
             </td>
           </tr>
-          <!-- Regards -->
           <tr>
             <td style="background:#ffffff;border-radius:0 0 16px 16px;padding:0 36px 32px;margin-top:-1px;">
               <div style="border-top:1px solid #e5e4e0;padding-top:20px;">
@@ -120,7 +148,6 @@ export async function sendOtpEmail(
               </div>
             </td>
           </tr>
-          <!-- Disclaimer -->
           <tr>
             <td style="padding-top:20px;">
               <div style="border-top:1px solid #d6d5d0;padding-top:16px;">
@@ -140,7 +167,6 @@ export async function sendOtpEmail(
               </div>
             </td>
           </tr>
-          <!-- Footer -->
           <tr>
             <td align="center" style="padding-top:20px;">
               <p style="margin:0;font-size:11px;color:#b0afa8;">&copy; 2026 Minaliya Goods And Services. All rights reserved.</p>
@@ -153,38 +179,7 @@ export async function sendOtpEmail(
 </body>
 </html>`;
 
-    const params = new URLSearchParams();
-    params.append("method", "EMS_POST_CAMPAIGN");
-    params.append("userid", EMAIL_USERID);
-    params.append("password", EMAIL_PASSWORD);
-    params.append("v", "1.1");
-    params.append("name", EMAIL_FROM_NAME);
-    params.append("recipients", recipientEmail);
-    params.append("subject", subject);
-    params.append("content", content);
-    params.append("content_type", "text/html");
-
-    if (!EMAIL_API_URL || !EMAIL_USERID || !EMAIL_PASSWORD) {
-      console.error("[Email OTP] Missing EMAIL_OTP_* environment variables");
-      return false;
-    }
-
-    const response = await fetch(EMAIL_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-
-    const text = await response.text();
-    const success = response.ok && text.toLowerCase().startsWith("success");
-    console.log(`[Email OTP] ${success ? "Sent" : "Failed"} to ${recipientEmail}, response: ${text}`);
-    return success;
-  } catch (error) {
-    console.error("[Email OTP] Failed to send email:", error);
-    return false;
-  }
+  return sendEmail(recipientEmail, subject, content);
 }
 
 export async function sendInvoiceEmail(order: any): Promise<boolean> {
@@ -192,7 +187,7 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
     const shippingAddress = order.shippingAddress as Record<string, string>;
     const recipientEmail = shippingAddress?.email;
     const customerName = shippingAddress?.name || "Customer";
-    
+
     if (!recipientEmail) {
       console.log(`[Email Invoice] No email address provided for order ${order.id}`);
       return false;
@@ -202,12 +197,12 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
     const invoiceNumber = order.invoiceNumber || "Pending";
     const amount = Number(order.totalAmount).toLocaleString("en-IN", { style: "currency", currency: "INR" });
     const paymentMethod = order.paymentMethod;
-    
+
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.minaliya.in";
     const downloadLink = `${baseUrl}/api/orders/${order.id}/invoice`;
 
     const subject = `Your Minaliya Order Confirmation & Invoice (#${orderId})`;
-    
+
     const content = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -216,7 +211,6 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
     <tr>
       <td align="center">
         <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">
-          <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:24px;">
               <table cellpadding="0" cellspacing="0">
@@ -228,7 +222,6 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
               </table>
             </td>
           </tr>
-          <!-- Card -->
           <tr>
             <td style="background:#ffffff;border-radius:16px;padding:40px 36px 32px;text-align:left;">
               <p style="margin:0 0 6px 0;font-size:14px;color:#6b7280;">Dear ${customerName},</p>
@@ -236,8 +229,6 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
               <p style="margin:0 0 16px 0;font-size:14px;color:#4b5563;line-height:1.6;">
                 Your order has been successfully placed. Please find your order details and invoice below.
               </p>
-              
-              <!-- Order Details Box -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;border-radius:12px;padding:24px;margin-bottom:24px;">
                 <tr>
                   <td>
@@ -248,8 +239,6 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
                   </td>
                 </tr>
               </table>
-
-              <!-- Download Button -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
                   <td align="center">
@@ -257,12 +246,10 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
                   </td>
                 </tr>
               </table>
-
               <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;line-height:1.6;">
                 If the button above does not work, you can also download your invoice using this link: <br/>
                 <a href="${downloadLink}" style="color:#2d3e2f;word-break:break-all;">${downloadLink}</a>
               </p>
-              
               <p style="margin:0 0 4px 0;font-size:13px;color:#6b7280;line-height:1.6;">
                 <strong>Note:</strong> If you have any questions, please contact us at
                 <a href="tel:+919841422998" style="color:#2d3e2f;font-weight:600;text-decoration:none;">+91 98414 22998</a>
@@ -271,7 +258,6 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
               </p>
             </td>
           </tr>
-          <!-- Regards -->
           <tr>
             <td style="background:#ffffff;border-radius:0 0 16px 16px;padding:0 36px 32px;margin-top:-1px;">
               <div style="border-top:1px solid #e5e4e0;padding-top:20px;">
@@ -288,37 +274,9 @@ export async function sendInvoiceEmail(order: any): Promise<boolean> {
 </body>
 </html>`;
 
-    const params = new URLSearchParams();
-    params.append("method", "EMS_POST_CAMPAIGN");
-    params.append("userid", EMAIL_USERID);
-    params.append("password", EMAIL_PASSWORD);
-    params.append("v", "1.1");
-    params.append("name", EMAIL_FROM_NAME);
-    params.append("recipients", recipientEmail);
-    params.append("subject", subject);
-    params.append("content", content);
-    params.append("content_type", "text/html");
-
-    if (!EMAIL_API_URL || !EMAIL_USERID || !EMAIL_PASSWORD) {
-      console.error("[Email Invoice] Missing EMAIL_OTP_* environment variables");
-      return false;
-    }
-
-    const response = await fetch(EMAIL_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-
-    const text = await response.text();
-    const success = response.ok && text.toLowerCase().startsWith("success");
-    console.log(`[Email Invoice] ${success ? "Sent" : "Failed"} to ${recipientEmail}, response: ${text}`);
-    return success;
+    return sendEmail(recipientEmail, subject, content);
   } catch (error) {
     console.error("[Email Invoice] Failed to send email:", error);
     return false;
   }
 }
-

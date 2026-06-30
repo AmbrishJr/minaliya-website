@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { getRazorpay } from "@/lib/razorpay";
 
 export async function POST(req: NextRequest) {
   try {
-    const { amount, currency } = await req.json();
+    const { amount, currency, orderId } = await req.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -15,9 +16,18 @@ export async function POST(req: NextRequest) {
       receipt: `receipt_${Date.now()}`,
     };
 
-    const order = await getRazorpay().orders.create(options);
+    const razorpayOrder = await getRazorpay().orders.create(options);
 
-    return NextResponse.json(order);
+    // Save the Razorpay order ID on the DB order immediately so the webhook
+    // can find it even if the frontend's verify-payment call is delayed.
+    if (orderId) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { razorpayOrderId: razorpayOrder.id },
+      }).catch(err => console.error("Failed to link razorpayOrderId to order:", err));
+    }
+
+    return NextResponse.json(razorpayOrder);
   } catch (error) {
     console.error("Error creating Razorpay order:", error);
     return NextResponse.json(

@@ -281,7 +281,7 @@ export default function CheckoutClient() {
       const res = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: finalTotal, currency: "INR" }),
+        body: JSON.stringify({ amount: finalTotal, currency: "INR", orderId: dbOrderId }),
       });
 
       if (!res.ok) {

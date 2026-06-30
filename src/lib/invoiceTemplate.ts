@@ -106,250 +106,252 @@ export function generateInvoiceHTML(data: InvoiceData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Invoice ${data.invoiceNumber}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: #1c1917;
+      color: #000000;
       background: #ffffff;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+      font-size: 11px;
     }
 
     @page {
       size: A4;
-      margin: 12mm 14mm;
-    }
-
-    @media print {
-      body { background: #ffffff; }
-      .invoice-container { box-shadow: none; margin: 0; border-radius: 0; }
+      margin: 10mm;
     }
 
     .invoice-container {
-      max-width: 794px;
+      max-width: 100%;
       margin: 0 auto;
       background: #ffffff;
       padding: 0;
     }
+
+    .header-table { width: 100%; margin-bottom: 20px; }
+    .company-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .company-details { line-height: 1.4; color: #333; }
+    
+    .invoice-title {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .meta-table { width: 100%; margin-bottom: 20px; }
+    .meta-table td { vertical-align: top; }
+    .meta-right { text-align: right; line-height: 1.5; font-size: 10px; }
+    .meta-right strong { font-weight: 600; }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 10px;
+    }
+    .items-table th {
+      background-color: #a78bfa; /* Light purple matching the image */
+      color: #ffffff;
+      padding: 8px 6px;
+      font-weight: 600;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    .items-table td {
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    .items-table .text-left { text-align: left; }
+    .items-table .text-right { text-align: right; }
+    
+    .totals-row td {
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      font-weight: 700;
+      padding: 8px 6px;
+    }
+
+    .summary-section { width: 100%; margin-top: 20px; }
+    .summary-left { width: 60%; vertical-align: top; padding-right: 20px; }
+    .summary-right { width: 40%; vertical-align: top; }
+
+    .summary-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .summary-table td { padding: 4px 0; }
+    .summary-table .amount { text-align: right; font-weight: 600; }
+    
+    .words-box { margin-bottom: 15px; }
+    .words-title { font-weight: 700; margin-bottom: 4px; }
+    
+    .footer-section { width: 100%; margin-top: 40px; }
+    .signatory { text-align: right; }
+    .signatory-title { font-weight: 700; margin-bottom: 40px; }
+    
+    .computer-gen { font-size: 9px; color: #666; margin-top: 40px; }
   </style>
 </head>
 <body>
   <div class="invoice-container">
 
-    <!-- ═══════════ HEADER ═══════════ -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:3px solid #2d3e2f;">
+    <!-- HEADER -->
+    <table class="header-table">
       <tr>
-        <td style="padding:24px 0 20px 0;" valign="top">
-          <table cellpadding="0" cellspacing="0">
-            <tr>
-              <td valign="middle" style="padding-right:16px;">
-                ${data.logoUrl
-                  ? `<img src="${data.logoUrl}" alt="Minaliya" style="width:56px;height:56px;border-radius:10px;" />`
-                  : `<div style="width:56px;height:56px;background:#2d3e2f;border-radius:10px;display:flex;align-items:center;justify-content:center;">
-                      <span style="color:#ffffff;font-size:22px;font-weight:800;letter-spacing:1px;">M</span>
-                    </div>`
-                }
-              </td>
-              <td valign="middle">
-                <div style="font-size:20px;font-weight:800;color:#2d3e2f;letter-spacing:0.5px;">${data.companyName}</div>
-                <div style="font-size:11px;color:#78716c;margin-top:4px;line-height:1.5;">
-                  ${data.companyAddress}<br />
-                  Phone: ${data.companyPhone} &nbsp;|&nbsp; Email: ${data.companyEmail}
-                </div>
-              </td>
-            </tr>
-          </table>
-        </td>
-        <td style="padding:24px 0 20px 0;text-align:right;" valign="top">
-          <div style="font-size:11px;color:#78716c;line-height:1.8;">
-            <strong style="color:#57534e;">GSTIN:</strong> ${data.companyGst}<br />
-            <strong style="color:#57534e;">FSSAI:</strong> ${data.companyFssai}
+        <td width="70%" valign="top">
+          <div class="company-name">${data.companyName}</div>
+          <div class="company-details">
+            ${data.companyAddress.replace(/,/g, ',<br/>')}<br />
+            FSSAI Lic.No : ${data.companyFssai}<br />
+            GSTIN/UIN: ${data.companyGst}<br />
+            Email: ${data.companyEmail}<br />
+            Phone: ${data.companyPhone}
           </div>
+        </td>
+        <td width="30%" valign="top" style="text-align:right;">
+          ${data.logoUrl 
+            ? `<img src="${data.logoUrl}" style="max-width:120px; max-height:80px; object-fit:contain;" />` 
+            : `<h2 style="color:#e11d48; margin:0;">MINALIYA</h2>`
+          }
         </td>
       </tr>
     </table>
 
-    <!-- ═══════════ TAX INVOICE TITLE ═══════════ -->
-    <div style="text-align:center;padding:16px 0 12px;">
-      <span style="display:inline-block;font-size:16px;font-weight:800;color:#2d3e2f;letter-spacing:3px;text-transform:uppercase;border-bottom:2px solid #c7956d;padding-bottom:4px;">
-        Tax Invoice
-      </span>
-    </div>
+    <div class="invoice-title">Tax Invoice</div>
 
-    <!-- ═══════════ INVOICE DETAILS ═══════════ -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f7;border:1px solid #e8e5e0;border-radius:10px;margin-bottom:16px;">
+    <!-- META INFO -->
+    <table class="meta-table">
       <tr>
-        <td style="padding:14px 18px;" width="50%">
-          <table cellpadding="0" cellspacing="0" style="width:100%;">
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;width:110px;">Invoice Number</td>
-              <td style="font-size:12px;font-weight:700;color:#2d3e2f;padding:3px 0;">${data.invoiceNumber}</td>
-            </tr>
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;">Order ID</td>
-              <td style="font-size:12px;font-weight:600;color:#1c1917;padding:3px 0;">${data.orderId}</td>
-            </tr>
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;">Invoice Date</td>
-              <td style="font-size:12px;color:#1c1917;padding:3px 0;">${data.invoiceDate}</td>
-            </tr>
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;">Invoice Time</td>
-              <td style="font-size:12px;color:#1c1917;padding:3px 0;">${data.invoiceTime}</td>
-            </tr>
-          </table>
+        <td width="60%">
+          <!-- Bill to / Ship to could go here if needed, but the design focuses on meta -->
+          <div style="font-weight:700; margin-bottom:4px;">Bill To:</div>
+          <div>${data.customerName}</div>
+          <div>${data.billingAddress}</div>
+          <div>${data.customerState}, ${data.customerPincode}</div>
+          <div>Ph: ${data.customerPhone}</div>
         </td>
-        <td style="padding:14px 18px;" width="50%">
-          <table cellpadding="0" cellspacing="0" style="width:100%;">
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;width:110px;">Payment Status</td>
-              <td style="padding:3px 0;">
-                <span style="display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 10px;border-radius:20px;${data.paymentStatus === "Paid" ? "background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;" : "background:#fffbeb;color:#b45309;border:1px solid #fde68a;"}">${data.paymentStatus}</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;">Payment Method</td>
-              <td style="font-size:12px;color:#1c1917;padding:3px 0;">${data.paymentMethod}</td>
-            </tr>
-            <tr>
-              <td style="font-size:11px;color:#78716c;padding:3px 0;">Place of Supply</td>
-              <td style="font-size:12px;color:#1c1917;padding:3px 0;">${data.placeOfSupply}</td>
-            </tr>
-          </table>
+        <td width="40%" class="meta-right">
+          <div>Invoice Number: <strong>${data.invoiceNumber}</strong></div>
+          <div>Order Id: <strong>${data.orderId}</strong></div>
+          <div>Date: <strong>${data.invoiceDate}</strong></div>
+          <div>Time: <strong>${data.invoiceTime}</strong></div>
         </td>
       </tr>
     </table>
 
-    <!-- ═══════════ CUSTOMER DETAILS ═══════════ -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
-      <tr>
-        <td width="50%" style="padding-right:8px;" valign="top">
-          <div style="background:#faf9f7;border:1px solid #e8e5e0;border-radius:10px;padding:14px 18px;height:100%;">
-            <div style="font-size:10px;font-weight:700;color:#2d3e2f;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;border-bottom:1px solid #e8e5e0;padding-bottom:6px;">Bill To</div>
-            <div style="font-size:12px;font-weight:600;color:#1c1917;">${data.customerName}</div>
-            <div style="font-size:11px;color:#78716c;margin-top:4px;line-height:1.6;">
-              ${data.billingAddress}<br />
-              ${data.customerState} — ${data.customerPincode}<br />
-              Phone: ${data.customerPhone}<br />
-              Email: ${data.customerEmail}
-              ${data.customerGst ? `<br />GSTIN: ${data.customerGst}` : ""}
-            </div>
-          </div>
-        </td>
-        <td width="50%" style="padding-left:8px;" valign="top">
-          <div style="background:#faf9f7;border:1px solid #e8e5e0;border-radius:10px;padding:14px 18px;height:100%;">
-            <div style="font-size:10px;font-weight:700;color:#2d3e2f;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;border-bottom:1px solid #e8e5e0;padding-bottom:6px;">Ship To</div>
-            <div style="font-size:12px;font-weight:600;color:#1c1917;">${data.customerName}</div>
-            <div style="font-size:11px;color:#78716c;margin-top:4px;line-height:1.6;">
-              ${data.shippingAddress}<br />
-              ${data.customerState} — ${data.customerPincode}<br />
-              Phone: ${data.customerPhone}
-            </div>
-          </div>
-        </td>
-      </tr>
-    </table>
-
-    <!-- ═══════════ PRODUCT TABLE ═══════════ -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e5e0;border-radius:10px;overflow:hidden;margin-bottom:16px;">
+    <!-- ITEMS -->
+    <table class="items-table">
       <thead>
-        <tr style="background:#2d3e2f;">
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;width:40px;">S.No</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:left;">Product</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;">HSN/SAC</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;width:40px;">Qty</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;width:40px;">Unit</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:right;">Rate</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:right;">Disc.</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;width:50px;">GST %</th>
-          <th style="padding:10px 8px;font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;text-align:right;">Total</th>
+        <tr>
+          <th>S.No</th>
+          <th class="text-left">Product Name</th>
+          <th>HSN / SAC</th>
+          <th>Qty</th>
+          <th class="text-right">Rate</th>
+          <th>Discount %</th>
+          <th class="text-right">Total Rate</th>
+          <th>GST %</th>
+          <th class="text-right">Total Amt</th>
         </tr>
       </thead>
       <tbody>
-        ${itemRows}
+        ${data.items.map((item) => `
+        <tr>
+          <td>${item.sno}</td>
+          <td class="text-left">Minaliya Wooden Cold Pressed ${item.productName}</td>
+          <td>${item.hsnSac || "—"}</td>
+          <td>${item.quantity} ${item.unit}</td>
+          <td class="text-right">${formatCurrency(item.pricePerUnit)}</td>
+          <td>${item.discount > 0 ? ((item.discount / item.pricePerUnit) * 100).toFixed(0) : "0"}</td>
+          <td class="text-right">${formatCurrency((item.pricePerUnit - item.discount) * item.quantity)}</td>
+          <td>${item.gstPercent}</td>
+          <td class="text-right">${formatCurrency(item.totalPrice)}</td>
+        </tr>
+        `).join('')}
+        <tr class="totals-row">
+          <td colspan="3" class="text-left">Total</td>
+          <td>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
+          <td colspan="4"></td>
+          <td class="text-right">${formatCurrency(data.grandTotal)}</td>
+        </tr>
       </tbody>
     </table>
 
-    <!-- ═══════════ ORDER SUMMARY ═══════════ -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+    <!-- SUMMARY -->
+    <table class="summary-section">
       <tr>
-        <!-- Amount in Words (Left) -->
-        <td width="50%" valign="top" style="padding-right:16px;">
-          <div style="background:#faf9f7;border:1px solid #e8e5e0;border-radius:10px;padding:14px 18px;">
-            <div style="font-size:10px;font-weight:700;color:#2d3e2f;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Amount in Words</div>
-            <div style="font-size:12px;color:#1c1917;font-weight:500;font-style:italic;line-height:1.5;">${numberToWords(data.grandTotal)}</div>
+        <td class="summary-left">
+          <div class="words-box">
+            <div class="words-title">Total Amount (in words)</div>
+            <div>${numberToWords(data.grandTotal)}</div>
+          </div>
+          <div style="margin-top:20px; line-height:1.6;">
+            <div>* Terms and conditions apply</div>
+            <div><strong>Place Of Supply:</strong> ${data.placeOfSupply}</div>
           </div>
         </td>
-        <!-- Summary (Right) -->
-        <td width="50%" valign="top">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f7;border:1px solid #e8e5e0;border-radius:10px;overflow:hidden;">
+        <td class="summary-right">
+          <table class="summary-table">
             <tr>
-              <td style="padding:8px 18px;font-size:12px;color:#57534e;">Subtotal</td>
-              <td style="padding:8px 18px;font-size:12px;color:#1c1917;text-align:right;font-weight:500;">${formatCurrency(data.subtotal)}</td>
+              <td>Sub Total</td>
+              <td class="amount">${formatCurrency(data.subtotal)}</td>
             </tr>
-            ${data.couponDiscount > 0 ? `
             <tr>
-              <td style="padding:4px 18px;font-size:12px;color:#047857;">Coupon Discount</td>
-              <td style="padding:4px 18px;font-size:12px;color:#047857;text-align:right;font-weight:500;">-${formatCurrency(data.couponDiscount)}</td>
-            </tr>` : ""}
-            <tr>
-              <td style="padding:4px 18px;font-size:12px;color:#57534e;">Shipping Charges</td>
-              <td style="padding:4px 18px;font-size:12px;color:#1c1917;text-align:right;font-weight:500;">${data.shippingCharges === 0 ? "FREE" : formatCurrency(data.shippingCharges)}</td>
+              <td>Discount</td>
+              <td class="amount">${formatCurrency(data.couponDiscount)}</td>
             </tr>
             ${isIntraState ? `
             <tr>
-              <td style="padding:4px 18px;font-size:12px;color:#57534e;">CGST</td>
-              <td style="padding:4px 18px;font-size:12px;color:#1c1917;text-align:right;font-weight:500;">${formatCurrency(data.cgst)}</td>
+              <td>SGST 2.5%</td>
+              <td class="amount">${formatCurrency(data.sgst)}</td>
             </tr>
             <tr>
-              <td style="padding:4px 18px;font-size:12px;color:#57534e;">SGST</td>
-              <td style="padding:4px 18px;font-size:12px;color:#1c1917;text-align:right;font-weight:500;">${formatCurrency(data.sgst)}</td>
-            </tr>` : `
+              <td>CGST 2.5%</td>
+              <td class="amount">${formatCurrency(data.cgst)}</td>
+            </tr>
+            ` : `
             <tr>
-              <td style="padding:4px 18px;font-size:12px;color:#57534e;">IGST</td>
-              <td style="padding:4px 18px;font-size:12px;color:#1c1917;text-align:right;font-weight:500;">${formatCurrency(data.igst)}</td>
-            </tr>`}
-            ${data.roundOff !== 0 ? `
+              <td>IGST 5%</td>
+              <td class="amount">${formatCurrency(data.igst)}</td>
+            </tr>
+            `}
             <tr>
-              <td style="padding:4px 18px;font-size:11px;color:#a8a29e;">Round Off</td>
-              <td style="padding:4px 18px;font-size:11px;color:#a8a29e;text-align:right;">${data.roundOff > 0 ? "+" : ""}${formatCurrency(data.roundOff)}</td>
-            </tr>` : ""}
-            <tr>
-              <td colspan="2" style="padding:0 18px;"><div style="border-top:2px solid #2d3e2f;"></div></td>
+              <td>Round Off</td>
+              <td class="amount">${formatCurrency(data.roundOff)}</td>
             </tr>
             <tr>
-              <td style="padding:10px 18px;font-size:14px;font-weight:800;color:#2d3e2f;">Grand Total</td>
-              <td style="padding:10px 18px;font-size:14px;font-weight:800;color:#2d3e2f;text-align:right;">${formatCurrency(data.grandTotal)}</td>
+              <td style="font-weight:700; border-top:1px solid #000; border-bottom:1px solid #000; padding:6px 0;">Total Amount</td>
+              <td class="amount" style="font-weight:700; border-top:1px solid #000; border-bottom:1px solid #000; padding:6px 0;">${formatCurrency(data.grandTotal)}</td>
             </tr>
             <tr>
-              <td style="padding:4px 18px 10px;font-size:12px;color:#57534e;">Amount Paid</td>
-              <td style="padding:4px 18px 10px;font-size:12px;color:#047857;text-align:right;font-weight:600;">${formatCurrency(data.amountPaid)}</td>
+              <td style="padding-top:10px;">Amt Received</td>
+              <td class="amount" style="padding-top:10px;">${formatCurrency(data.amountPaid)}</td>
             </tr>
-            ${data.balance > 0 ? `
             <tr>
-              <td style="padding:4px 18px 10px;font-size:12px;color:#b45309;">Balance Due</td>
-              <td style="padding:4px 18px 10px;font-size:12px;color:#b45309;text-align:right;font-weight:600;">${formatCurrency(data.balance)}</td>
-            </tr>` : ""}
+              <td>Balance</td>
+              <td class="amount" style="font-weight:700;">${formatCurrency(data.balance)}</td>
+            </tr>
           </table>
         </td>
       </tr>
     </table>
 
-    <!-- ═══════════ FOOTER ═══════════ -->
-    <div style="border-top:2px solid #2d3e2f;padding-top:16px;text-align:center;">
-      <div style="font-size:13px;font-weight:600;color:#2d3e2f;margin-bottom:6px;">Thank you for shopping with Minaliya!</div>
-      <div style="font-size:11px;color:#78716c;margin-bottom:4px;">
-        <a href="mailto:support@minaliya.in" style="color:#2d3e2f;text-decoration:none;">support@minaliya.in</a>
-        &nbsp;&bull;&nbsp;
-        <a href="https://www.minaliya.in" style="color:#2d3e2f;text-decoration:none;">www.minaliya.in</a>
-      </div>
-      <div style="font-size:10px;color:#a8a29e;margin-top:8px;font-style:italic;">
-        This is a computer-generated invoice. Signature is not required.
-      </div>
-    </div>
+    <!-- FOOTER -->
+    <table class="footer-section">
+      <tr>
+        <td width="50%" valign="bottom">
+          <div class="computer-gen">This is a computer generated invoice. No signature is required.</div>
+        </td>
+        <td width="50%" class="signatory" valign="bottom">
+          <div class="signatory-title">For Minaliya Goods And Services</div>
+          <div>Auth Signatory</div>
+        </td>
+      </tr>
+    </table>
 
   </div>
 </body>

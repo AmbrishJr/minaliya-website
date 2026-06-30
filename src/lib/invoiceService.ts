@@ -20,7 +20,6 @@ function getHsnCode(productName: string): string {
   return '';
 }
 
-// Make sure to define these environment variables or use fallback values
 const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || 'Minaliya Goods And Services, Chennai, Tamil Nadu, India';
 const COMPANY_PHONE = process.env.COMPANY_PHONE || '+91 98414 22998';
 const COMPANY_EMAIL = process.env.ADMIN_EMAIL || 'support@minaliya.in';
@@ -30,6 +29,18 @@ const LOGO_URL = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}
 
 const INVOICE_STORAGE_PATH = process.env.INVOICE_STORAGE_PATH || path.join(process.cwd(), 'public', 'invoices');
 
+const GST_RATE = 5; // 5% GST on food items
+
+// Common local Chrome installation paths
+const CHROME_PATHS = [
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/chromium',
+  '/snap/bin/chromium',
+];
+
 async function ensureStorageDir() {
   try {
     await fs.mkdir(INVOICE_STORAGE_PATH, { recursive: true });
@@ -38,19 +49,34 @@ async function ensureStorageDir() {
   }
 }
 
+async function findChromeExecutable(): Promise<string | undefined> {
+  for (const p of CHROME_PATHS) {
+    try {
+      await fs.access(p);
+      return p;
+    } catch {
+      continue;
+    }
+  }
+  // On Windows, also check the registry-based path
+  if (process.platform === 'win32') {
+    const localAppData = process.env.LOCALAPPDATA;
+    if (localAppData) {
+      const edgePath = path.join(localAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe');
+      try {
+        await fs.access(edgePath);
+        return edgePath;
+      } catch {}
+    }
+  }
+  return undefined;
+}
+
 export async function generateInvoiceNumber(): Promise<string> {
   const currentYear = new Date().getFullYear();
-  
-  // Find the highest invoice number for the current year
   const lastOrder = await prisma.order.findFirst({
-    where: {
-      invoiceNumber: {
-        startsWith: `INV-${currentYear}-`,
-      },
-    },
-    orderBy: {
-      invoiceNumber: 'desc',
-    },
+    where: { invoiceNumber: { startsWith: `INV-${currentYear}-` } },
+    orderBy: { invoiceNumber: 'desc' },
   });
 
   let nextSequence = 1;
@@ -61,26 +87,23 @@ export async function generateInvoiceNumber(): Promise<string> {
     }
   }
 
-  const paddedSequence = nextSequence.toString().padStart(6, '0');
-  return `INV-${currentYear}-${paddedSequence}`;
+  return `INV-${currentYear}-${nextSequence.toString().padStart(6, '0')}`;
 }
 
-export async function generateInvoicePDF(orderId: string, forceRegenerate = false): Promise<{ success: boolean; url?: string; error?: string }> {
+export async function generateInvoicePDF(
+  orderId: string,
+  forceRegenerate = false
+): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        items: {
-          include: { product: true }
-        },
+        items: { include: { product: true } },
         user: true,
-      }
+      },
     });
 
-    if (!order) {
-      return { success: false, error: 'Order not found' };
-    }
-
+    if (!order) return { success: false, error: 'Order not found' };
     if (order.invoiceGenerated && !forceRegenerate) {
       return { success: true, url: order.invoiceUrl || undefined };
     }
@@ -97,28 +120,33 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
     await ensureStorageDir();
     const fileName = `${invoiceNumber}.pdf`;
     const filePath = path.join(INVOICE_STORAGE_PATH, fileName);
-    // Relative URL from the public directory
     const invoiceUrl = `/invoices/${fileName}`;
 
     const shippingAddress = order.shippingAddress as Record<string, string>;
     const items: InvoiceItem[] = order.items.map((item, index) => {
-        const hsn = getHsnCode(item.product.name);
-        return {
-            sno: index + 1,
-            productName: item.product.name,
-            productImage: item.product.images[0] || "",
-            hsnSac: hsn || undefined,
-            quantity: item.quantity,
-            unit: "NOS",
-            pricePerUnit: Number(item.price),
-            discount: 0,
-            gstPercent: 5,
-            totalPrice: Number(item.price) * item.quantity,
-        };
+      const hsn = getHsnCode(item.product.name);
+      const lineTotal = Number(item.price) * item.quantity;
+      const gstAmount = Math.round((lineTotal * GST_RATE) / 100 * 100) / 100;
+      return {
+        sno: index + 1,
+        productName: item.product.name,
+        productImage: item.product.images[0] || "",
+        hsnSac: hsn || undefined,
+        quantity: item.quantity,
+        unit: "NOS",
+        pricePerUnit: Number(item.price),
+        discount: 0,
+        gstPercent: GST_RATE,
+        totalPrice: lineTotal,
+      };
     });
 
     const subtotal = Number(order.totalAmount);
-    const shippingCharges = 0; // Assume free for now or extract from logic
+    const gstTotal = items.reduce((sum, item) => {
+      return sum + Math.round((item.totalPrice * GST_RATE) / 100 * 100) / 100;
+    }, 0);
+    const cgst = gstTotal / 2;
+    const sgst = gstTotal / 2;
 
     const invoiceData: InvoiceData = {
       companyName: 'Minaliya Goods And Services',
@@ -145,9 +173,9 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
       items,
       subtotal,
       couponDiscount: 0,
-      shippingCharges,
-      cgst: 0,
-      sgst: 0,
+      shippingCharges: 0,
+      cgst,
+      sgst,
       igst: 0,
       roundOff: 0,
       grandTotal: subtotal,
@@ -158,38 +186,38 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
     const htmlContent = generateInvoiceHTML(invoiceData);
 
     const isLocal = !process.env.VERCEL_ENV && process.env.NODE_ENV !== 'production';
-    
+
     let executablePath: string | undefined;
-    
     if (isLocal) {
-        // Common paths for Windows local development
-        executablePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+      executablePath = await findChromeExecutable();
+      if (!executablePath) {
+        console.warn('Chrome not found in common paths. Install Google Chrome or set CHROME_PATH env var.');
+      }
     } else {
-        executablePath = await chromium.executablePath();
+      executablePath = await chromium.executablePath();
     }
 
-    const browser = await puppeteer.launch({
-        args: isLocal ? [] : chromium.args,
-        defaultViewport: { width: 1280, height: 720 },
-        executablePath,
-        headless: true,
-    });
+    const launchOptions: Record<string, unknown> = {
+      args: isLocal ? [] : chromium.args,
+      defaultViewport: { width: 1280, height: 720 },
+      executablePath,
+      headless: true,
+    };
+
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'load' });
     await page.pdf({
-        path: filePath,
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '0', right: '0', bottom: '0', left: '0' }
+      path: filePath,
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' },
     });
     await browser.close();
 
     await prisma.order.update({
-        where: { id: orderId },
-        data: {
-            invoiceGenerated: true,
-            invoiceUrl,
-        }
+      where: { id: orderId },
+      data: { invoiceGenerated: true, invoiceUrl },
     });
 
     return { success: true, url: invoiceUrl };
@@ -201,33 +229,41 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
 
 export async function processInvoice(orderId: string): Promise<void> {
   try {
-      const order = await prisma.order.findUnique({ where: { id: orderId }});
-      if (!order) {
-        console.error('Order not found for invoice processing:', orderId);
-        return;
-      }
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      console.error('Order not found for invoice processing:', orderId);
+      return;
+    }
 
-      if (order.invoiceSent) {
-        console.log(`Invoice already sent for order ${orderId}, skipping`);
-        return;
-      }
+    if (order.invoiceSent) {
+      console.log(`Invoice already sent for order ${orderId}, skipping`);
+      return;
+    }
 
-      const pdfResult = await generateInvoicePDF(orderId);
-      if (pdfResult.success) {
-          const emailResult = await sendInvoiceEmail(order);
-          if (emailResult) {
-              await prisma.order.update({
-                  where: { id: orderId },
-                  data: { invoiceSent: true }
-              });
-              console.log(`Invoice sent successfully for order ${orderId}`);
-          } else {
-              console.error(`Failed to send invoice email for order ${orderId}`);
-          }
-      } else {
-          console.error(`Failed to generate invoice PDF for order ${orderId}:`, pdfResult.error);
-      }
+    const pdfResult = await generateInvoicePDF(orderId);
+    if (!pdfResult.success) {
+      console.error(`Failed to generate invoice PDF for order ${orderId}:`, pdfResult.error);
+      return;
+    }
+
+    // Re-fetch the updated order (with invoiceNumber/invoiceUrl set)
+    const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!updatedOrder) {
+      console.error('Order disappeared after PDF generation:', orderId);
+      return;
+    }
+
+    const emailResult = await sendInvoiceEmail(updatedOrder);
+    if (emailResult) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { invoiceSent: true },
+      });
+      console.log(`Invoice sent successfully for order ${orderId}`);
+    } else {
+      console.error(`Failed to send invoice email for order ${orderId}`);
+    }
   } catch (error) {
-      console.error('Error processing invoice for order:', orderId, error);
+    console.error('Error processing invoice for order:', orderId, error);
   }
 }

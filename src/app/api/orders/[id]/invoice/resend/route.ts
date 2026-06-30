@@ -8,8 +8,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { isAdmin } = await verifyAdminSession();
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
-    
+
     const order = await prisma.order.findUnique({
       where: { id },
     });
@@ -23,16 +28,16 @@ export async function POST(
     }
 
     const emailResult = await sendInvoiceEmail(order);
-    
+
     if (emailResult) {
       await prisma.order.update({
         where: { id },
-        data: { invoiceSent: true }
+        data: { invoiceSent: true },
       });
       return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
     }
+
+    return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   } catch (error) {
     console.error("Error resending invoice email:", error);
     return NextResponse.json({ error: "Failed to resend invoice email" }, { status: 500 });

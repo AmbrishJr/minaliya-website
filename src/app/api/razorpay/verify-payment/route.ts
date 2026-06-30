@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { processInvoice } from "@/lib/invoiceService";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,11 +36,12 @@ export async function POST(req: NextRequest) {
           razorpayPaymentId: razorpay_payment_id,
         },
       });
-      
-      // Asynchronously process the invoice so it doesn't block the response
-      import("@/lib/invoiceService").then(({ processInvoice }) => {
-        processInvoice(orderId).catch(err => console.error("Invoice processing failed:", err));
-      }).catch(err => console.error("Failed to load invoiceService:", err));
+
+      // Fire invoice processing in background — on Vercel Pro this completes
+      // within the 60s limit. The webhook is the fallback if it times out.
+      processInvoice(orderId).catch(err =>
+        console.error("Invoice processing failed for order", orderId, err)
+      );
     }
 
     return NextResponse.json({ success: true });

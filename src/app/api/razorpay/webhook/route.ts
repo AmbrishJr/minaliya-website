@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { processInvoice } from "@/lib/invoiceService";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,6 +29,14 @@ export async function POST(req: NextRequest) {
           where: { razorpayOrderId },
         });
 
+        if (updatedOrders.length === 0) {
+          // Order might not have razorpayOrderId set yet if the create-order API
+          // didn't save it (e.g., old flow before the fix). Log and bail —
+          // the verify-payment route will handle invoice processing.
+          console.warn(`Webhook: no order found for razorpayOrderId ${razorpayOrderId}, deferring to verify-payment`);
+          return NextResponse.json({ status: "ok" });
+        }
+
         await prisma.order.updateMany({
           where: { razorpayOrderId },
           data: {
@@ -35,13 +44,14 @@ export async function POST(req: NextRequest) {
             razorpayPaymentId,
           },
         });
-        
-        // Asynchronously process invoices
-        import("@/lib/invoiceService").then(({ processInvoice }) => {
-          updatedOrders.forEach(order => {
-             processInvoice(order.id).catch(err => console.error("Invoice processing failed:", err));
-          });
-        }).catch(err => console.error("Failed to load invoiceService:", err));
+
+        // Process invoice for each matched order — processInvoice guards
+        // against duplicate sends via the invoiceSent check.
+        for (const order of updatedOrders) {
+          processInvoice(order.id).catch(err =>
+            console.error("Invoice processing failed for order", order.id, err)
+          );
+        }
         break;
       }
 
@@ -51,9 +61,7 @@ export async function POST(req: NextRequest) {
 
         await prisma.order.updateMany({
           where: { razorpayOrderId },
-          data: {
-            paymentStatus: "FAILED",
-          },
+          data: { paymentStatus: "FAILED" },
         });
         break;
       }
