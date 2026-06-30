@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -73,6 +73,7 @@ export default function CheckoutClient() {
   const { items, totalPrice, clearCart } = useCart();
   const { orders, addOrder } = useOrders();
   const { user, isAuthenticated, isAuthReady, openLoginModal } = useAuth();
+  const isProcessingRef = useRef(false);
 
   // Protect checkout route
   useEffect(() => {
@@ -244,6 +245,8 @@ export default function CheckoutClient() {
   };
 
   const handleRazorpayPayment = useCallback(async () => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     setIsRazorpayLoading(true);
     setRazorpayError("");
 
@@ -348,6 +351,8 @@ export default function CheckoutClient() {
     } catch (err: unknown) {
       setRazorpayError((err as { message?: string }).message || "Something went wrong. Please try again.");
       setIsRazorpayLoading(false);
+    } finally {
+      isProcessingRef.current = false;
     }
   }, [finalTotal, firstName, lastName, email, phone, shippingState, address, city, postalCode, items, addOrder, clearCart, router]);
 
