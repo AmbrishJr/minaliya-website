@@ -156,7 +156,7 @@ export async function generateInvoicePDF(orderId: string, forceRegenerate = fals
         args: isLocal ? [] : chromium.args,
         defaultViewport: { width: 1280, height: 720 },
         executablePath,
-        headless: chromium.headless,
+        headless: true,
     });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'load' });
