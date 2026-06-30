@@ -136,13 +136,11 @@ export async function getUserOrders(email?: string, phone?: string) {
         id: order.id,
         date: order.createdAt.toISOString(),
         totalPrice: Number(order.totalAmount),
-        status:
-          order.status === "PENDING"
-            ? "Processing"
-            : order.status === "SHIPPED"
-            ? "Shipped"
-            : "Delivered",
+        status: order.status,
         awbNumber: order.awbNumber ?? null,
+        invoiceNumber: order.invoiceNumber,
+        invoiceGenerated: order.invoiceGenerated,
+        invoiceUrl: order.invoiceUrl,
         items: order.items.map((item) => ({
           name: item.product.name,
           slug: item.product.slug,

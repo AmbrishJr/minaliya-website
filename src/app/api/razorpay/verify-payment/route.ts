@@ -35,6 +35,11 @@ export async function POST(req: NextRequest) {
           razorpayPaymentId: razorpay_payment_id,
         },
       });
+      
+      // Asynchronously process the invoice so it doesn't block the response
+      import("@/lib/invoiceService").then(({ processInvoice }) => {
+        processInvoice(orderId).catch(err => console.error("Invoice processing failed:", err));
+      }).catch(err => console.error("Failed to load invoiceService:", err));
     }
 
     return NextResponse.json({ success: true });

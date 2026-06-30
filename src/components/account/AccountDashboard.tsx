@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck, ExternalLink } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, CreditCard, ChevronRight, Trash2, Check, AlertCircle, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck, ExternalLink, FileText, Send } from "lucide-react";
+import OrderStatusBadge from "@/components/shared/OrderStatusBadge";
+import OrderStatusTimeline from "@/components/shared/OrderStatusTimeline";
 import Link from "next/link";
 import Image from "next/image";
 import { useOrders } from "@/context/OrderContext";
@@ -53,6 +55,9 @@ interface DisplayOrder {
   totalPrice: number;
   status: string;
   awbNumber?: string | null;
+  invoiceNumber?: string | null;
+  invoiceGenerated?: boolean;
+  invoiceUrl?: string | null;
   items: {
     name: string;
     slug: string;
@@ -81,6 +86,7 @@ export default function AccountDashboard() {
   // Dynamic db orders state
   const [displayOrders, setDisplayOrders] = useState<DisplayOrder[]>([]);
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
+  const [resendingInvoice, setResendingInvoice] = useState<string | null>(null);
 
   // Re-order feedback toast
   const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
@@ -429,6 +435,24 @@ export default function AccountDashboard() {
     alert("Preferences updated successfully!");
   };
 
+  const handleResendInvoice = async (orderId: string) => {
+    setResendingInvoice(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/invoice/resend`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        alert("Invoice email sent successfully!");
+      } else {
+        alert(data.error || "Failed to resend invoice.");
+      }
+    } catch (error) {
+      console.error("Error resending invoice:", error);
+      alert("Failed to resend invoice.");
+    } finally {
+      setResendingInvoice(null);
+    }
+  };
+
   const renderAvatar = (avatarClass: string, nameInitial: string) => {
     const isGradient = user?.image?.startsWith("linear-gradient");
     const hasImage = user?.image && !isGradient;
@@ -639,7 +663,7 @@ export default function AccountDashboard() {
                         <div>
                           <div className="flex items-center gap-3 mb-1">
                             <span className="font-bold text-stone-900">{order.id}</span>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-bold font-sans" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}>{order.status}</span>
+                            <OrderStatusBadge status={order.status} />
                           </div>
                           <p className="text-sm text-stone-500">{new Date(order.date).toLocaleDateString()} • {order.items.length} {order.items.length === 1 ? 'item' : 'items'}</p>
                         </div>
@@ -806,47 +830,14 @@ export default function AccountDashboard() {
                         </div>
                         <div className="flex flex-col sm:items-end gap-2">
                            <p className="text-sm text-stone-500 mb-0.5">Order # <span className="font-medium text-stone-900">{order.id}</span></p>
-                           <div className="flex items-center gap-2">
-                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-block" style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}>{order.status}</span>
-                             <button
-                               onClick={() => handleReorder(order)}
-                               className="inline-flex items-center gap-1.5 py-1.5 px-4 text-xs font-semibold rounded-full whitespace-nowrap cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                               style={{ background: "var(--color-forest-600)", color: "white" }}
-                             >
-                               <RefreshCw size={12} /> Re-Order
-                             </button>
-                           </div>
-                            {/* ST Courier ID */}
-                            {order.awbNumber && (
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Courier ID:</span>
-                                <span className="text-xs font-bold" style={{ color: "var(--color-forest-700)" }}>{order.awbNumber}</span>
-                                <button
-                                   onClick={() => handleCopyAwb(order.id, order.awbNumber!)}
-                                  className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
-                                  style={copiedAwbId === order.id
-                                    ? { background: "var(--color-forest-600)", color: "white" }
-                                    : { background: "var(--color-stone-100)", color: "var(--color-stone-700)" }
-                                  }
-                                  title="Copy Courier ID to clipboard"
-                                >
-                                  {copiedAwbId === order.id
-                                    ? <><ClipboardCheck size={11} /> Copied!</>
-                                    : <><Clipboard size={11} /> Copy</>}
-                                </button>
-                                <a
-                                  href="https://stcourier.com/track/shipment"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 py-1 px-2.5 text-[10px] font-bold rounded-full transition-all cursor-pointer"
-                                  style={{ background: "var(--color-forest-600)", color: "white" }}
-                                >
-                                  <ExternalLink size={11} /> Track Your Order
-                                </a>
+                            <div className="flex items-center gap-2">
+                              <OrderStatusBadge status={order.status} />
                               </div>
-                            )}
-                         </div>
-                      </div>
+                            </div>
+                          </div>
+                       <div className="px-5 py-4 border-b" style={{ borderColor: "var(--color-stone-200)", background: "white" }}>
+                         <OrderStatusTimeline status={order.status} />
+                       </div>
                       <div className="p-5 space-y-4">
                         {order.items.map((item: DisplayOrder["items"][number], i: number) => (
                           <div key={i} className="flex gap-4">

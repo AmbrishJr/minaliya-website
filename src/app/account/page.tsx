@@ -2,7 +2,6 @@
 
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import AccountDashboard from "@/components/account/AccountDashboard";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
@@ -34,7 +33,6 @@ export default function AccountPage() {
             </button>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
@@ -61,8 +59,6 @@ export default function AccountPage() {
           <AccountDashboard />
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }

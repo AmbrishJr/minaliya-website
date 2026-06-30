@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "My Account",
@@ -12,5 +13,10 @@ export default function AccountLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      {children}
+      <Footer />
+    </>
+  );
 }

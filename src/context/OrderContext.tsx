@@ -8,7 +8,7 @@ export interface Order {
   date: string;
   items: CartItem[];
   totalPrice: number;
-  status: "Processing" | "Shipped" | "Delivered";
+  status: string;
   awbNumber?: string | null;
 }
 

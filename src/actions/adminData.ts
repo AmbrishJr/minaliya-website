@@ -60,7 +60,7 @@ export async function getAdminDashboardStats() {
     prisma.bulkInquiry.count(),
     prisma.order.aggregate({ _sum: { totalAmount: true } }),
     prisma.order.count({
-      where: { status: { in: ["PENDING", "PROCESSING"] } },
+      where: { status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "OUT_FOR_DELIVERY"] } },
     }),
     prisma.product.count({ where: { stock: { gt: 0 } } }),
     prisma.order.count({
@@ -128,6 +128,9 @@ export async function getAllOrders() {
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     awbNumber: order.awbNumber ?? null,
+    invoiceNumber: order.invoiceNumber,
+    invoiceGenerated: order.invoiceGenerated,
+    invoiceUrl: order.invoiceUrl,
     customerName: (order.shippingAddress as Record<string, string>)?.name || "N/A",
     customerEmail: (order.shippingAddress as Record<string, string>)?.email || "N/A",
     customerPhone: (order.shippingAddress as Record<string, string>)?.phone || "N/A",
@@ -309,7 +312,7 @@ export async function getAllInquiries() {
 
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED"
+  newStatus: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED" | "RETURNED"
 ) {
   await requireAdmin();
 

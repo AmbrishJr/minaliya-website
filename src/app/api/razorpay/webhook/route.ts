@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
         const razorpayOrderId = payment.order_id;
         const razorpayPaymentId = payment.id;
 
+        const updatedOrders = await prisma.order.findMany({
+          where: { razorpayOrderId },
+        });
+
         await prisma.order.updateMany({
           where: { razorpayOrderId },
           data: {
@@ -31,6 +35,13 @@ export async function POST(req: NextRequest) {
             razorpayPaymentId,
           },
         });
+        
+        // Asynchronously process invoices
+        import("@/lib/invoiceService").then(({ processInvoice }) => {
+          updatedOrders.forEach(order => {
+             processInvoice(order.id).catch(err => console.error("Invoice processing failed:", err));
+          });
+        }).catch(err => console.error("Failed to load invoiceService:", err));
         break;
       }
 

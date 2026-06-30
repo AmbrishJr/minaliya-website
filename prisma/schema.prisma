@@ -72,6 +72,11 @@ model Order {
   razorpayOrderId   String?   @unique
   razorpayPaymentId String?
   awbNumber       String?
+  invoiceNumber    String?   @unique
+  invoiceUrl       String?
+  invoiceGenerated Boolean   @default(false)
+  invoiceSent      Boolean   @default(false)
+  invoiceDate      DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   items           OrderItem[]
@@ -79,10 +84,13 @@ model Order {
 
 enum OrderStatus {
   PENDING
+  CONFIRMED
   PROCESSING
   SHIPPED
+  OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+  RETURNED
 }
 
 model OrderItem {
