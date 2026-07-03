@@ -161,7 +161,7 @@ export default function ContactPage() {
 
                 {/* Live Google Map Embed */}
                 <div
-                  className="rounded-2xl overflow-hidden h-64 shadow-soft transition-all duration-300 hover:shadow-md"
+                  className="rounded-2xl overflow-hidden h-72 sm:h-64 shadow-soft transition-all duration-300 hover:shadow-md"
                   style={{
                     border: "1px solid var(--color-stone-200)",
                   }}

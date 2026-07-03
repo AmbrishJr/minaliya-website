@@ -516,7 +516,7 @@ export default function ProductDetail({
                       />
                     ))}
                   </div>
-                    <ProductName as="h3" variant="card">
+                    <ProductName as="h3" variant="card" splitOnMobile>
                       {productDisplayName(item.name)}
                     </ProductName>
                   <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">

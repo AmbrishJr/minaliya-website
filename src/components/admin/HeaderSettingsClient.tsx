@@ -342,7 +342,7 @@ export default function HeaderSettingsClient({ settings: initialSettings }: Prop
                       extraAnnouncements: (prev.extraAnnouncements || []).filter((_, j) => j !== i),
                     }))
                   }
-                  className="p-1.5 rounded-lg hover:bg-red-50 text-red-400"
+                  className="p-2 rounded-lg hover:bg-red-50 text-red-400"
                 >
                   <Trash2 size={14} />
                 </button>

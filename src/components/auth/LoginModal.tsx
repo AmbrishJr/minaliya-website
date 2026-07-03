@@ -595,7 +595,7 @@ export default function LoginModal() {
                 setOtp("");
                 setOtpToken("");
               }}
-              className="p-2 rounded-full hover:bg-stone-100 transition-colors"
+              className="p-2.5 rounded-full hover:bg-stone-100 transition-colors"
               aria-label="Back"
             >
               <ArrowLeft size={20} className="text-stone-400" />
@@ -603,7 +603,7 @@ export default function LoginModal() {
           )}
           <button
             onClick={closeLoginModal}
-            className="p-2 rounded-full hover:bg-stone-100 transition-colors ml-auto"
+            className="p-2.5 rounded-full hover:bg-stone-100 transition-colors ml-auto"
           >
             <X size={20} className="text-stone-400" />
           </button>

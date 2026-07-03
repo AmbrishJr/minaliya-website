@@ -10,16 +10,13 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find PAID orders where invoice wasn't generated or email wasn't sent
+    // Find PAID orders where invoice email wasn't sent
     const failedOrders = await prisma.order.findMany({
       where: {
         paymentStatus: "PAID",
-        OR: [
-          { invoiceGenerated: false },
-          { invoiceSent: false },
-        ],
+        invoiceSent: false,
       },
-      select: { id: true, invoiceGenerated: true, invoiceSent: true },
+      select: { id: true, invoiceSent: true },
       orderBy: { createdAt: "desc" },
     });
 

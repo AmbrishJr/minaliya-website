@@ -162,7 +162,7 @@ export default async function BlogPage() {
                           )}
                           <Link
                             href={`/blog/${post.slug}`}
-                            className="flex items-center gap-1 text-xs font-semibold transition-colors hover:gap-2 ml-auto"
+                            className="flex items-center gap-1 text-sm sm:text-xs font-semibold transition-colors hover:gap-2 ml-auto"
                             style={{ color: "var(--color-forest-600)" }}
                           >
                             Read More

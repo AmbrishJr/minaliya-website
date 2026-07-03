@@ -54,7 +54,7 @@ export default function WishlistClient() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {items.map((product) => (
             <article key={product.slug} className="product-card group relative flex flex-col">
               <Link href={`/shop/${product.slug}`} className="block">
@@ -68,7 +68,7 @@ export default function WishlistClient() {
                   />
                   
                   <button
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
+                    className="absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
                     style={{
                       background: "white",
                       color: "var(--color-terra-500)",
@@ -86,7 +86,7 @@ export default function WishlistClient() {
 
               <div className="p-5 flex-1 flex flex-col">
                 <Link href={`/shop/${product.slug}`} className="block">
-                  <ProductName as="h3" variant="card" className="mb-2">
+                  <ProductName as="h3" variant="card" className="mb-2" splitOnMobile>
                     {productDisplayName(product.name)}
                   </ProductName>
                 </Link>

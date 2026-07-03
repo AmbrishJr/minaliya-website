@@ -180,20 +180,7 @@ export async function processInvoice(orderId: string): Promise<void> {
       });
     }
 
-    const pdfResult = await generateInvoicePDF(orderId);
-
-    const updatedOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        items: { include: { product: true } },
-      },
-    });
-    if (!updatedOrder) {
-      console.error('Order disappeared after processing:', orderId);
-      return;
-    }
-
-    const emailResult = await sendInvoiceEmail(updatedOrder, updatedOrder.items, pdfResult.buffer);
+    const emailResult = await sendInvoiceEmail(order, order.items);
 
     if (emailResult.success) {
       const updateData: Record<string, any> = {

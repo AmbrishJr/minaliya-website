@@ -221,7 +221,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                         {s.value}
                       </span>
                       <span
-                        className="text-[9px] uppercase tracking-wider font-semibold"
+                        className="text-[10px] sm:text-[9px] uppercase tracking-wider font-semibold"
                         style={{ color: "var(--color-stone-500)" }}
                       >
                         {s.label}
@@ -418,7 +418,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={prev}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border"
                 style={{
                   borderColor: "var(--color-stone-300)",
                   color: "var(--color-stone-600)",
@@ -431,7 +431,7 @@ export default function HeroSection({ slides }: HeroSectionProps) {
               </button>
               <button
                 onClick={next}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border"
                 style={{
                   borderColor: "var(--color-stone-300)",
                   color: "var(--color-stone-600)",

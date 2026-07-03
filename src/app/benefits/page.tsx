@@ -40,7 +40,7 @@ export default function BenefitsPage() {
               className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5"
               style={{
                 fontFamily: "var(--font-display)",
-                color: "black",
+                color: "white",
               }}
             >
               The Science of <span className="italic font-normal">Purity</span>

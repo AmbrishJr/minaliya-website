@@ -324,14 +324,14 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => openEdit(blog)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-stone-100"
+                  className="p-2 rounded-lg transition-colors hover:bg-stone-100"
                   title="Edit"
                 >
                   <Edit3 size={15} className="text-stone-400" />
                 </button>
                 <button
                   onClick={() => handleDelete(blog.id)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
+                  className="p-2 rounded-lg transition-colors hover:bg-red-50"
                   title="Delete"
                 >
                   <Trash2 size={15} className="text-red-400" />
@@ -344,7 +344,7 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
 
       {/* Blog Editor Panel */}
       {isPanelOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 sm:pt-10 pb-4 sm:pb-10 overflow-y-auto">
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={closePanel} />
           <div
             className="relative z-10 w-full max-w-3xl rounded-2xl border shadow-xl overflow-y-auto max-h-[90vh]"

@@ -114,7 +114,7 @@ export default function InquiriesTable({ inquiries: initialInquiries }: Inquirie
                     {inquiry.quantity} Liters
                   </span>
                 </div>
-                <p className="text-[10px] text-stone-400 shrink-0">{formatDate(inquiry.createdAt)}</p>
+                <p className="text-xs text-stone-400 shrink-0">{formatDate(inquiry.createdAt)}</p>
               </div>
               <div className="flex flex-wrap gap-3 text-xs text-stone-500 mt-3">
                 <span className="flex items-center gap-1">
@@ -145,7 +145,7 @@ export default function InquiriesTable({ inquiries: initialInquiries }: Inquirie
                     setDeleteError(null);
                     setDeletingId(inquiry.id);
                   }}
-                  className="p-1.5 rounded-lg border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
+                  className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
                   title="Delete Inquiry"
                 >
                   <Trash2 size={14} />
@@ -253,7 +253,7 @@ export default function InquiriesTable({ inquiries: initialInquiries }: Inquirie
                           setDeleteError(null);
                           setDeletingId(inquiry.id);
                         }}
-                        className="p-1.5 rounded-xl border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors inline-flex"
+                        className="p-2 rounded-xl border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors inline-flex"
                         title="Delete Inquiry"
                       >
                         <Trash2 size={15} />

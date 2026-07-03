@@ -480,7 +480,7 @@ export default function CheckoutClient() {
                               value={addr.id}
                               checked={isSelected}
                               onChange={() => handleSelectSavedAddress(addr.id)}
-                              className="mt-0.5 w-4 h-4 shrink-0 accent-forest-600"
+                              className="mt-0.5 w-5 h-5 shrink-0 accent-forest-600"
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -521,7 +521,7 @@ export default function CheckoutClient() {
                           value="new"
                           checked={selectedSavedAddressId === "new"}
                           onChange={() => handleSelectSavedAddress("new")}
-                          className="w-4 h-4 shrink-0 accent-forest-600"
+                          className="w-5 h-5 shrink-0 accent-forest-600"
                         />
                         <span className="text-sm font-semibold" style={{ color: "var(--color-stone-700)" }}>
                           + Enter a different address

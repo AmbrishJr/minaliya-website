@@ -134,7 +134,7 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
         </div>
 
         {/* Name */}
-        <ProductName as="h3" variant="card">
+        <ProductName as="h3" variant="card" splitOnMobile>
           {displayName}
         </ProductName>
 

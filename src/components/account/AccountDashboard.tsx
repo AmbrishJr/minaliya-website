@@ -76,8 +76,6 @@ export default function AccountDashboard() {
   // Dynamic db orders state
   const [displayOrders, setDisplayOrders] = useState<DisplayOrder[]>([]);
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
-  const [resendingInvoice, setResendingInvoice] = useState<string | null>(null);
-
   // Re-order feedback toast
   const [reorderFeedback, setReorderFeedback] = useState<string | null>(null);
   const reorderFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -293,24 +291,6 @@ export default function AccountDashboard() {
       newsletterSubscribed: settingsNewsletter,
     });
     alert("Preferences updated successfully!");
-  };
-
-  const handleResendInvoice = async (orderId: string) => {
-    setResendingInvoice(orderId);
-    try {
-      const res = await fetch(`/api/orders/${orderId}/invoice/resend`, { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        alert("Invoice email sent successfully!");
-      } else {
-        alert(data.error || "Failed to resend invoice.");
-      }
-    } catch (error) {
-      console.error("Error resending invoice:", error);
-      alert("Failed to resend invoice.");
-    } finally {
-      setResendingInvoice(null);
-    }
   };
 
   const renderAvatar = (avatarClass: string, nameInitial: string) => {
@@ -733,15 +713,15 @@ export default function AccountDashboard() {
                             </div>
                           </div>
                         )}
-                        {order.invoiceUrl && (
+                        {order.invoiceNumber && (
                           <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--color-stone-200)", background: "var(--color-cream-50)" }}>
                             <div className="flex items-center gap-2">
                               <FileText size={16} className="text-forest-600" />
                               <span className="text-sm font-medium text-stone-700">Invoice:</span>
-                              <span className="text-sm font-bold text-stone-900 font-mono">{order.invoiceNumber || ""}</span>
+                              <span className="text-sm font-bold text-stone-900 font-mono">{order.invoiceNumber}</span>
                             </div>
                             <a
-                              href={order.invoiceUrl}
+                              href={`/api/orders/${order.id}/invoice`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors"

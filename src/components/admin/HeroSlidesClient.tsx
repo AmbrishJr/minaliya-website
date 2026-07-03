@@ -341,21 +341,21 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => handleToggleActive(slide)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-stone-100"
+                  className="p-2 rounded-lg transition-colors hover:bg-stone-100"
                   title={slide.isActive ? "Deactivate" : "Activate"}
                 >
                   {slide.isActive ? <Eye size={15} className="text-stone-400" /> : <EyeOff size={15} className="text-stone-300" />}
                 </button>
                 <button
                   onClick={() => openEdit(slide)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-stone-100"
+                  className="p-2 rounded-lg transition-colors hover:bg-stone-100"
                   title="Edit"
                 >
                   <Edit3 size={15} className="text-stone-400" />
                 </button>
                 <button
                   onClick={() => handleDelete(slide.id)}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-red-50"
+                  className="p-2 rounded-lg transition-colors hover:bg-red-50"
                   title="Delete"
                 >
                   <Trash2 size={15} className="text-red-400" />
@@ -368,7 +368,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
 
       {/* Slide Editor Panel */}
       {isPanelOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 sm:pt-10 pb-4 sm:pb-10 overflow-y-auto">
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={closePanel} />
           <div
             className="relative z-10 w-full max-w-2xl rounded-2xl border shadow-xl overflow-y-auto max-h-[90vh]"
@@ -564,7 +564,7 @@ export default function HeroSlidesClient({ slides: initialSlides }: Props) {
               {/* Color Fields */}
               <div>
                 <label className="block text-xs font-semibold text-stone-600 mb-2">Colors</label>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { key: "accentColor", label: "Accent" },
                     { key: "bgPrimary", label: "BG Primary" },

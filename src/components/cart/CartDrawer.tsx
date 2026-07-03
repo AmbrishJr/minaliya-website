@@ -139,7 +139,7 @@ export default function CartDrawer() {
 
                   {/* Details */}
                   <div className="flex-1 min-w-0">
-                    <ProductName as="h4" variant="compact">
+                    <ProductName as="h4" variant="compact" splitOnMobile>
                       {productDisplayName(item.name)}
                     </ProductName>
                     <p

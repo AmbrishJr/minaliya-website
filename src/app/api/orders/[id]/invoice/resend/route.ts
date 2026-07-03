@@ -23,10 +23,6 @@ export async function POST(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    if (!order.invoiceGenerated) {
-      return NextResponse.json({ error: "Invoice not generated yet" }, { status: 400 });
-    }
-
     const emailResult = await sendInvoiceEmail(order);
 
     if (emailResult) {

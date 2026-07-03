@@ -104,7 +104,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           </Link>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg lg:hidden transition-colors"
+            className="p-2.5 rounded-lg lg:hidden transition-colors"
             style={{ color: "var(--color-stone-400)" }}
             onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-stone-700)"; e.currentTarget.style.background = "var(--color-stone-200)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-stone-400)"; e.currentTarget.style.background = "transparent"; }}

@@ -282,7 +282,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                             placeholder="e.g. John Doe"
                             value={bulkName}
                             onChange={(e) => setBulkName(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm transition-all"
                             style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                             required
                           />
@@ -297,7 +297,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                             placeholder="e.g. Organic Foods Ltd"
                             value={bulkCompany}
                             onChange={(e) => setBulkCompany(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm transition-all"
                             style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                           />
                         </div>
@@ -311,7 +311,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                             placeholder="e.g. business@organic.com"
                             value={bulkEmail}
                             onChange={(e) => setBulkEmail(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm font-mono transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm font-mono transition-all"
                             style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                             required
                           />
@@ -326,7 +326,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                             placeholder="e.g. 9876543210"
                             value={bulkPhone}
                             onChange={(e) => setBulkPhone(e.target.value.replace(/[^0-9]/gi, "").slice(0, 10))}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm font-mono transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm font-mono transition-all"
                             style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                             required
                           />
@@ -344,7 +344,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                         <select
                           value={bulkProduct}
                           onChange={(e) => setBulkProduct(e.target.value)}
-                          className="w-full px-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm cursor-pointer"
+                          className="w-full px-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm cursor-pointer"
                           style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                         >
                           <option value="All Oils">All Wooden Pressed Oils</option>
@@ -363,7 +363,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                             min="20"
                             value={bulkQuantity}
                             onChange={(e) => setBulkQuantity(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm font-mono transition-all"
+                            className="w-full px-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm font-mono transition-all"
                             style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                             required
                           />
@@ -385,7 +385,7 @@ export default function ShopContent({ initialProducts }: { initialProducts: Prod
                         placeholder="Please detail any custom packaging, shipping locations, frequency of delivery, or labeling requirements..."
                         value={bulkMessage}
                         onChange={(e) => setBulkMessage(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border focus:ring-2 outline-none text-sm transition-all"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border focus:ring-2 outline-none text-sm transition-all"
                         style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                       />
                     </div>

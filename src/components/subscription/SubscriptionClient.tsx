@@ -355,7 +355,7 @@ export default function SubscriptionClient() {
                   {step.title}
                 </h3>
                 <p
-                  className="text-sm leading-relaxed max-w-xs mx-auto"
+                  className="text-sm leading-relaxed max-w-sm mx-auto"
                   style={{ color: "var(--color-stone-500)" }}
                 >
                   {step.desc}

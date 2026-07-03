@@ -520,7 +520,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                     style={{ borderColor: "var(--color-stone-200)" }}
                     placeholder="+91 98765 43210"
                   />
-                  <button onClick={() => removePhone(i)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
+                  <button onClick={() => removePhone(i)} className="p-2 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -541,7 +541,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                     style={{ borderColor: "var(--color-stone-200)" }}
                     placeholder="hello@minaliya.com"
                   />
-                  <button onClick={() => removeEmail(i)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
+                  <button onClick={() => removeEmail(i)} className="p-2 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -783,7 +783,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                   style={{ borderColor: "var(--color-stone-200)" }}
                   placeholder="UPI"
                 />
-                <button onClick={() => removePaymentMethod(i)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
+                <button onClick={() => removePaymentMethod(i)} className="p-2 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -928,7 +928,7 @@ function LinkRow({
         style={{ borderColor: "var(--color-stone-200)" }}
         placeholder="/path"
       />
-      <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
+      <button onClick={onRemove} className="p-2 rounded-lg hover:bg-red-50 text-red-400 shrink-0">
         <Trash2 size={14} />
       </button>
     </div>

@@ -108,156 +108,288 @@ export default function ProductsTableClient({ products: initialProducts, categor
         </p>
         <AddProductModal categories={categories} onSuccess={() => router.refresh()} />
       </div>
-      <div className="overflow-x-auto">
-        {products.length > 0 ? (
-          <table className="w-full text-left border-collapse text-sm min-w-[750px]">
-            <thead>
-              <tr
-                className="border-b font-semibold"
-                style={{
-                  borderColor: "var(--color-forest-100)",
-                  background: "var(--color-forest-50)",
-                  color: "var(--color-forest-700)",
-                }}
-              >
-                <th className="p-4 pl-6 text-xs uppercase tracking-wider w-10">Order</th>
-                <th className="p-4 text-xs uppercase tracking-wider">Product Info</th>
-                <th className="p-4 text-xs uppercase tracking-wider">Slug</th>
-                <th className="p-4 text-xs uppercase tracking-wider">Category</th>
-                <th className="p-4 text-xs uppercase tracking-wider">Price</th>
-                <th className="p-4 text-xs uppercase tracking-wider">Stock Level</th>
-                <th className="p-4 text-xs uppercase tracking-wider">Status</th>
-                <th className="p-4 pr-6 text-xs uppercase tracking-wider text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y" style={{ borderColor: "var(--color-stone-100)" }}>
-              {products.map((product, idx) => {
-                const status = getStockStatus(product.stock);
-                const StatusIcon = status.icon;
+      {products.length > 0 ? (
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {products.map((product, idx) => {
+              const status = getStockStatus(product.stock);
+              const StatusIcon = status.icon;
 
-                return (
-                  <tr
-                    key={product.id}
-                    className="hover:bg-forest-50/30 text-stone-600 transition-colors border-b"
-                    style={{ borderColor: "var(--color-stone-100)" }}
-                  >
-                    <td className="p-4 pl-6">
-                      <div className="flex flex-col gap-0.5 text-stone-300">
-                        <button
-                          onClick={() => handleMove(product.id, "up")}
-                          disabled={idx === 0 || reorderPending}
-                          className="disabled:opacity-20 hover:text-stone-500 cursor-pointer"
-                        >
-                          <ChevronUp size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleMove(product.id, "down")}
-                          disabled={idx === products.length - 1 || reorderPending}
-                          className="disabled:opacity-20 hover:text-stone-500 cursor-pointer"
-                        >
-                          <ChevronDown size={14} />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="p-4 pl-6">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-50 flex items-center justify-center shrink-0 border"
-                          style={{ borderColor: "var(--color-forest-200)" }}
-                        >
-                          <Image
-                            src={product.images[0] || "/logo.png"}
-                            alt={product.name}
-                            fill
-                            sizes="48px"
-                            className="object-contain p-1"
-                          />
-                        </div>
-                        <div>
-                          <ProductName as="span" variant="compact" className="text-stone-900 block">
-                            {product.name}
-                          </ProductName>
-                          {product.isFeatured && (
-                            <span
-                              className="inline-flex text-[9px] font-bold uppercase tracking-wider mt-1"
-                              style={{ color: "var(--color-amber-600)" }}
-                            >
-                              ⭐ Featured
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4 font-mono text-xs text-stone-500 font-medium">{product.slug}</td>
-                    <td className="p-4 font-medium">
-                      <span
-                        className="px-2.5 py-1 rounded-full text-xs font-semibold"
-                        style={{
-                          background: "var(--color-cream-100)",
-                          color: "var(--color-stone-700)",
-                        }}
+              return (
+                <div
+                  key={product.id}
+                  className="p-4 rounded-xl border"
+                  style={{
+                    borderColor: "var(--color-stone-200)",
+                    background: "white",
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleMove(product.id, "up")}
+                        disabled={idx === 0 || reorderPending}
+                        className="disabled:opacity-20 hover:text-stone-500 cursor-pointer p-1"
                       >
-                        {product.categoryName}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-semibold text-stone-900">₹{product.price}</div>
-                      {product.discountPrice && (
-                        <div className="text-xs font-medium" style={{ color: "var(--color-forest-600)" }}>
-                          Sale: ₹{product.discountPrice}
-                        </div>
+                        <ChevronUp size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleMove(product.id, "down")}
+                        disabled={idx === products.length - 1 || reorderPending}
+                        className="disabled:opacity-20 hover:text-stone-500 cursor-pointer p-1"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
+                    <span className="text-xs text-stone-400">#{idx + 1}</span>
+                  </div>
+
+                  <div className="flex items-start gap-3 mb-3">
+                    <div
+                      className="relative w-14 h-14 rounded-lg overflow-hidden bg-stone-50 flex items-center justify-center shrink-0 border"
+                      style={{ borderColor: "var(--color-forest-200)" }}
+                    >
+                      <Image
+                        src={product.images[0] || "/logo.png"}
+                        alt={product.name}
+                        fill
+                        sizes="56px"
+                        className="object-contain p-1"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <ProductName as="span" variant="compact" className="text-stone-900 block">
+                        {product.name}
+                      </ProductName>
+                      {product.isFeatured && (
+                        <span
+                          className="inline-flex text-[9px] font-bold uppercase tracking-wider mt-1"
+                          style={{ color: "var(--color-amber-600)" }}
+                        >
+                          ⭐ Featured
+                        </span>
                       )}
-                    </td>
-                    <td className="p-4 font-semibold text-stone-900">{product.stock} units</td>
-                    <td className="p-4">
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
-                        style={{
-                          backgroundColor: status.color,
-                          color: status.text,
-                          borderColor: status.border,
-                        }}
-                      >
-                        <StatusIcon size={12} />
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="p-4 pr-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Edit Button */}
-                        <AddProductModal
-                          categories={categories}
-                          product={product}
-                          triggerButton={
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-lg border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
-                              title="Edit Product"
-                            >
-                              <Edit size={16} />
-                            </button>
-                          }
-                        />
+                    </div>
+                  </div>
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDeleteError(null);
-                            setDeletingId(product.id);
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500 mb-3">
+                    <span>
+                      <span className="font-semibold text-stone-700">Slug:</span> {product.slug}
+                    </span>
+                    <span>
+                      <span className="font-semibold text-stone-700">Cat:</span> {product.categoryName}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <span className="font-semibold text-stone-900">₹{product.price}</span>
+                      {product.discountPrice && (
+                        <span className="text-xs font-medium ml-2" style={{ color: "var(--color-forest-600)" }}>
+                          Sale: ₹{product.discountPrice}
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                      style={{
+                        backgroundColor: status.color,
+                        color: status.text,
+                        borderColor: status.border,
+                      }}
+                    >
+                      <StatusIcon size={10} />
+                      {status.label}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--color-stone-100)" }}>
+                    <span className="text-xs text-stone-500">{product.stock} units</span>
+                    <div className="flex items-center gap-2">
+                      <AddProductModal
+                        categories={categories}
+                        product={product}
+                        triggerButton={
+                          <button
+                            type="button"
+                            className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
+                            title="Edit Product"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError(null);
+                          setDeletingId(product.id);
+                        }}
+                        className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm min-w-[750px]">
+              <thead>
+                <tr
+                  className="border-b font-semibold"
+                  style={{
+                    borderColor: "var(--color-forest-100)",
+                    background: "var(--color-forest-50)",
+                    color: "var(--color-forest-700)",
+                  }}
+                >
+                  <th className="p-4 pl-6 text-xs uppercase tracking-wider w-10">Order</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Product Info</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Slug</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Category</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Price</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Stock Level</th>
+                  <th className="p-4 text-xs uppercase tracking-wider">Status</th>
+                  <th className="p-4 pr-6 text-xs uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: "var(--color-stone-100)" }}>
+                {products.map((product, idx) => {
+                  const status = getStockStatus(product.stock);
+                  const StatusIcon = status.icon;
+
+                  return (
+                    <tr
+                      key={product.id}
+                      className="hover:bg-forest-50/30 text-stone-600 transition-colors border-b"
+                      style={{ borderColor: "var(--color-stone-100)" }}
+                    >
+                      <td className="p-4 pl-6">
+                        <div className="flex flex-col gap-0.5 text-stone-300">
+                          <button
+                            onClick={() => handleMove(product.id, "up")}
+                            disabled={idx === 0 || reorderPending}
+                            className="disabled:opacity-20 hover:text-stone-500 cursor-pointer"
+                          >
+                            <ChevronUp size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleMove(product.id, "down")}
+                            disabled={idx === products.length - 1 || reorderPending}
+                            className="disabled:opacity-20 hover:text-stone-500 cursor-pointer"
+                          >
+                            <ChevronDown size={14} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-50 flex items-center justify-center shrink-0 border"
+                            style={{ borderColor: "var(--color-forest-200)" }}
+                          >
+                            <Image
+                              src={product.images[0] || "/logo.png"}
+                              alt={product.name}
+                              fill
+                              sizes="48px"
+                              className="object-contain p-1"
+                            />
+                          </div>
+                          <div>
+                            <ProductName as="span" variant="compact" className="text-stone-900 block">
+                              {product.name}
+                            </ProductName>
+                            {product.isFeatured && (
+                              <span
+                                className="inline-flex text-[9px] font-bold uppercase tracking-wider mt-1"
+                                style={{ color: "var(--color-amber-600)" }}
+                              >
+                                ⭐ Featured
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 font-mono text-xs text-stone-500 font-medium">{product.slug}</td>
+                      <td className="p-4 font-medium">
+                        <span
+                          className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            background: "var(--color-cream-100)",
+                            color: "var(--color-stone-700)",
                           }}
-                          className="p-1.5 rounded-lg border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
-                          title="Delete Product"
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          {product.categoryName}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-semibold text-stone-900">₹{product.price}</div>
+                        {product.discountPrice && (
+                          <div className="text-xs font-medium" style={{ color: "var(--color-forest-600)" }}>
+                            Sale: ₹{product.discountPrice}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 font-semibold text-stone-900">{product.stock} units</td>
+                      <td className="p-4">
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
+                          style={{
+                            backgroundColor: status.color,
+                            color: status.text,
+                            borderColor: status.border,
+                          }}
+                        >
+                          <StatusIcon size={12} />
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="p-4 pr-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Edit Button */}
+                          <AddProductModal
+                            categories={categories}
+                            product={product}
+                            triggerButton={
+                              <button
+                                type="button"
+                                className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-forest-600 hover:border-forest-200 hover:bg-forest-50 transition-colors"
+                                title="Edit Product"
+                              >
+                                <Edit size={16} />
+                              </button>
+                            }
+                          />
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteError(null);
+                              setDeletingId(product.id);
+                            }}
+                            className="p-2 rounded-lg border border-stone-200 text-stone-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
+                            title="Delete Product"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
         ) : (
           <div className="p-12 text-center text-stone-500 font-medium space-y-3">
             <p>No products yet.</p>
@@ -267,7 +399,6 @@ export default function ProductsTableClient({ products: initialProducts, categor
             </p>
           </div>
         )}
-      </div>
 
       {/* Delete Confirmation Modal */}
       {deletingId && (

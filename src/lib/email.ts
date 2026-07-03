@@ -62,64 +62,6 @@ async function sendEmail(
   }
 }
 
-async function sendEmailWithAttachment(
-  recipientEmail: string,
-  subject: string,
-  content: string,
-  filename: string,
-  fileBuffer: Buffer,
-  mimeType = "application/pdf"
-): Promise<{ success: boolean; messageId?: string }> {
-  if (!EMAIL_CONFIG_OK) {
-    console.error(`[Email] Cannot send to ${recipientEmail}: EMAIL_OTP_* env vars not configured`);
-    return { success: false };
-  }
-
-  try {
-    const boundary = `----FormBoundary${Date.now()}`;
-    const parts: Buffer[] = [];
-
-    const appendField = (name: string, value: string) => {
-      parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
-    };
-
-    appendField("method", "EMS_POST_CAMPAIGN");
-    appendField("userid", EMAIL_USERID);
-    appendField("password", EMAIL_PASSWORD);
-    appendField("v", "1.1");
-    appendField("name", EMAIL_FROM_NAME);
-    appendField("recipients", recipientEmail);
-    appendField("subject", subject);
-    appendField("content", content);
-    appendField("content_type", "text/html");
-    appendField("file", filename); // required by Webaroo for filename reference
-
-    // File attachment part
-    parts.push(Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\nContent-Transfer-Encoding: base64\r\n\r\n${fileBuffer.toString("base64")}\r\n`
-    ));
-
-    parts.push(Buffer.from(`--${boundary}--\r\n`));
-
-    const body = Buffer.concat(parts);
-
-    const response = await fetch(EMAIL_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
-      body,
-    });
-
-    const text = await response.text();
-    const success = response.ok && text.toLowerCase().startsWith("success");
-    console.log(`[Email][Attachment] ${success ? "Sent" : "Failed"} to ${recipientEmail}, response: ${text}`);
-
-    return { success, messageId: success ? text.trim() : undefined };
-  } catch (error) {
-    console.error(`[Email][Attachment] Failed to send to ${recipientEmail}:`, error);
-    return { success: false };
-  }
-}
-
 export async function sendOtpEmail(
   recipientEmail: string,
   otp: string,
@@ -242,10 +184,23 @@ export async function sendOtpEmail(
   return result.success;
 }
 
+const PRODUCT_HSN: Record<string, string> = {
+  'groundnut oil': '15089091',
+  'sesame oil': '15155091',
+  'coconut oil': '15131100',
+};
+
+function getHsnCode(productName: string): string {
+  const key = productName.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+  for (const [name, hsn] of Object.entries(PRODUCT_HSN)) {
+    if (key.includes(name)) return hsn;
+  }
+  return '';
+}
+
 export async function sendInvoiceEmail(
   order: any,
   orderItems?: any[],
-  pdfBuffer?: Buffer,
 ): Promise<{ success: boolean; messageId?: string }> {
   try {
     const shippingAddress = order.shippingAddress as Record<string, string>;
@@ -260,19 +215,24 @@ export async function sendInvoiceEmail(
     const orderIdShort = order.id.slice(-8).toUpperCase();
     const invoiceNumber = order.invoiceNumber || "Pending";
 
-    const subject = `Your Minaliya Order Confirmation & Invoice (#${orderIdShort})`;
+    const subject = `Tax Invoice - ${invoiceNumber} - Minaliya Goods And Services`;
 
-    // Build items for the email template
-    const items = (orderItems || []).map((item: any) => ({
-      productName: item.product?.name || item.productName || 'Product',
-      quantity: item.quantity,
-      unit: 'NOS',
-      pricePerUnit: Number(item.price),
-      hsnSac: item.hsnSac || '',
-      discount: 0,
-      gstPercent: 5,
-      totalPrice: Number(item.price) * item.quantity,
-    }));
+    const items = (orderItems || []).map((item: any, index: number) => {
+      const rawName = item.product?.name || item.productName || 'Product';
+      const base = rawName.replace(/^Cold Pressed /i, '');
+      const productName = `Minaliya Wooden Cold Pressed ${base}`;
+      return {
+        sno: index + 1,
+        productName,
+        quantity: item.quantity,
+        unit: 'NOS',
+        pricePerUnit: Number(item.price),
+        hsnSac: getHsnCode(rawName),
+        discount: 0,
+        gstPercent: 5,
+        totalPrice: Number(item.price) * item.quantity,
+      };
+    });
 
     const subtotal = Number(order.totalAmount);
     const gstRate = 5;
@@ -285,7 +245,16 @@ export async function sendInvoiceEmail(
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.minaliya.in";
     const logoUrl = `${baseUrl}/logo.png`;
 
-    // Import the email template generator
+    const orderDate = (order.invoiceDate || order.createdAt)
+      ? new Date(order.invoiceDate || order.createdAt).toLocaleDateString('en-IN', {
+          day: '2-digit', month: 'short', year: 'numeric',
+        })
+      : new Date().toLocaleDateString('en-IN');
+
+    const invoiceTime = (order.invoiceDate || order.createdAt)
+      ? new Date(order.invoiceDate || order.createdAt).toLocaleTimeString('en-IN')
+      : new Date().toLocaleTimeString('en-IN');
+
     const { generateInvoiceEmailHTML } = await import('./invoiceEmailTemplate');
 
     const content = generateInvoiceEmailHTML({
@@ -296,22 +265,14 @@ export async function sendInvoiceEmail(
       companyGst: process.env.COMPANY_GST || '33APKPD8864Q3Z3',
       companyFssai: process.env.COMPANY_FSSAI || '12423002001621',
       logoUrl,
-      orderId: order.id,
-      orderIdShort,
       invoiceNumber,
-      orderDate: (order.invoiceDate || order.createdAt)
-        ? new Date(order.invoiceDate || order.createdAt).toLocaleDateString('en-IN', {
-            day: '2-digit', month: 'short', year: 'numeric',
-          })
-        : new Date().toLocaleDateString('en-IN'),
-      razorpayPaymentId: order.razorpayPaymentId || '',
-      paymentMethod: order.paymentMethod || 'Online',
-      paymentStatus: order.paymentStatus === 'PAID' ? 'Paid' : 'Pending',
+      orderId: orderIdShort,
+      invoiceDate: orderDate,
+      invoiceTime,
       customerName,
       customerEmail: shippingAddress?.email || '',
       customerPhone: shippingAddress?.phone || '',
       billingAddress: shippingAddress?.address || '',
-      shippingAddress: shippingAddress?.address || '',
       customerState: shippingAddress?.state || '',
       customerPincode: shippingAddress?.pinCode || '',
       items,
@@ -321,11 +282,10 @@ export async function sendInvoiceEmail(
       cgst,
       sgst,
       igst: 0,
+      roundOff: 0,
       grandTotal: subtotal,
-      ordersPageUrl: `${baseUrl}/account?tab=orders`,
-      invoiceDownloadUrl: order.invoiceUrl
-        ? order.invoiceUrl.replace('/upload/', '/upload/fl_attachment/')
-        : `${baseUrl}/api/orders/${order.id}/invoice`,
+      amountPaid: order.paymentStatus === 'PAID' ? subtotal : 0,
+      balance: order.paymentStatus === 'PAID' ? 0 : subtotal,
     });
 
     const result = await sendEmail(recipientEmail, subject, content);
