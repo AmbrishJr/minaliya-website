@@ -1,14 +1,9 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { existsSync, mkdirSync } from 'fs';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
-import prisma from './prisma';
-import { generateInvoiceHTML, InvoiceData, InvoiceItem } from './invoiceTemplate';
-import { sendInvoiceEmail } from './email';
-import { uploadInvoicePdf } from './cloudinary';
-
-const INVOICE_STORAGE_PATH = process.env.INVOICE_STORAGE_PATH || path.join(process.cwd(), 'public', 'invoices');
+import { renderToBuffer } from "@react-pdf/renderer";
+import React from "react";
+import prisma from "./prisma";
+import { InvoiceDocument, InvoiceData } from "./invoicePDF";
+import { sendInvoiceEmail } from "./email";
+import { uploadInvoicePdf } from "./cloudinary";
 
 const PRODUCT_HSN: Record<string, string> = {
   'groundnut oil': '15089091',
@@ -32,41 +27,6 @@ const COMPANY_FSSAI = process.env.COMPANY_FSSAI || '12423002001621';
 
 const GST_RATE = 5;
 
-const CHROME_PATHS = [
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium-browser',
-  '/usr/bin/chromium',
-  '/snap/bin/chromium',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/Applications/Chromium.app/Contents/MacOS/Chromium',
-  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-];
-
-async function findChromeExecutable(): Promise<string | undefined> {
-  const fs = await import('fs/promises');
-  for (const p of CHROME_PATHS) {
-    try {
-      await fs.access(p);
-      return p;
-    } catch {
-      continue;
-    }
-  }
-  if (process.platform === 'win32') {
-    const localAppData = process.env.LOCALAPPDATA;
-    if (localAppData) {
-      const edgePath = path.join(localAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe');
-      try {
-        await fs.access(edgePath);
-        return edgePath;
-      } catch {}
-    }
-  }
-  return undefined;
-}
-
 export async function generateInvoicePDF(
   orderId: string,
   forceRegenerate = false
@@ -81,8 +41,21 @@ export async function generateInvoicePDF(
     });
 
     if (!order) return { success: false, error: 'Order not found' };
+
+    // If already generated and caller doesn't need a fresh copy, fetch from Cloudinary
     if (order.invoiceGenerated && !forceRegenerate) {
-      return { success: true, url: order.invoiceUrl || undefined };
+      if (order.invoiceUrl) {
+        try {
+          const response = await fetch(order.invoiceUrl);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            return { success: true, url: order.invoiceUrl, buffer: Buffer.from(arrayBuffer) };
+          }
+        } catch {
+          // Cloudinary fetch failed — fall through to regenerate
+        }
+      }
+      // No valid Cloudinary URL or fetch failed — regenerate
     }
 
     const invoiceNumber = order.invoiceNumber || `INV-${order.id.slice(-8).toUpperCase()}`;
@@ -95,7 +68,7 @@ export async function generateInvoicePDF(
     }
 
     const shippingAddress = order.shippingAddress as Record<string, string>;
-    const items: InvoiceItem[] = order.items.map((item, index) => {
+    const items = order.items.map((item, index) => {
       const hsn = getHsnCode(item.product.name);
       const lineTotal = Number(item.price) * item.quantity;
       return {
@@ -151,49 +124,11 @@ export async function generateInvoicePDF(
       balance: order.paymentStatus === 'PAID' ? 0 : subtotal,
     };
 
-    const htmlContent = generateInvoiceHTML(invoiceData);
-
-    const isLocal = !process.env.VERCEL_ENV && process.env.NODE_ENV !== 'production';
-
-    let executablePath: string | undefined;
-    if (isLocal) {
-      executablePath = await findChromeExecutable();
-      if (!executablePath) {
-        console.warn('Chrome not found in common paths. Install Google Chrome or set CHROME_PATH env var.');
-      }
-    } else {
-      executablePath = await chromium.executablePath();
-    }
-
-    if (!executablePath) {
-      return { success: false, error: 'Chrome/Chromium executable not found.' };
-    }
-
-    const launchOptions: Record<string, unknown> = {
-      args: isLocal ? [] : chromium.args,
-      defaultViewport: { width: 1280, height: 720 },
-      executablePath,
-      headless: true,
-    };
-
-    const browser = await puppeteer.launch(launchOptions);
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'load' });
-    const pdfBuffer = Buffer.from(await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' },
-    }));
-    await browser.close();
+    const pdfBuffer = await renderToBuffer(
+      React.createElement(InvoiceDocument, { data: invoiceData }) as any
+    );
 
     const uploadResult = await uploadInvoicePdf(pdfBuffer, invoiceNumber);
-
-    // Save locally so the /api/orders/[id]/invoice route can serve it
-    if (!existsSync(INVOICE_STORAGE_PATH)) {
-      mkdirSync(INVOICE_STORAGE_PATH, { recursive: true });
-    }
-    const localPath = path.join(INVOICE_STORAGE_PATH, `${invoiceNumber}.pdf`);
-    await fs.writeFile(localPath, pdfBuffer);
 
     await prisma.order.update({
       where: { id: orderId },
@@ -202,8 +137,9 @@ export async function generateInvoicePDF(
 
     return { success: true, url: uploadResult.secure_url, buffer: pdfBuffer };
   } catch (error) {
-    console.error('Invoice PDF generation failed:', error);
-    return { success: false, error: 'Failed to generate invoice PDF' };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Invoice PDF generation failed:', message, error);
+    return { success: false, error: `Failed to generate invoice PDF: ${message}` };
   }
 }
 
