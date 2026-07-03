@@ -1,0 +1,14 @@
+# robots.txt for Minaliya Cold Pressed Oils
+# https://minaliya.com
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /payment/success
+Disallow: /payment/failed
+Disallow: /checkout
+Disallow: /account
+
+# Sitemap
+Sitemap: https://minaliya.com/sitemap.xml
