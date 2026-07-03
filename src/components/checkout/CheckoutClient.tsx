@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrderContext";
+import { ProductName } from "@/components/shared/ProductName";
 import { ChevronRight, Lock, MapPin, CheckCircle2, ShoppingBag, ArrowLeft, AlertCircle, Tag, X, ChevronDown, Shield } from "lucide-react";
 import { createOrder } from "@/actions/order";
 import { lookupPincode } from "@/actions/lookupPincode";
@@ -729,7 +730,7 @@ export default function CheckoutClient() {
                     <Image src={item.image} alt={item.name} width={50} height={50} className="object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold truncate" style={{ color: "var(--color-stone-800)" }}>{item.name}</h4>
+                    <ProductName as="h4" variant="compact">{item.name}</ProductName>
                     <p className="text-xs text-stone-500 mt-0.5 mb-2">{item.size} × {item.quantity}</p>
                     
                     <div className="text-[10px] sm:text-xs text-stone-500 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 bg-stone-50 p-2 rounded-md border" style={{ borderColor: "var(--color-stone-100)" }}>

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { ProductName } from "@/components/shared/ProductName";
 import { AlertTriangle, CheckCircle, ChevronUp, ChevronDown, Edit, Trash2, Loader2 } from "lucide-react";
 import AddProductModal, { CategoryOption } from "./AddProductModal";
 import { deleteProduct, reorderProducts } from "@/actions/adminData";
@@ -173,9 +174,9 @@ export default function ProductsTableClient({ products: initialProducts, categor
                           />
                         </div>
                         <div>
-                          <span className="font-semibold text-stone-900 text-sm block">
+                          <ProductName as="span" variant="compact" className="text-stone-900 block">
                             {product.name}
-                          </span>
+                          </ProductName>
                           {product.isFeatured && (
                             <span
                               className="inline-flex text-[9px] font-bold uppercase tracking-wider mt-1"

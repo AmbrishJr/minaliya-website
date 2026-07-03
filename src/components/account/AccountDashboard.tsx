@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { User, Package, MapPin, LogOut, Settings, ChevronRight, Trash2, RefreshCw, Sparkles, Building, Phone, Upload, ToggleLeft, ToggleRight, ShieldCheck, Mail, Bell, Clipboard, ClipboardCheck, ExternalLink, Truck, FileText } from "lucide-react";
+import { ProductName } from "@/components/shared/ProductName";
 import OrderStatusBadge from "@/components/shared/OrderStatusBadge";
 import OrderStatusTimeline from "@/components/shared/OrderStatusTimeline";
 import Link from "next/link";
@@ -690,6 +691,13 @@ export default function AccountDashboard() {
                            <p className="text-sm text-stone-500 mb-0.5">Order # <span className="font-medium text-stone-900">{order.id}</span></p>
                             <div className="flex items-center gap-2">
                               <OrderStatusBadge status={order.status} />
+                              <button
+                                onClick={() => handleReorder(order)}
+                                className="inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-semibold rounded-full cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                                style={{ background: "var(--color-forest-600)", color: "white" }}
+                              >
+                                <RefreshCw size={12} /> Reorder
+                              </button>
                               </div>
                             </div>
                           </div>
@@ -751,16 +759,16 @@ export default function AccountDashboard() {
                               <Image src={item.image} alt={item.name} fill className="object-contain p-2" sizes="80px" />
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
-                              <p className="font-bold text-stone-900 text-sm">{item.name}</p>
+                              <ProductName as="p" variant="compact" className="text-stone-900">{item.name}</ProductName>
                               <p className="text-xs text-stone-500 mt-1">Size: {item.size}</p>
                               <div className="flex justify-between items-center mt-2">
                                 <p className="text-xs font-medium text-stone-600">Qty: {item.quantity}</p>
-                                <p className="font-bold text-stone-900 text-sm">₹{item.price * item.quantity}</p>
+                                 <p className="font-bold text-stone-900 text-sm">₹{item.price * item.quantity}</p>
                               </div>
                             </div>
                           </div>
                         ))}
-                      </div>
+                       </div>
                     </div>
                   ))}
                 </div>

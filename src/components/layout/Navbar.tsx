@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { ProductName } from "@/components/shared/ProductName";
 import { allProducts } from "@/data/products";
 import {
   Search,
@@ -279,9 +280,9 @@ export default function Navbar() {
                               />
                             </div>
                             <div className="flex-1">
-                              <h4 className="text-sm font-bold text-stone-800 group-hover:text-forest-700 transition-colors">
+                              <ProductName as="h4" variant="card" className="group-hover:text-forest-700 transition-colors">
                                 {product.name}
-                              </h4>
+                              </ProductName>
                               <p className="text-xs text-stone-400">{product.category} • {product.sizes[0]}</p>
                             </div>
                           </div>

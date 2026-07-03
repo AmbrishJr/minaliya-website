@@ -11,6 +11,8 @@ import {
   Loader2,
   X,
   GripVertical,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import { createBlog, updateBlog, deleteBlog, type ContentBlock } from "@/actions/adminData";
 
@@ -21,6 +23,10 @@ interface BlogPost {
   content: ContentBlock[];
   images: string[];
   imagePublicIds: string[];
+  imageAlt: string | null;
+  imageTitle: string | null;
+  imageCaption: string | null;
+  imageDescription: string | null;
   author: string | null;
   publishedAt: string;
   createdAt: string;
@@ -52,8 +58,13 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
     content: emptyContent.map((c) => ({ ...c })),
     images: [] as string[],
     imagePublicIds: [] as string[],
+    imageAlt: "",
+    imageTitle: "",
+    imageCaption: "",
+    imageDescription: "",
     author: "",
   });
+  const [seoExpanded, setSeoExpanded] = useState(false);
 
   function resetForm() {
     setForm({
@@ -62,11 +73,16 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
       content: emptyContent.map((c) => ({ ...c })),
       images: [],
       imagePublicIds: [],
+      imageAlt: "",
+      imageTitle: "",
+      imageCaption: "",
+      imageDescription: "",
       author: "",
     });
     setImagePreviews([]);
     setImageFiles([]);
     setError("");
+    setSeoExpanded(false);
   }
 
   function openCreate() {
@@ -82,6 +98,10 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
       content: blog.content.map((c) => ({ ...c })),
       images: blog.images,
       imagePublicIds: blog.imagePublicIds,
+      imageAlt: blog.imageAlt ?? "",
+      imageTitle: blog.imageTitle ?? "",
+      imageCaption: blog.imageCaption ?? "",
+      imageDescription: blog.imageDescription ?? "",
       author: blog.author ?? "",
     });
     setImagePreviews(blog.images);
@@ -187,6 +207,10 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
           content,
           images,
           imagePublicIds,
+          imageAlt: form.imageAlt || undefined,
+          imageTitle: form.imageTitle || undefined,
+          imageCaption: form.imageCaption || undefined,
+          imageDescription: form.imageDescription || undefined,
           author: form.author || undefined,
         });
         if (!res.success) { setError(res.error); return; }
@@ -197,6 +221,10 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
           content,
           images,
           imagePublicIds,
+          imageAlt: form.imageAlt || undefined,
+          imageTitle: form.imageTitle || undefined,
+          imageCaption: form.imageCaption || undefined,
+          imageDescription: form.imageDescription || undefined,
           author: form.author || undefined,
         });
         if (!res.success) { setError(res.error); return; }
@@ -491,6 +519,76 @@ export default function BlogClient({ blogs: initialBlogs }: Props) {
                     <p className="text-xs font-medium text-stone-600">Click to add images</p>
                   </div>
                 </div>
+              </div>
+
+              {/* SEO Settings (collapsible, optional) */}
+              <div
+                className="rounded-xl border overflow-hidden"
+                style={{ borderColor: "var(--color-stone-200)" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSeoExpanded(!seoExpanded)}
+                  className="flex items-center justify-between w-full px-4 py-3 text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Search size={14} />
+                    SEO Settings
+                    <span className="text-[10px] font-normal text-stone-400">(optional, for search engines)</span>
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${seoExpanded ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {seoExpanded && (
+                  <div className="p-4 space-y-3 border-t" style={{ borderColor: "var(--color-stone-200)" }}>
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-600 mb-1">Alt Text</label>
+                      <input
+                        type="text"
+                        value={form.imageAlt}
+                        onChange={(e) => setForm({ ...form, imageAlt: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{ borderColor: "var(--color-stone-200)" }}
+                        placeholder="e.g. Minaliya Wooden Cold Pressed Groundnut Oil, Sesame Oil and Coconut Oil"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-600 mb-1">Image Title</label>
+                      <input
+                        type="text"
+                        value={form.imageTitle}
+                        onChange={(e) => setForm({ ...form, imageTitle: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{ borderColor: "var(--color-stone-200)" }}
+                        placeholder="e.g. Minaliya Wooden Cold Pressed Oils – Groundnut, Sesame and Coconut Oil"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-600 mb-1">Caption</label>
+                      <input
+                        type="text"
+                        value={form.imageCaption}
+                        onChange={(e) => setForm({ ...form, imageCaption: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border text-sm"
+                        style={{ borderColor: "var(--color-stone-200)" }}
+                        placeholder="e.g. Minaliya Wooden Cold Pressed Oils manufactured using traditional wooden oil extraction methods"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-stone-600 mb-1">Description</label>
+                      <textarea
+                        value={form.imageDescription}
+                        onChange={(e) => setForm({ ...form, imageDescription: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border text-sm resize-none"
+                        style={{ borderColor: "var(--color-stone-200)" }}
+                        rows={2}
+                        placeholder="e.g. A premium product showcase featuring Minaliya Wooden Cold Pressed Groundnut Oil..."
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {error && (

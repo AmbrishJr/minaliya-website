@@ -6,6 +6,7 @@ import { getAnalyticsData } from "@/actions/analytics";
 import GrowthChart from "./GrowthChart";
 import RecommendationsPanel from "./RecommendationsPanel";
 import InteractiveStatCard from "./InteractiveStatCard";
+import { ProductName } from "@/components/shared/ProductName";
 import { TrendingUp, ShoppingBag, DollarSign, Package, AlertCircle, MessageSquare } from "lucide-react";
 
 interface AnalyticsData {
@@ -252,9 +253,9 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                   style={{ borderColor: "var(--color-stone-200)", background: "var(--color-stone-50)" }}
                 >
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--color-stone-800)" }}>
+                    <ProductName as="p" variant="compact">
                       {product.name}
-                    </p>
+                    </ProductName>
                     <p className="text-xs" style={{ color: "var(--color-stone-500)" }}>
                       {product.unitsSold} units sold
                     </p>

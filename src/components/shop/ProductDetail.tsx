@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { ProductName } from "@/components/shared/ProductName";
 import { productDisplayName } from "@/lib/product-utils";
 
 interface Size {
@@ -176,15 +177,9 @@ export default function ProductDetail({
               </span>
 
               {/* Name */}
-              <h1
-                className="text-3xl sm:text-4xl font-bold leading-tight"
-                style={{
-                  fontFamily: "var(--font-body)",
-                  color: "var(--color-stone-900)",
-                }}
-              >
+              <ProductName as="h1" variant="detail">
                 {product.name}
-              </h1>
+              </ProductName>
 
               {/* Tagline */}
               <p
@@ -521,15 +516,9 @@ export default function ProductDetail({
                       />
                     ))}
                   </div>
-                  <h3
-                    className="text-sm sm:text-base font-semibold line-clamp-2"
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      color: "var(--color-stone-800)",
-                    }}
-                  >
-                    {productDisplayName(item.name)}
-                  </h3>
+                    <ProductName as="h3" variant="card">
+                      {productDisplayName(item.name)}
+                    </ProductName>
                   <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
                     <span
                       className="text-base sm:text-lg font-bold"

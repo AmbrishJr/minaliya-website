@@ -3,6 +3,7 @@
 import { Fragment, useState, useTransition } from "react";
 import { updateOrderStatus, deleteOrder, updateOrderAwb } from "@/actions/adminData";
 import OrderStatusBadge from "./OrderStatusBadge";
+import { ProductName } from "@/components/shared/ProductName";
 import { ChevronDown, ChevronUp, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X, Pencil, Package } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -153,7 +154,7 @@ export default function OrdersTable({
                   />
                 </div>
                 <div>
-                  <h5 className="font-semibold text-stone-900 text-xs">{item.productName}</h5>
+                  <ProductName as="h5" variant="compact" className="text-xs text-stone-900">{item.productName}</ProductName>
                   <p className="text-[10px] text-stone-500 mt-0.5">₹{item.price} each</p>
                 </div>
               </div>

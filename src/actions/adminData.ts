@@ -585,6 +585,10 @@ export type CreateBlogInput = {
   content: ContentBlock[];
   images: string[];
   imagePublicIds?: string[];
+  imageAlt?: string;
+  imageTitle?: string;
+  imageCaption?: string;
+  imageDescription?: string;
   author?: string;
   publishedAt?: Date;
 };
@@ -621,6 +625,10 @@ export async function createBlog(input: CreateBlogInput) {
         content,
         images: input.images,
         imagePublicIds: input.imagePublicIds ?? [],
+        imageAlt: input.imageAlt?.trim() || null,
+        imageTitle: input.imageTitle?.trim() || null,
+        imageCaption: input.imageCaption?.trim() || null,
+        imageDescription: input.imageDescription?.trim() || null,
         author: input.author?.trim() || null,
         publishedAt: input.publishedAt || new Date(),
       },
@@ -643,6 +651,10 @@ export async function updateBlog(id: string, input: Partial<CreateBlogInput>) {
   if (input.images !== undefined) data.images = input.images;
   if (input.imagePublicIds !== undefined) data.imagePublicIds = input.imagePublicIds;
   if (input.author !== undefined) data.author = input.author?.trim() || null;
+  if (input.imageAlt !== undefined) data.imageAlt = input.imageAlt?.trim() || null;
+  if (input.imageTitle !== undefined) data.imageTitle = input.imageTitle?.trim() || null;
+  if (input.imageCaption !== undefined) data.imageCaption = input.imageCaption?.trim() || null;
+  if (input.imageDescription !== undefined) data.imageDescription = input.imageDescription?.trim() || null;
 
   if (!data.title) return { success: false as const, error: "Title is required." };
   if (!data.slug) return { success: false as const, error: "Slug is required." };
@@ -956,6 +968,49 @@ export async function updateFooterSettings(
   } catch (error) {
     console.error("Error updating footer settings:", error);
     return { success: false as const, error: "Failed to update footer settings." };
+  }
+}
+
+// ─── HEADER SETTINGS ─────────────────────────────────────
+
+export type HeaderAnnouncement = {
+  text: string;
+  icon: string;
+  enabled: boolean;
+};
+
+export type HeaderWhatsApp = {
+  label: string;
+  phone: string;
+  enabled: boolean;
+};
+
+export type HeaderSettingsData = {
+  announcement1: HeaderAnnouncement;
+  announcement2: HeaderAnnouncement;
+  announcement3: HeaderWhatsApp;
+  announcement4: HeaderAnnouncement;
+  extraAnnouncements: HeaderAnnouncement[];
+};
+
+export async function updateHeaderSettings(
+  data: HeaderSettingsData
+) {
+  const { isAdmin } = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false as const, error: "Unauthorized." };
+  }
+
+  try {
+    await prisma.headerSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default", data },
+      update: { data },
+    });
+    return { success: true as const };
+  } catch (error) {
+    console.error("Error updating header settings:", error);
+    return { success: false as const, error: "Failed to update header settings." };
   }
 }
 

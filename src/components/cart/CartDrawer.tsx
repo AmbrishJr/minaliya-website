@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { ProductName } from "@/components/shared/ProductName";
 import { productDisplayName } from "@/lib/product-utils";
 import {
   X,
@@ -138,15 +139,9 @@ export default function CartDrawer() {
 
                   {/* Details */}
                   <div className="flex-1 min-w-0">
-                    <h4
-                      className="text-sm font-semibold leading-tight"
-                      style={{
-                        fontFamily: "var(--font-heading)",
-                        color: "var(--color-stone-800)",
-                      }}
-                    >
+                    <ProductName as="h4" variant="compact">
                       {productDisplayName(item.name)}
-                    </h4>
+                    </ProductName>
                     <p
                       className="text-xs mt-0.5"
                       style={{ color: "var(--color-stone-400)" }}

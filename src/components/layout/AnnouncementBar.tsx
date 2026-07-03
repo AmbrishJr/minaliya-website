@@ -1,19 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Truck, Phone, CreditCard } from "lucide-react";
+import { getDefaultHeaderSettings } from "@/lib/header-defaults";
+import type { HeaderSettingsData } from "@/actions/adminData";
+
+const iconMap: Record<string, React.ReactNode> = {
+  truck: <Truck size={14} />,
+  "credit-card": <CreditCard size={14} />,
+  phone: <Phone size={14} />,
+};
 
 export default function AnnouncementBar() {
   const [visible, setVisible] = useState(true);
+  const [settings, setSettings] = useState<HeaderSettingsData | null>(null);
+
+  useEffect(() => {
+    fetch("/api/header-settings")
+      .then((res) => res.json())
+      .then((data) => setSettings(data))
+      .catch(() => setSettings(getDefaultHeaderSettings()));
+  }, []);
 
   if (!visible) return null;
 
-  const announcements = [
-    { icon: <Truck size={14} />, text: "Free Shipping on Orders Above ₹499" },
-    { icon: <CreditCard size={14} />, text: "Free Shipping in TN, KL, KA, TG, AP" },
-    { icon: <Phone size={14} />, text: "WhatsApp Order: +91 98765 43210" },
-    { text: "100% Pure Wooden Cold Pressed Oils" },
-  ];
+  const s = settings ?? getDefaultHeaderSettings();
+
+  const announcements: { icon?: React.ReactNode; text: string; href?: string }[] = [];
+
+  if (s.announcement1.enabled) {
+    announcements.push({
+      icon: iconMap[s.announcement1.icon] ?? undefined,
+      text: s.announcement1.text,
+    });
+  }
+  if (s.announcement2.enabled) {
+    announcements.push({
+      icon: iconMap[s.announcement2.icon] ?? undefined,
+      text: s.announcement2.text,
+    });
+  }
+  if (s.announcement3.enabled) {
+    announcements.push({
+      icon: iconMap.phone,
+      text: `${s.announcement3.label} ${s.announcement3.phone}`,
+      href: `https://wa.me/${s.announcement3.phone.replace(/\D/g, "")}`,
+    });
+  }
+  if (s.announcement4.enabled) {
+    announcements.push({
+      icon: iconMap[s.announcement4.icon] ?? undefined,
+      text: s.announcement4.text,
+    });
+  }
+  if (s.extraAnnouncements && Array.isArray(s.extraAnnouncements)) {
+    for (const extra of s.extraAnnouncements) {
+      if (extra.enabled) {
+        announcements.push({
+          icon: iconMap[extra.icon] ?? undefined,
+          text: extra.text,
+        });
+      }
+    }
+  }
+
+  if (announcements.length === 0) return null;
 
   return (
     <div
@@ -31,7 +82,18 @@ export default function AnnouncementBar() {
                 style={{ color: "var(--color-cream-200)" }}
               >
                 {item.icon}
-                {item.text}
+                {item.href ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    {item.text}
+                  </a>
+                ) : (
+                  item.text
+                )}
                 <span className="mx-4 opacity-30">•</span>
               </span>
             ))}

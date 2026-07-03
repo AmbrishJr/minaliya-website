@@ -151,16 +151,20 @@ enum SubscriptionStatus {
 }
 
 model Blog {
-  id             String   @id @default(cuid())
-  title          String
-  slug           String   @unique
-  content        Json     // Array of { type: string, text?: string, items?: string[] }
-  images         String[] // Cloudinary URLs
-  imagePublicIds String[] // Cloudinary public_ids, parallel to images[]
-  author         String?
-  publishedAt    DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  content          Json     // Array of { type: string, text?: string, items?: string[] }
+  images           String[] // Cloudinary URLs
+  imagePublicIds   String[] // Cloudinary public_ids, parallel to images[]
+  imageAlt         String?  // SEO: alt text for images
+  imageTitle       String?  // SEO: title attribute for images
+  imageCaption     String?  // SEO: caption for images
+  imageDescription String?  // SEO: description for images
+  author           String?
+  publishedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model HeroSlide {
@@ -183,6 +187,12 @@ model HeroSlide {
 }
 
 model FooterSettings {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model HeaderSettings {
   id        String   @id @default("default")
   data      Json
   updatedAt DateTime @updatedAt

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { productDisplayName } from "@/lib/product-utils";
+import { ProductName } from "@/components/shared/ProductName";
 
 interface FeaturedProduct {
   name: string;
@@ -133,15 +134,9 @@ function ProductCard({ product }: { product: FeaturedProduct }) {
         </div>
 
         {/* Name */}
-        <h3
-          className="text-[11px] sm:text-sm font-bold leading-tight line-clamp-2 sm:line-clamp-1 not-italic"
-          style={{
-            fontFamily: "var(--font-body)",
-            color: "var(--color-stone-800)",
-          }}
-        >
+        <ProductName as="h3" variant="card">
           {displayName}
-        </h3>
+        </ProductName>
 
         {/* Price + CTA */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-stone-100 min-w-0">

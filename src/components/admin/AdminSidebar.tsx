@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   PenLine,
   FileText,
+  PanelTop,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -30,11 +31,12 @@ const menuItems = [
   { name: "Products", href: "/admin/products", icon: Leaf },
   { name: "Blog", href: "/admin/blog", icon: PenLine },
   { name: "Hero Slides", href: "/admin/hero-slides", icon: ImageIcon },
+  { name: "Header Settings", href: "/admin/header-settings", icon: PanelTop },
   { name: "Inquiries", href: "/admin/inquiries", icon: MessageSquare },
   { name: "Footer", href: "/admin/footer", icon: FileText },
 ];
 
-const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/blog", "/admin/hero-slides", "/admin/inquiries", "/admin/footer"];
+const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/blog", "/admin/hero-slides", "/admin/header-settings", "/admin/inquiries", "/admin/footer"];
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();

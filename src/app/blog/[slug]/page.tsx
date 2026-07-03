@@ -32,18 +32,19 @@ export async function generateMetadata({
   if (!post) return { title: "Post Not Found" };
   const leadContent = post.content.find((c) => c.type === "lead")?.text;
   const ogImage = post.images[0] || "/og-image.svg";
+  const seoDesc = post.imageDescription || post.imageCaption || leadContent?.slice(0, 160) || "";
   return {
     title: post.title,
-    description: leadContent?.slice(0, 160) || "",
+    description: seoDesc,
     alternates: { canonical: `/blog/${slug}` },
     openGraph: {
       title: post.title,
-      description: leadContent?.slice(0, 160) || "",
+      description: seoDesc,
       url: `https://minaliya.com/blog/${slug}`,
       type: "article",
       publishedTime: post.publishedAt,
       authors: post.author ? [post.author] : undefined,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.imageAlt || post.title }],
     },
   };
 }
@@ -127,7 +128,8 @@ export default async function BlogDetailPage({
                   >
                     <Image
                       src={img}
-                      alt={`${post.title} - Image ${i + 1}`}
+                      alt={post.imageAlt || `${post.title} - Image ${i + 1}`}
+                      title={post.imageTitle || undefined}
                       fill
                       className="object-cover"
                       sizes={i === 0 && post.images.length > 1 ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 100vw, 50vw"}
