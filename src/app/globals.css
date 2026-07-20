@@ -421,19 +421,22 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Desktop: ~440px height, Mobile: ~280px height */
-  min-height: 440px;
+  /* Desktop 3-col: compact cards */
+  min-height: 360px;
 }
 
 @media (max-width: 767px) {
   .product-card {
-    min-height: 300px;
+    min-height: auto;
+    max-width: 400px;
+    margin: 0 auto;
+    width: 100%;
   }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
   .product-card {
-    min-height: 380px;
+    min-height: 320px;
   }
 }
 
@@ -450,19 +453,19 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
   background: white;
   flex-shrink: 0;
-  /* Desktop: 58% of card height, Mobile: 52% of card height */
-  aspect-ratio: 1 / 0.58;
+  /* Desktop 3-col: slightly taller aspect */
+  aspect-ratio: 4 / 3;
 }
 
 @media (max-width: 767px) {
   .product-image {
-    aspect-ratio: 1.5 / 1.5;
+    aspect-ratio: 4 / 3;
   }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
   .product-image {
-    aspect-ratio: 1 / 0.55;
+    aspect-ratio: 4 / 3;
   }
 }
 
@@ -616,6 +619,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: var(--color-stone-800);

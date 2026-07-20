@@ -5,6 +5,7 @@ import { slugify } from "@/lib/product-utils";
 import { verifyAdminSession } from "./admin";
 import { deleteImages } from "@/lib/cloudinary";
 import { sendShipmentEmail } from "@/lib/email";
+import { revalidatePath } from "next/cache";
 
 export type CreateProductInput = {
   name: string;
@@ -330,6 +331,9 @@ export async function updateOrderStatus(
       );
     }
 
+    revalidatePath("/account");
+    revalidatePath("/admin/orders");
+
     return { success: true };
   } catch (error) {
     console.error("Error updating order status:", error);
@@ -355,6 +359,9 @@ export async function updateOrderAwb(orderId: string, awbNumber: string) {
         console.error("Failed to send shipment email for order", orderId, err)
       );
     }
+
+    revalidatePath("/account");
+    revalidatePath("/admin/orders");
 
     return { success: true };
   } catch (error) {
@@ -545,6 +552,10 @@ export async function deleteOrder(orderId: string) {
     await prisma.order.delete({
       where: { id: orderId },
     });
+
+    revalidatePath("/account");
+    revalidatePath("/admin/orders");
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error deleting order:", error);

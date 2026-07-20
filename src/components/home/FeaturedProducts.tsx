@@ -256,14 +256,10 @@ export default function FeaturedProducts({ products, showHeader = true }: { prod
           </div>
         )}
 
-        {/* Product Grid — 2 columns, rows grouped by category */}
-        <div className="space-y-3 sm:space-y-4">
-          {grouped.map((group) => (
-            <div key={group.category} className="grid grid-cols-2 gap-3 sm:gap-4">
-              {group.items.map((product) => (
-                <ProductCard key={product.slug} product={product} />
-              ))}
-            </div>
+        {/* Product Grid — 1 col mobile, 3 cols desktop/tablet */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+          {products.map((product) => (
+            <ProductCard key={product.slug} product={product} />
           ))}
         </div>
 
