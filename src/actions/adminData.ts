@@ -276,6 +276,8 @@ export async function createProduct(input: CreateProductInput) {
       },
     });
 
+    revalidatePath("/admin/products");
+
     return { success: true as const, productId: product.id };
   } catch (error: unknown) {
     console.error("Error creating product:", error);
@@ -299,7 +301,7 @@ export async function getAllInquiries() {
     },
   });
 
-  return inquiries.map((inquiry: { id: string; name: string; company: string | null; email: string; phone: string; product: string; quantity: number; message: string | null; createdAt: Date }) => ({
+  return inquiries.map((inquiry) => ({
     id: inquiry.id,
     name: inquiry.name,
     company: inquiry.company,
@@ -342,10 +344,7 @@ export async function updateOrderStatus(
 }
 
 export async function updateOrderAwb(orderId: string, awbNumber: string) {
-  const { isAdmin } = await verifyAdminSession();
-  if (!isAdmin) {
-    return { success: false, error: "Session expired. Please log in again." };
-  }
+  await requireAdmin();
 
   try {
     const order = await prisma.order.update({
@@ -490,6 +489,8 @@ export async function updateProduct(id: string, input: CreateProductInput) {
       },
     });
 
+    revalidatePath("/admin/products");
+
     return { success: true as const, productId: product.id };
   } catch (error: unknown) {
     console.error("Error updating product:", error);
@@ -507,33 +508,34 @@ export async function deleteProduct(id: string) {
       select: { imagePublicIds: true },
     });
 
-    // 1. Find all order items for this product
-    const orderItems = await prisma.orderItem.findMany({
-      where: { productId: id },
-      select: { orderId: true },
-    });
-
-    const orderIds = Array.from(new Set(orderItems.map((item) => item.orderId)));
-
-    // 2. Delete all order items belonging to those orders
+    // 1. Delete only the order items for this product
     await prisma.orderItem.deleteMany({
-      where: { orderId: { in: orderIds } },
+      where: { productId: id },
     });
 
-    // 3. Delete the parent orders
-    await prisma.order.deleteMany({
-      where: { id: { in: orderIds } },
+    // 2. Clean up any orders that are now empty
+    const emptyOrders = await prisma.order.findMany({
+      where: { items: { none: {} } },
+      select: { id: true },
     });
+    if (emptyOrders.length > 0) {
+      await prisma.order.deleteMany({
+        where: { id: { in: emptyOrders.map((o) => o.id) } },
+      });
+    }
 
-    // 4. Delete the product from DB
+    // 3. Delete the product from DB
     await prisma.product.delete({
       where: { id },
     });
 
-    // 5. Delete images from Cloudinary (after DB success)
+    // 4. Delete images from Cloudinary (after DB success)
     if (productToDelete?.imagePublicIds?.length) {
       await deleteImages(productToDelete.imagePublicIds);
     }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/admin/orders");
 
     return { success: true as const };
   } catch (error: unknown) {
@@ -575,6 +577,9 @@ export async function reorderProducts(ids: string[]) {
         })
       )
     );
+
+    revalidatePath("/admin/products");
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error reordering products:", error);
@@ -644,6 +649,7 @@ export async function createBlog(input: CreateBlogInput) {
         publishedAt: input.publishedAt || new Date(),
       },
     });
+    revalidatePath("/admin/blogs");
     return { success: true as const, blogId: blog.id };
   } catch (error: unknown) {
     console.error("Error creating blog:", error);
@@ -682,6 +688,7 @@ export async function updateBlog(id: string, input: Partial<CreateBlogInput>) {
 
   try {
     await prisma.blog.update({ where: { id }, data });
+    revalidatePath("/admin/blogs");
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error updating blog:", error);
@@ -704,6 +711,8 @@ export async function deleteBlog(id: string) {
       await deleteImages(blog.imagePublicIds);
     }
 
+    revalidatePath("/admin/blogs");
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error deleting blog:", error);
@@ -718,6 +727,7 @@ export async function deleteInquiry(inquiryId: string) {
     await prisma.bulkInquiry.delete({
       where: { id: inquiryId },
     });
+    revalidatePath("/admin/inquiries");
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error deleting inquiry:", error);
@@ -814,6 +824,9 @@ export async function createHeroSlide(input: {
         sortOrder: input.sortOrder ?? nextSortOrder,
       },
     });
+
+    revalidatePath("/");
+
     return { success: true as const, slideId: slide.id };
   } catch (error: unknown) {
     console.error("Error creating hero slide:", error);
@@ -871,6 +884,9 @@ export async function updateHeroSlide(
         ...(input.isActive !== undefined && { isActive: input.isActive }),
       },
     });
+
+    revalidatePath("/");
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error updating hero slide:", error);
@@ -894,6 +910,8 @@ export async function deleteHeroSlide(id: string) {
     if (slide?.imagePublicId) {
       await deleteImages([slide.imagePublicId]);
     }
+
+    revalidatePath("/");
 
     return { success: true as const };
   } catch (error: unknown) {
@@ -964,10 +982,7 @@ export type FooterSettingsData = {
 export async function updateFooterSettings(
   data: FooterSettingsData
 ) {
-  const { isAdmin } = await verifyAdminSession();
-  if (!isAdmin) {
-    return { success: false as const, error: "Unauthorized." };
-  }
+  await requireAdmin();
 
   try {
     await prisma.footerSettings.upsert({
@@ -975,6 +990,7 @@ export async function updateFooterSettings(
       create: { id: "default", data },
       update: { data },
     });
+    revalidatePath("/");
     return { success: true as const };
   } catch (error) {
     console.error("Error updating footer settings:", error);
@@ -1007,10 +1023,7 @@ export type HeaderSettingsData = {
 export async function updateHeaderSettings(
   data: HeaderSettingsData
 ) {
-  const { isAdmin } = await verifyAdminSession();
-  if (!isAdmin) {
-    return { success: false as const, error: "Unauthorized." };
-  }
+  await requireAdmin();
 
   try {
     await prisma.headerSettings.upsert({
@@ -1018,6 +1031,7 @@ export async function updateHeaderSettings(
       create: { id: "default", data },
       update: { data },
     });
+    revalidatePath("/");
     return { success: true as const };
   } catch (error) {
     console.error("Error updating header settings:", error);
@@ -1037,6 +1051,9 @@ export async function reorderHeroSlides(ids: string[]) {
         })
       )
     );
+
+    revalidatePath("/");
+
     return { success: true as const };
   } catch (error: unknown) {
     console.error("Error reordering hero slides:", error);
