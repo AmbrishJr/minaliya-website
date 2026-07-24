@@ -55,36 +55,48 @@ function fmt(amount: number): string {
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    backgroundColor: "#F7F7F5",
-    color: "#1A1A1A",
-    fontSize: 13,
+    backgroundColor: "#FFFFFF",
+    color: "#111111",
+    fontSize: 15,
     fontFamily: "Helvetica",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  headerLeft: {
+    width: "70%",
   },
   companyName: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: 700,
-    marginBottom: 10,
+    color: "#111111",
+    marginBottom: 8,
+  },
+  companyAddress: {
+    fontSize: 16,
+    color: "#111111",
+    lineHeight: 1.6,
+    marginBottom: 8,
   },
   companyDetails: {
-    fontSize: 13,
-    color: "#4A4A4A",
-    lineHeight: 1.6,
+    fontSize: 15,
+    color: "#111111",
+    lineHeight: 1.8,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 95,
+    height: 95,
     objectFit: "contain",
   },
   title: {
     textAlign: "center",
-    color: "#9A9A9A",
-    fontSize: 14,
-    letterSpacing: 3,
+    color: "#666666",
+    fontSize: 24,
+    fontWeight: 500,
+    letterSpacing: 4,
     marginVertical: 30,
     textTransform: "uppercase",
   },
@@ -93,83 +105,111 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 25,
   },
+  billToSection: {
+    width: "55%",
+  },
   billToLabel: {
     fontWeight: 700,
-    fontSize: 14,
-    marginBottom: 6,
+    fontSize: 18,
+    marginBottom: 8,
   },
   billToDetails: {
-    fontSize: 13,
-    color: "#2A2A2A",
-    lineHeight: 1.6,
+    fontSize: 15,
+    color: "#111111",
+    lineHeight: 1.8,
+  },
+  invoiceMetaSection: {
+    width: "45%",
+    alignItems: "flex-end",
+  },
+  invoiceMetaLabel: {
+    fontWeight: 700,
+    fontSize: 18,
+    marginBottom: 8,
+    textAlign: "right",
   },
   invoiceMeta: {
+    fontSize: 15,
+    lineHeight: 1.8,
     textAlign: "right",
-    fontSize: 13,
-    lineHeight: 1.9,
   },
-  metaKey: { color: "#6B6B6B" },
-  metaValue: { fontWeight: 700, color: "#1A1A1A" },
+  metaKey: { fontWeight: 700, color: "#111111" },
+  metaValue: { color: "#111111" },
   table: {
     marginTop: 10,
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#9B8FD9",
+    backgroundColor: "#A68CF3",
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 700,
     paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   tableRow: {
     flexDirection: "row",
     paddingVertical: 14,
-    paddingHorizontal: 10,
-    fontSize: 13,
+    paddingHorizontal: 8,
+    fontSize: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E2",
+    borderBottomColor: "#E5E5E5",
+    minHeight: 54,
+    alignItems: "center",
   },
   totalRow: {
     flexDirection: "row",
     paddingVertical: 14,
-    paddingHorizontal: 10,
-    fontSize: 13,
+    paddingHorizontal: 8,
+    fontSize: 16,
     fontWeight: 700,
     borderTopWidth: 2,
-    borderTopColor: "#1A1A1A",
+    borderTopColor: "#111111",
+    alignItems: "center",
   },
-  colSno: { width: "6%", textAlign: "center" },
-  colName: { width: "20%", paddingRight: 4 },
-  colHsn: { width: "12%", textAlign: "center" },
-  colQty: { width: "8%", textAlign: "center" },
-  colUnit: { width: "8%", textAlign: "center" },
-  colPrice: { width: "12%", textAlign: "right" },
-  colDisc: { width: "10%", textAlign: "right" },
-  colGst: { width: "12%", textAlign: "right" },
-  colAmount: { width: "12%", textAlign: "right" },
+  colSno: { width: "5%", textAlign: "center" },
+  colName: { width: "40%", paddingRight: 4 },
+  colHsn: { width: "10%", textAlign: "center" },
+  colQty: { width: "7%", textAlign: "center" },
+  colUnit: { width: "7%", textAlign: "center" },
+  colPrice: { width: "10%", textAlign: "right" },
+  colDisc: { width: "8%", textAlign: "right" },
+  colGst: { width: "8%", textAlign: "right" },
+  colAmount: { width: "10%", textAlign: "right" },
   bottom: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 30,
   },
-  leftCol: { maxWidth: 400 },
-  sectionLabel: { fontWeight: 700, fontSize: 13, marginBottom: 6, marginTop: 20 },
-  sectionText: { fontSize: 13, color: "#2A2A2A" },
-  summary: { width: 300 },
-  sumRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, fontSize: 13 },
-  sumKey: { color: "#4A4A4A", fontWeight: 600 },
-  sumVal: { fontWeight: 600 },
-  sumEmphasizeKey: { color: "#1A1A1A", fontWeight: 700 },
-  sumEmphasizeVal: { fontWeight: 700, color: "#1A1A1A" },
+  leftCol: { width: "60%" },
+  rightCol: { width: "40%" },
+  sectionLabel: {
+    fontWeight: 700,
+    fontSize: 18,
+    marginBottom: 8,
+    marginTop: 20,
+    textTransform: "uppercase",
+  },
+  sectionText: { fontSize: 15, color: "#111111" },
+  summary: { marginTop: 20 },
+  sumRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    fontSize: 15,
+  },
+  sumKey: { color: "#111111", fontWeight: 600 },
+  sumVal: { fontWeight: 600, color: "#111111" },
+  sumEmphasizeKey: { color: "#111111", fontWeight: 700 },
+  sumEmphasizeVal: { fontWeight: 700, color: "#111111" },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
     marginTop: 60,
   },
-  footNote: { fontSize: 12, color: "#9A9A9A" },
-  footSign: { textAlign: "right", fontSize: 13 },
+  footNote: { fontSize: 13, color: "#666666" },
+  footSign: { textAlign: "right", fontSize: 15 },
   forText: { fontWeight: 700, marginBottom: 40 },
 });
 
@@ -195,10 +235,10 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.companyName}>{data.companyName}</Text>
+            <Text style={styles.companyAddress}>{data.companyAddress.replace(/<br\s*\/?>/g, "\n")}</Text>
             <View style={styles.companyDetails}>
-              <Text>{data.companyAddress.replace(/<br\s*\/?>/g, "\n")}</Text>
               <Text>FSSAI LICENSE NO: {data.companyFssai}</Text>
               <Text>GSTIN: {data.companyGst}</Text>
               <Text>Email: {data.companyEmail}</Text>
@@ -211,9 +251,9 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
         {/* Title */}
         <Text style={styles.title}>Tax Invoice</Text>
 
-        {/* Meta */}
+        {/* Customer + Invoice Details */}
         <View style={styles.metaRow}>
-          <View>
+          <View style={styles.billToSection}>
             <Text style={styles.billToLabel}>Bill To:</Text>
             <View style={styles.billToDetails}>
               <Text>{data.customerName}</Text>
@@ -222,29 +262,31 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
               <Text>Ph: {data.customerPhone}</Text>
             </View>
           </View>
-          <View style={styles.invoiceMeta}>
-            <Text>
-              <Text style={styles.metaKey}>Invoice Number: </Text>
-              <Text style={styles.metaValue}>{data.invoiceNumber}</Text>
-            </Text>
-            <Text>
-              <Text style={styles.metaKey}>Order Id: </Text>
-              <Text style={styles.metaValue}>{data.orderId}</Text>
-            </Text>
-            <Text>
-              <Text style={styles.metaKey}>Date: </Text>
-              <Text style={styles.metaValue}>{data.invoiceDate}</Text>
-            </Text>
-            <Text>
-              <Text style={styles.metaKey}>Time: </Text>
-              <Text style={styles.metaValue}>{data.invoiceTime}</Text>
-            </Text>
+          <View style={styles.invoiceMetaSection}>
+            <Text style={styles.invoiceMetaLabel}>Invoice Information</Text>
+            <View style={styles.invoiceMeta}>
+              <Text>
+                <Text style={styles.metaKey}>Invoice Number: </Text>
+                <Text style={styles.metaValue}>{data.invoiceNumber}</Text>
+              </Text>
+              <Text>
+                <Text style={styles.metaKey}>Order ID: </Text>
+                <Text style={styles.metaValue}>{data.orderId}</Text>
+              </Text>
+              <Text>
+                <Text style={styles.metaKey}>Date: </Text>
+                <Text style={styles.metaValue}>{data.invoiceDate}</Text>
+              </Text>
+              <Text>
+                <Text style={styles.metaKey}>Time: </Text>
+                <Text style={styles.metaValue}>{data.invoiceTime}</Text>
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Table */}
         <View style={styles.table}>
-          {/* Header Row */}
           <View style={styles.tableHeader}>
             <Text style={styles.colSno}>SNo</Text>
             <Text style={styles.colName}>Item Name</Text>
@@ -257,7 +299,6 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text style={styles.colAmount}>Amount</Text>
           </View>
 
-          {/* Data Rows */}
           {data.items.map((item) => {
             const gstAmount = (item.pricePerUnit - item.discount) * item.quantity * (item.gstPercent / 100);
             return (
@@ -269,13 +310,15 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
                 <Text style={styles.colUnit}>{item.unit}</Text>
                 <Text style={styles.colPrice}>{fmt(item.pricePerUnit)}</Text>
                 <Text style={styles.colDisc}>{fmt(item.discount)}</Text>
-                <Text style={styles.colGst}>{fmt(gstAmount)}</Text>
+                <Text style={styles.colGst}>
+                  {fmt(gstAmount)}{"\n"}
+                  <Text style={{ fontSize: 12, color: "#666666" }}>({item.gstPercent.toFixed(2)}%)</Text>
+                </Text>
                 <Text style={styles.colAmount}>{fmt(item.totalPrice)}</Text>
               </View>
             );
           })}
 
-          {/* Total Row */}
           <View style={styles.totalRow}>
             <Text style={styles.colSno}></Text>
             <Text style={styles.colName}>Total</Text>
@@ -289,37 +332,39 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
           </View>
         </View>
 
-        {/* Bottom */}
+        {/* Lower Section */}
         <View style={styles.bottom}>
           <View style={styles.leftCol}>
-            <Text style={styles.sectionLabel}>INVOICE AMOUNT IN WORDS</Text>
+            <Text style={styles.sectionLabel}>Invoice Amount in Words</Text>
             <Text style={styles.sectionText}>{numberToWords(data.grandTotal)}</Text>
 
-            <Text style={styles.sectionLabel}>TERMS AND CONDITIONS</Text>
+            <Text style={styles.sectionLabel}>Terms and Conditions</Text>
             <Text style={styles.sectionText}>Terms and Conditions apply.</Text>
           </View>
 
-          <View style={styles.summary}>
-            <SummaryRow label="Sub Total" value={fmt(data.subtotal)} />
-            <SummaryRow label="Discount" value={fmt(data.couponDiscount)} />
-            {isIntraState ? (
-              <>
-                <SummaryRow label="SGST@2.50%" value={fmt(data.sgst)} />
-                <SummaryRow label="CGST@2.50%" value={fmt(data.cgst)} />
-              </>
-            ) : (
-              <SummaryRow label="IGST@5.00%" value={fmt(data.igst)} />
-            )}
-            <SummaryRow label="Round Off" value={fmt(data.roundOff)} />
-            <SummaryRow label="Total Amount" value={fmt(data.grandTotal)} emphasize />
-            <SummaryRow label="Received" value={fmt(data.amountPaid)} emphasize />
-            <SummaryRow label="Balance" value={fmt(data.balance)} emphasize />
+          <View style={styles.rightCol}>
+            <View style={styles.summary}>
+              <SummaryRow label="Sub Total" value={fmt(data.subtotal)} />
+              <SummaryRow label="Discount" value={fmt(data.couponDiscount)} />
+              {isIntraState ? (
+                <>
+                  <SummaryRow label="SGST@2.50%" value={fmt(data.sgst)} />
+                  <SummaryRow label="CGST@2.50%" value={fmt(data.cgst)} />
+                </>
+              ) : (
+                <SummaryRow label="IGST@5.00%" value={fmt(data.igst)} />
+              )}
+              <SummaryRow label="Round Off" value={fmt(data.roundOff)} />
+              <SummaryRow label="Total Amount" value={fmt(data.grandTotal)} emphasize />
+              <SummaryRow label="Received" value={fmt(data.amountPaid)} emphasize />
+              <SummaryRow label="Balance" value={fmt(data.balance)} emphasize />
+            </View>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footNote}>This is a computer generated invoice. No signature is required.</Text>
+          <Text style={styles.footNote}>This is a computer generated invoice.{"\n"}No signature is required.</Text>
           <View style={styles.footSign}>
             <Text style={styles.forText}>For {data.companyName}</Text>
             <Text>Authorized Signatory</Text>
