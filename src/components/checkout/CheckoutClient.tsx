@@ -20,6 +20,22 @@ const FREE_SHIPPING_STATES = [
   "Andhra Pradesh",
 ];
 
+function normalizeState(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function isFreeShippingState(state: string): boolean {
+  if (!state) return false;
+  const norm = normalizeState(state);
+  return FREE_SHIPPING_STATES.some((s) => normalizeState(s) === norm);
+}
+
+function matchFreeShippingState(state: string): string {
+  if (!state) return "Other";
+  const norm = normalizeState(state);
+  return FREE_SHIPPING_STATES.find((s) => normalizeState(s) === norm) || "Other";
+}
+
 interface Coupon {
   code: string;
   type: "percentage" | "freeship";
@@ -137,7 +153,7 @@ export default function CheckoutClient() {
       setCity(defAddr.city);
       setPostalCode(defAddr.zipCode);
       setPhone(defAddr.phone);
-      setShippingState(defAddr.state);
+      setShippingState(matchFreeShippingState(defAddr.state));
     } else {
       if (user.mobile) setPhone(user.mobile);
     }
@@ -152,7 +168,7 @@ export default function CheckoutClient() {
       setIsLookingUpPincode(true);
       const res = await lookupPincode(postalCode.trim());
       if (res.success && res.state) {
-        setShippingState(FREE_SHIPPING_STATES.includes(res.state) ? res.state : "Other");
+        setShippingState(matchFreeShippingState(res.state));
       }
       setIsLookingUpPincode(false);
     }, 500);
@@ -181,7 +197,7 @@ export default function CheckoutClient() {
     setCity(addr.city);
     setPostalCode(addr.zipCode);
     setPhone(addr.phone);
-    setShippingState(addr.state);
+    setShippingState(matchFreeShippingState(addr.state));
   };
 
   // Coupon states
@@ -201,8 +217,7 @@ export default function CheckoutClient() {
   // Shipping cost: free if subscription, or order total >= 499, FREESHIP coupon,
   // or shipping to Tamil Nadu, Kerala, Karnataka, Telangana, or Andhra Pradesh
   const isFreeShipCoupon = appliedCoupon?.type === "freeship";
-  const isFreeShippingState = FREE_SHIPPING_STATES.includes(shippingState);
-  const shippingCost = (totalPrice >= 499 || hasSubscription || isFreeShipCoupon || isFreeShippingState) ? 0 : 50;
+  const shippingCost = (totalPrice >= 499 || hasSubscription || isFreeShipCoupon || isFreeShippingState(shippingState)) ? 0 : 50;
 
   const finalTotal = Math.max(0, totalPrice - discountAmount + shippingCost);
 

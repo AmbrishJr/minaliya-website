@@ -200,7 +200,7 @@ export default async function Footer() {
                 </h4>
                 <div className="flex gap-3 flex-wrap">
                   {Object.entries(s.socialMedia).map(([key, sp]) =>
-                    sp.enabled && sp.url ? (
+                    sp.enabled && sp.url && socialIcons[key] ? (
                       <a
                         key={key}
                         href={sp.url}
