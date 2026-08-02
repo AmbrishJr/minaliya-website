@@ -4,7 +4,7 @@ import { Fragment, useState, useTransition } from "react";
 import { updateOrderStatus, deleteOrder, updateOrderAwb } from "@/actions/adminData";
 import OrderStatusBadge from "./OrderStatusBadge";
 import { ProductName } from "@/components/shared/ProductName";
-import { ChevronDown, ChevronUp, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X, Pencil, Package } from "lucide-react";
+import { ChevronDown, ChevronUp, Phone, Mail, MapPin, CheckCircle, Loader2, Trash2, AlertTriangle, X, Pencil, Package, Download } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -28,7 +28,20 @@ interface Order {
   customerEmail: string;
   customerPhone: string;
   awbNumber: string | null;
+  invoiceNumber: string | null;
+  invoiceGenerated: boolean;
+  invoiceUrl: string | null;
   items: OrderItem[];
+  priceDetails?: {
+    subtotal: number;
+    gst: number;
+    cgst: number;
+    sgst: number;
+    discount: number;
+    shipping: number;
+    roundOff: number;
+    total: number;
+  } | null;
 }
 
 type OrderFilter = "all" | "active";
@@ -59,6 +72,7 @@ export default function OrdersTable({
   const [awbInput, setAwbInput] = useState("");
   const [awbSaving, setAwbSaving] = useState(false);
   const [awbError, setAwbError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const handleSaveAwb = async () => {
     if (!awbEditingId) return;
@@ -74,6 +88,32 @@ export default function OrdersTable({
       setAwbError(result.error || "Failed to save AWB number.");
     }
     setAwbSaving(false);
+  };
+
+  const handleExportExcel = async () => {
+    if (orders.length === 0 || exporting) return;
+    setExporting(true);
+    try {
+      const res = await fetch("/api/orders/export");
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        alert(err?.error || "Failed to export orders.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `minaliya-orders-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to export orders. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleDeleteOrder = (id: string) => {
@@ -265,6 +305,34 @@ export default function OrdersTable({
             </span>
           </button>
         ))}
+
+        <button
+          type="button"
+          onClick={handleExportExcel}
+          disabled={orders.length === 0 || exporting}
+          className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
+          style={{
+            background: "var(--color-forest-50)",
+            color: "var(--color-forest-700)",
+            border: "1px solid var(--color-forest-100)",
+          }}
+          onMouseEnter={(e) => {
+            if (!e.currentTarget.disabled) {
+              e.currentTarget.style.background = "var(--color-forest-600)";
+              e.currentTarget.style.color = "white";
+              e.currentTarget.style.borderColor = "var(--color-forest-600)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--color-forest-50)";
+            e.currentTarget.style.color = "var(--color-forest-700)";
+            e.currentTarget.style.borderColor = "var(--color-forest-100)";
+          }}
+          title="Download all orders & customer details as Excel"
+        >
+          {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          Export Excel
+        </button>
       </div>
 
       {filteredOrders.length > 0 ? (

@@ -267,7 +267,8 @@ export default function HeroSection({ slides }: HeroSectionProps) {
                       filter: "drop-shadow(0 20px 30px rgba(0, 0, 0, 0.12))",
                     }}
                     quality={100}
-                    priority
+                    preload
+                    fetchPriority="high"
                   />
 
                   {/* Reflection beneath bottle */}

@@ -237,7 +237,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
 
     return (
       <div className="border rounded-xl overflow-hidden" style={{ borderColor: "var(--color-stone-200)" }}>
-        <div className="bg-stone-900 text-stone-300 p-6 text-xs leading-relaxed">
+        <div className="p-6 text-xs leading-relaxed" style={{ background: "var(--color-forest-800)", color: "var(--color-cream-100)" }}>
           {/* Newsletter preview */}
           {s.showFields.newsletter && s.newsletter.enabled && (
             <div
@@ -247,18 +247,18 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
               }}
             >
               <div className="text-center sm:text-left">
-                <p className="text-sm font-bold text-white">{s.newsletter.title}</p>
-                <p className="text-[11px] text-white/80 mt-0.5">{s.newsletter.description}</p>
+                <p className="text-sm font-bold" style={{ color: "var(--color-stone-900)" }}>{s.newsletter.title}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: "var(--color-stone-800)" }}>{s.newsletter.description}</p>
               </div>
               <div className="flex gap-2">
                 <input
                   type="email"
                   placeholder="Enter your email"
                   className="px-3 py-2 rounded-full text-[11px] outline-none w-48"
-                  style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "1px solid rgba(255,255,255,0.3)" }}
+                  style={{ background: "rgba(255,255,255,0.9)", color: "var(--color-stone-900)", border: "1px solid rgba(255,255,255,0.6)" }}
                   readOnly
                 />
-                <button className="px-4 py-2 rounded-full text-[11px] font-semibold bg-white" style={{ color: "var(--color-amber-600)" }}>
+                <button className="px-4 py-2 rounded-full text-[11px] font-semibold" style={{ background: "var(--color-forest-800)", color: "var(--color-cream-100)" }}>
                   Subscribe
                 </button>
               </div>
@@ -274,11 +274,11 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                 </div>
               )}
               {s.showFields.description && (
-                <p className="text-[11px] leading-relaxed max-w-xs" style={{ color: "var(--color-stone-400)" }}>
+                <p className="text-[11px] leading-relaxed max-w-xs" style={{ color: "var(--color-cream-200)" }}>
                   {s.description}
                 </p>
               )}
-              <div className="space-y-2 text-[11px]" style={{ color: "var(--color-stone-400)" }}>
+              <div className="space-y-2 text-[11px]" style={{ color: "var(--color-cream-200)" }}>
                 {s.showFields.address && s.address && (
                   <div className="flex items-start gap-2">
                     <MapPin size={12} className="shrink-0 mt-0.5" />
@@ -312,7 +312,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-white mb-3">Quick Links</p>
                 <ul className="space-y-2">
                   {s.quickLinks.map((link, i) => (
-                    <li key={i} className="text-[11px]" style={{ color: "var(--color-stone-400)" }}>
+                    <li key={i} className="text-[11px]" style={{ color: "var(--color-cream-200)" }}>
                       {link.name}
                     </li>
                   ))}
@@ -326,7 +326,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-white mb-3">Our Oils</p>
                 <ul className="space-y-2">
                   {s.categories.map((cat, i) => (
-                    <li key={i} className="text-[11px]" style={{ color: "var(--color-stone-400)" }}>
+                    <li key={i} className="text-[11px]" style={{ color: "var(--color-cream-200)" }}>
                       {cat.name}
                     </li>
                   ))}
@@ -341,7 +341,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-white mb-3">Policies</p>
                   <ul className="space-y-2 mb-4">
                     {s.legalLinks.map((l, i) => (
-                      <li key={i} className="text-[11px]" style={{ color: "var(--color-stone-400)" }}>
+                      <li key={i} className="text-[11px]" style={{ color: "var(--color-cream-200)" }}>
                         {l.name}
                       </li>
                     ))}
@@ -352,7 +352,7 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                 <div className="flex gap-2 mb-4">
                   {Object.entries(s.socialMedia).map(([key, sp]) =>
                     sp.enabled ? (
-                      <div key={key} className="w-6 h-6 rounded-full bg-stone-700 flex items-center justify-center">
+                      <div key={key} className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
                         <Globe size={12} />
                       </div>
                     ) : null
@@ -368,9 +368,9 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                         key={i}
                         className="px-2 py-1 rounded text-[9px] font-bold"
                         style={{
-                          background: "rgba(255,255,255,0.08)",
-                          color: "var(--color-stone-400)",
-                          border: "1px solid rgba(255,255,255,0.08)",
+                          background: "rgba(255,255,255,0.1)",
+                          color: "var(--color-cream-200)",
+                          border: "1px solid rgba(255,255,255,0.1)",
                         }}
                       >
                         {m}
@@ -379,18 +379,19 @@ export default function FooterCMSClient({ settings: initialSettings }: Props) {
                   </div>
                 </div>
               )}
+              {s.showFields.googleMaps && s.googleMaps.enabled && s.googleMaps.embedUrl && (
+                <div className="mt-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white mb-2">Find Us</p>
+                  <div className="rounded-lg overflow-hidden h-28 bg-forest-700 flex items-center justify-center text-cream-300 text-[11px]">
+                    Google Maps Placeholder
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Map */}
-          {s.showFields.googleMaps && s.googleMaps.enabled && s.googleMaps.embedUrl && (
-            <div className="mt-4 rounded-lg overflow-hidden h-32 bg-stone-800 flex items-center justify-center text-stone-500 text-[11px]">
-              Google Maps Placeholder
-            </div>
-          )}
-
           {/* Bottom bar */}
-          <div className="mt-6 pt-4 text-[10px]" style={{ borderTop: "1px solid rgba(255,255,255,0.08)", color: "var(--color-stone-500)" }}>
+          <div className="mt-6 pt-4 text-[10px]" style={{ borderTop: "1px solid rgba(255,255,255,0.1)", color: "var(--color-cream-300)" }}>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
               <p>{s.copyright.replace("{year}", String(year))}</p>
               <p className="flex items-center gap-1">Made with <span className="text-red-400">♥</span> for healthier Indian kitchens</p>

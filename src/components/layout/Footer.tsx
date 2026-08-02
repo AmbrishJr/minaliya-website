@@ -41,8 +41,8 @@ export default async function Footer() {
   return (
     <footer
       style={{
-        background: "var(--color-stone-900)",
-        color: "var(--color-stone-300)",
+        background: "var(--color-forest-800)",
+        color: "var(--color-cream-100)",
       }}
     >
       {/* Newsletter Strip */}
@@ -77,11 +77,11 @@ export default async function Footer() {
               </div>
             )}
             {s.showFields.description && (
-              <p className="text-sm leading-relaxed max-w-sm" style={{ color: "var(--color-stone-400)" }}>
+              <p className="text-sm leading-relaxed max-w-sm" style={{ color: "var(--color-cream-200)" }}>
                 {s.description}
               </p>
             )}
-            <div className="space-y-3 text-sm" style={{ color: "var(--color-stone-400)" }}>
+            <div className="space-y-3 text-sm" style={{ color: "var(--color-cream-200)" }}>
               {s.showFields.address && s.address && (
                 <div className="flex items-start gap-2.5">
                   <MapPin size={16} className="shrink-0 mt-0.5" />
@@ -91,7 +91,7 @@ export default async function Footer() {
               {s.showFields.phone && s.phones.map((phone, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <Phone size={16} className="shrink-0" />
-                  <a href={`tel:${phone.replace(/\s/g, "")}`} className="hover:text-white transition-colors">
+                  <a href={`tel:${phone.replace(/\s/g, "")}`} className="hover:text-amber-300 transition-colors">
                     {phone}
                   </a>
                 </div>
@@ -99,7 +99,7 @@ export default async function Footer() {
               {s.showFields.email && s.emails.map((email, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <Mail size={16} className="shrink-0" />
-                  <a href={`mailto:${email}`} className="hover:text-white transition-colors">
+                  <a href={`mailto:${email}`} className="hover:text-amber-300 transition-colors">
                     {email}
                   </a>
                 </div>
@@ -116,7 +116,10 @@ export default async function Footer() {
           {/* Quick Links */}
           {s.showFields.quickLinks && s.quickLinks.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-5">
+              <h4
+                className="text-sm font-semibold uppercase tracking-wider mb-5"
+                style={{ color: "var(--color-cream-50)" }}
+              >
                 Quick Links
               </h4>
               <ul className="space-y-3">
@@ -124,8 +127,8 @@ export default async function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-sm hover:text-white transition-colors flex items-center gap-1.5 group"
-                      style={{ color: "var(--color-stone-400)" }}
+                      className="text-sm hover:text-amber-300 transition-colors flex items-center gap-1.5 group"
+                      style={{ color: "var(--color-cream-200)" }}
                     >
                       <ArrowRight
                         size={12}
@@ -142,7 +145,10 @@ export default async function Footer() {
           {/* Categories */}
           {s.showFields.categories && s.categories.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-5">
+              <h4
+                className="text-sm font-semibold uppercase tracking-wider mb-5"
+                style={{ color: "var(--color-cream-50)" }}
+              >
                 Our Oils
               </h4>
               <ul className="space-y-3">
@@ -150,8 +156,8 @@ export default async function Footer() {
                   <li key={cat.name}>
                     <Link
                       href={cat.href}
-                      className="text-sm hover:text-white transition-colors flex items-center gap-1.5 group"
-                      style={{ color: "var(--color-stone-400)" }}
+                      className="text-sm hover:text-amber-300 transition-colors flex items-center gap-1.5 group"
+                      style={{ color: "var(--color-cream-200)" }}
                     >
                       <ArrowRight
                         size={12}
@@ -169,7 +175,10 @@ export default async function Footer() {
           <div>
             {s.showFields.legalLinks && s.legalLinks.length > 0 && (
               <>
-                <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-5">
+                <h4
+                  className="text-sm font-semibold uppercase tracking-wider mb-5"
+                  style={{ color: "var(--color-cream-50)" }}
+                >
                   Policies
                 </h4>
                 <ul className="space-y-3">
@@ -177,8 +186,8 @@ export default async function Footer() {
                     <li key={p.name}>
                       <Link
                         href={p.href}
-                        className="text-sm hover:text-white transition-colors flex items-center gap-1.5 group"
-                        style={{ color: "var(--color-stone-400)" }}
+                        className="text-sm hover:text-amber-300 transition-colors flex items-center gap-1.5 group"
+                        style={{ color: "var(--color-cream-200)" }}
                       >
                         <ArrowRight
                           size={12}
@@ -195,7 +204,10 @@ export default async function Footer() {
             {/* Social Media */}
             {s.showFields.socialMedia && (
               <div className={s.showFields.legalLinks && s.legalLinks.length > 0 ? "mt-8" : ""}>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-3">
+                <h4
+                  className="text-xs font-semibold uppercase tracking-wider mb-3"
+                  style={{ color: "var(--color-cream-50)" }}
+                >
                   Follow Us
                 </h4>
                 <div className="flex gap-3 flex-wrap">
@@ -208,8 +220,8 @@ export default async function Footer() {
                         rel="noopener noreferrer"
                         className="p-2 rounded-full transition-all hover:scale-110"
                         style={{
-                          background: "rgba(255, 255, 255, 0.08)",
-                          color: "var(--color-stone-400)",
+                          background: "rgba(255, 255, 255, 0.1)",
+                          color: "var(--color-cream-200)",
                         }}
                         aria-label={key}
                       >
@@ -224,7 +236,10 @@ export default async function Footer() {
             {/* Payment Methods */}
             {s.showFields.paymentMethods && s.paymentMethods.length > 0 && (
               <div className="mt-8">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-white mb-3">
+                <h4
+                  className="text-xs font-semibold uppercase tracking-wider mb-3"
+                  style={{ color: "var(--color-cream-50)" }}
+                >
                   We Accept
                 </h4>
                 <div className="flex gap-2 flex-wrap">
@@ -233,9 +248,9 @@ export default async function Footer() {
                       key={m}
                       className="px-3 py-1.5 rounded-md text-[10px] font-bold"
                       style={{
-                        background: "rgba(255, 255, 255, 0.08)",
-                        color: "var(--color-stone-400)",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        background: "rgba(255, 255, 255, 0.1)",
+                        color: "var(--color-cream-200)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
                       }}
                     >
                       {m}
@@ -244,32 +259,41 @@ export default async function Footer() {
                 </div>
               </div>
             )}
+
+            {/* Find Us */}
+            {s.showFields.googleMaps && s.googleMaps.enabled && s.googleMaps.embedUrl && (
+              <div className="mt-8">
+                <h4
+                  className="text-xs font-semibold uppercase tracking-wider mb-3"
+                  style={{ color: "var(--color-cream-50)" }}
+                >
+                  Find Us
+                </h4>
+                <div
+                  className="rounded-xl overflow-hidden"
+                  style={{ maxHeight: 180, border: "1px solid rgba(255, 255, 255, 0.1)" }}
+                >
+                  <iframe
+                    src={s.googleMaps.embedUrl}
+                    width="100%"
+                    height="160"
+                    style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Minaliya Location"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Google Maps */}
-        {s.showFields.googleMaps && s.googleMaps.enabled && s.googleMaps.embedUrl && (
-          <div className="mt-12">
-            <div className="w-full rounded-xl overflow-hidden" style={{ maxHeight: 300 }}>
-              <iframe
-                src={s.googleMaps.embedUrl}
-                width="100%"
-                height="250"
-                style={{ border: 0, filter: "invert(90%) hue-rotate(180deg)" }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Minaliya Location"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Bottom Bar */}
-      <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+      <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ color: "var(--color-stone-500)" }}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ color: "var(--color-cream-300)" }}>
             <p>
               {s.copyright.replace("{year}", String(year))}
             </p>

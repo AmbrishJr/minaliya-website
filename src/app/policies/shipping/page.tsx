@@ -44,11 +44,9 @@ export default function ShippingPage() {
               </p>
 
               <h2>Shipping Rates & Delivery Estimates</h2>
-              <p>Shipping charges for your order will be calculated and displayed at checkout.</p>
+              <p>Shipping is free on all orders — no minimum order value required.</p>
               <ul>
-                <li><strong>Free Shipping</strong> to Tamil Nadu, Kerala, Karnataka, Telangana &amp; Andhra Pradesh (on all orders)</li>
-                <li><strong>Orders above ₹499:</strong> Free Standard Shipping (all India)</li>
-                <li><strong>Orders below ₹499:</strong> Flat rate of ₹50</li>
+                <li><strong>Free Shipping</strong> on all orders to Tamil Nadu, Kerala, Karnataka, Telangana &amp; Andhra Pradesh</li>
               </ul>
               <p>
                 <strong>Estimated Delivery Times:</strong>

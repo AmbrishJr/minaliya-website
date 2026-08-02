@@ -9,6 +9,7 @@ import CartDrawer from "@/components/cart/CartDrawer";
 import LoginModal from "@/components/auth/LoginModal";
 import ChatBot from "@/components/common/ChatBot";
 import SkipToContent from "@/components/common/SkipToContent";
+import StoreModeBanner from "@/components/common/StoreModeBanner";
 import JsonLd from "@/components/seo/JsonLd";
 const playfair = Playfair_Display({
   variable: "--font-heading",
@@ -165,6 +166,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased">
         <SkipToContent />
+        <StoreModeBanner />
         <AuthProvider>
           <OrderProvider>
             <WishlistProvider>

@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CheckoutClient from "@/components/checkout/CheckoutClient";
+import { getSiteSettings } from "@/lib/site-data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Checkout | Minaliya",
@@ -9,12 +12,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/checkout" },
 };
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+  const settings = await getSiteSettings();
+
   return (
     <>
       <Navbar />
       <main id="main-content" className="flex-1" style={{ background: "var(--color-cream-50)" }}>
-        <CheckoutClient />
+        <CheckoutClient storeMode={settings.storeMode} />
       </main>
       <Footer />
     </>

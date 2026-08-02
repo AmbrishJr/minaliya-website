@@ -1,14 +1,47 @@
 "use client";
 
-import { Menu, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Menu, ExternalLink, Power, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { updateSiteSettings } from "@/actions/adminData";
 
 interface AdminHeaderProps {
   onMenuToggle: () => void;
   title: string;
+  storeMode: "LIVE" | "OFFLINE";
 }
 
-export default function AdminHeader({ onMenuToggle, title }: AdminHeaderProps) {
+export default function AdminHeader({ onMenuToggle, title, storeMode }: AdminHeaderProps) {
+  const router = useRouter();
+  const [mode, setMode] = useState<"LIVE" | "OFFLINE">(storeMode);
+  const [toggling, setToggling] = useState(false);
+
+  const isLive = mode === "LIVE";
+
+  const handleToggle = async () => {
+    const next: "LIVE" | "OFFLINE" = isLive ? "OFFLINE" : "LIVE";
+    const message = isLive
+      ? "Switch store to OFFLINE mode?\n\nUsers can still browse the site, but they will NOT be able to place orders."
+      : "Switch store to LIVE mode?\n\nUsers will be able to place orders again.";
+    if (!confirm(message)) return;
+
+    setToggling(true);
+    try {
+      const res = await updateSiteSettings({ storeMode: next });
+      if (res.success) {
+        setMode(next);
+        router.refresh();
+      } else {
+        alert(res.error || "Failed to update store mode.");
+      }
+    } catch {
+      alert("Failed to update store mode. Please try again.");
+    } finally {
+      setToggling(false);
+    }
+  };
+
   return (
     <header
       className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b"
@@ -68,25 +101,43 @@ export default function AdminHeader({ onMenuToggle, title }: AdminHeaderProps) {
           <span className="hidden sm:inline">Visit Store</span>
         </Link>
 
-        {/* Status Indicator */}
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+        {/* LIVE / OFFLINE Toggle */}
+        <button
+          onClick={handleToggle}
+          disabled={toggling}
+          title={isLive ? "Click to go OFFLINE (users can't order)" : "Click to go LIVE (orders enabled)"}
+          aria-label="Toggle store mode"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200 disabled:opacity-60"
           style={{
-            background: "var(--color-forest-50)",
-            border: "1px solid var(--color-forest-100)",
+            background: isLive ? "var(--color-forest-50)" : "var(--color-terra-50)",
+            border: isLive ? "1px solid var(--color-forest-100)" : "1px solid var(--color-terra-200)",
+            cursor: toggling ? "wait" : "pointer",
           }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,0,0,0.05)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
         >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: "var(--color-forest-400)" }}></span>
-            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: "var(--color-forest-500)" }}></span>
-          </span>
+          {toggling ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <span className="relative flex h-2 w-2">
+              <span
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                style={{ background: isLive ? "var(--color-forest-400)" : "var(--color-terra-400)" }}
+              ></span>
+              <span
+                className="relative inline-flex rounded-full h-2 w-2"
+                style={{ background: isLive ? "var(--color-forest-500)" : "var(--color-terra-500)" }}
+              ></span>
+            </span>
+          )}
           <span
             className="text-[10px] font-bold uppercase tracking-wider"
-            style={{ color: "var(--color-forest-600)" }}
+            style={{ color: isLive ? "var(--color-forest-600)" : "var(--color-terra-500)" }}
           >
-            Live Mode
+            {isLive ? "Live Mode" : "Offline Mode"}
           </span>
-        </div>
+          <Power size={11} style={{ color: isLive ? "var(--color-forest-500)" : "var(--color-terra-500)" }} />
+        </button>
       </div>
     </header>
   );

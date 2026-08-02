@@ -69,11 +69,14 @@ export async function generateInvoicePDF(
 
     const shippingAddress = order.shippingAddress as Record<string, string>;
     const items = order.items.map((item, index) => {
-      const hsn = getHsnCode(item.product.name);
+      const rawName = item.product.name;
+      const hsn = getHsnCode(rawName);
+      const base = rawName.replace(/^Cold Pressed /i, '');
+      const productName = `Minaliya Wooden Cold Pressed ${base}`;
       const lineTotal = Number(item.price) * item.quantity;
       return {
         sno: index + 1,
-        productName: item.product.name,
+        productName,
         hsnSac: hsn || undefined,
         quantity: item.quantity,
         unit: "NOS",
@@ -180,7 +183,21 @@ export async function processInvoice(orderId: string): Promise<void> {
       });
     }
 
-    const emailResult = await sendInvoiceEmail(order, order.items);
+    // Generate the PDF and upload to Cloudinary first
+    let invoiceUrl: string | undefined;
+    try {
+      const pdfResult = await generateInvoicePDF(orderId);
+      if (pdfResult.success && pdfResult.url) {
+        invoiceUrl = pdfResult.url;
+        console.log(`Invoice PDF generated and uploaded for order ${orderId}: ${invoiceUrl}`);
+      } else {
+        console.warn(`PDF generation failed for order ${orderId}, proceeding with email only: ${pdfResult.error}`);
+      }
+    } catch (pdfError) {
+      console.warn(`PDF generation threw for order ${orderId}, proceeding with email only:`, pdfError);
+    }
+
+    const emailResult = await sendInvoiceEmail(order, order.items, invoiceUrl);
 
     if (emailResult.success) {
       const updateData: Record<string, any> = {

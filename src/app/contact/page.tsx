@@ -3,54 +3,37 @@ import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ContactForm from "@/components/contact/ContactForm";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
-  MessageCircle,
-} from "lucide-react";
+import { MapPin, Phone, Mail, Clock, MessageCircle } from "lucide-react";
+import { getContactSettings } from "@/lib/contact-data";
+import type { ContactCardIcon } from "@/actions/adminData";
 
-export const metadata: Metadata = {
-  title: "Contact Us",
-  description:
-    "Get in touch with Minaliya for orders, queries, or feedback. WhatsApp, call, or email us. Based in Chennai, Tamil Nadu.",
-  alternates: { canonical: "/contact" },
-  openGraph: {
-    title: "Contact Minaliya",
-    description:
-      "Get in touch with Minaliya for orders, queries, or feedback. Call, WhatsApp, or email us.",
-    url: "https://minaliya.com/contact",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Contact Minaliya" }],
-  },
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getContactSettings();
+  return {
+    title: s.metaTitle,
+    description: s.metaDescription,
+    alternates: { canonical: "/contact" },
+    openGraph: {
+      title: s.metaTitle,
+      description: s.metaDescription,
+      url: "https://minaliya.com/contact",
+      images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: s.metaTitle }],
+    },
+  };
+}
+
+const cardIcons: Record<ContactCardIcon, React.ReactNode> = {
+  map: <MapPin size={22} />,
+  phone: <Phone size={22} />,
+  mail: <Mail size={22} />,
+  clock: <Clock size={22} />,
 };
 
-const contactInfo = [
-  {
-    icon: <MapPin size={22} />,
-    title: "Visit Us",
-    lines: ["Shop No. 3, Kodambakkam Road, West Mambalam,", "Chennai, Tamil Nadu - 600033"],
-  },
-  {
-    icon: <Phone size={22} />,
-    title: "Call Us",
-    lines: ["+91 98765 43210"],
-    href: "tel:+919876543210",
-  },
-  {
-    icon: <Mail size={22} />,
-    title: "Email Us",
-    lines: ["hello@minaliya.com"],
-    href: "mailto:hello@minaliya.com",
-  },
-  {
-    icon: <Clock size={22} />,
-    title: "Working Hours",
-    lines: ["Mon–Sat: 9:00 AM – 8:00 PM", "Sunday: Closed"],
-  },
-];
+export default async function ContactPage() {
+  const s = await getContactSettings();
 
-export default function ContactPage() {
   return (
     <>
       <AnnouncementBar />
@@ -79,14 +62,13 @@ export default function ContactPage() {
                 color: "var(--color-stone-900)",
               }}
             >
-              Get in <span className="italic font-normal">Touch</span>
+              {s.heroTitle} <span className="italic font-normal">{s.heroHighlight}</span>
             </h1>
             <p
               className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed"
               style={{ color: "var(--color-stone-500)" }}
             >
-              Have a question about our oils, need help with an order, or want to
-              place a bulk enquiry? We&apos;d love to hear from you.
+              {s.heroSubtitle}
             </p>
           </div>
         </section>
@@ -98,115 +80,124 @@ export default function ContactPage() {
               {/* Left: Contact Info */}
               <div className="space-y-6">
                 {/* Contact Cards */}
-                {contactInfo.map((item, i) => (
+                {s.showFields.cards &&
+                  s.cards.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex gap-4 p-5 rounded-2xl transition-all duration-300 hover:shadow-md"
+                      style={{
+                        background: "white",
+                        border: "1px solid var(--color-stone-200)",
+                      }}
+                    >
+                      <div
+                        className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                        style={{
+                          background: "var(--color-forest-50)",
+                          color: "var(--color-forest-500)",
+                        }}
+                      >
+                        {cardIcons[item.icon] ?? <MapPin size={22} />}
+                      </div>
+                      <div>
+                        <h3
+                          className="text-sm font-semibold mb-1"
+                          style={{ color: "var(--color-stone-800)" }}
+                        >
+                          {item.title}
+                        </h3>
+                        {item.lines.map((line, j) =>
+                          item.href ? (
+                            <a
+                              key={j}
+                              href={item.href}
+                              className="block text-sm hover:underline"
+                              style={{ color: "var(--color-stone-500)" }}
+                            >
+                              {line}
+                            </a>
+                          ) : (
+                            <p
+                              key={j}
+                              className="text-sm"
+                              style={{ color: "var(--color-stone-500)" }}
+                            >
+                              {line}
+                            </p>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                {/* WhatsApp Quick CTA */}
+                {s.showFields.whatsapp && s.whatsapp.enabled && s.whatsapp.number && (
+                  <a
+                    href={`https://wa.me/${s.whatsapp.number}?text=${encodeURIComponent(
+                      s.whatsapp.message
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-3 w-full py-4 rounded-full font-semibold text-base transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                    style={{ background: "#25D366", color: "white" }}
+                  >
+                    <MessageCircle size={20} />
+                    {s.whatsapp.label || "Chat on WhatsApp"}
+                  </a>
+                )}
+
+                {/* Live Google Map Embed */}
+                {s.showFields.map && s.mapEmbedUrl && (
                   <div
-                    key={i}
-                    className="flex gap-4 p-5 rounded-2xl transition-all duration-300 hover:shadow-md"
+                    className="rounded-2xl overflow-hidden h-72 sm:h-64 shadow-soft transition-all duration-300 hover:shadow-md"
                     style={{
-                      background: "white",
                       border: "1px solid var(--color-stone-200)",
                     }}
                   >
-                    <div
-                      className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{
-                        background: "var(--color-forest-50)",
-                        color: "var(--color-forest-500)",
-                      }}
-                    >
-                      {item.icon}
-                    </div>
-                    <div>
-                      <h3
-                        className="text-sm font-semibold mb-1"
-                        style={{ color: "var(--color-stone-800)" }}
-                      >
-                        {item.title}
-                      </h3>
-                      {item.lines.map((line, j) =>
-                        item.href ? (
-                          <a
-                            key={j}
-                            href={item.href}
-                            className="block text-sm hover:underline"
-                            style={{ color: "var(--color-stone-500)" }}
-                          >
-                            {line}
-                          </a>
-                        ) : (
-                          <p
-                            key={j}
-                            className="text-sm"
-                            style={{ color: "var(--color-stone-500)" }}
-                          >
-                            {line}
-                          </p>
-                        )
-                      )}
-                    </div>
+                    <iframe
+                      src={s.mapEmbedUrl}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen={true}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Minaliya Location"
+                    ></iframe>
                   </div>
-                ))}
-
-                {/* WhatsApp Quick CTA */}
-                <a
-                  href="https://wa.me/919876543210?text=Hi%20Minaliya!%20I%20have%20a%20query."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-3 w-full py-4 rounded-full font-semibold text-base transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                  style={{ background: "#25D366", color: "white" }}
-                >
-                  <MessageCircle size={20} />
-                  Chat on WhatsApp
-                </a>
-
-                {/* Live Google Map Embed */}
-                <div
-                  className="rounded-2xl overflow-hidden h-72 sm:h-64 shadow-soft transition-all duration-300 hover:shadow-md"
-                  style={{
-                    border: "1px solid var(--color-stone-200)",
-                  }}
-                >
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3886.9942630650953!2d80.21720617596043!3d13.028396790938479!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a5267bd843cc565%3A0xc6643dfa200839ed!2sMinaliya%20Wooden%20Cold%20Pressed%20Oils%20-%20Best%20Marachekku%20Oil%20Manufacturer%20in%20Chennai!5e0!3m2!1sen!2sin!4v1716142055610!5m2!1sen!2sin"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={true}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Minaliya Wooden Cold Pressed Oils Shop Location"
-                  ></iframe>
-                </div>
+                )}
               </div>
 
               {/* Right: Contact Form */}
-              <div className="lg:col-span-2">
-                <div
-                  className="p-8 sm:p-10 rounded-2xl"
-                  style={{
-                    background: "white",
-                    border: "1px solid var(--color-stone-200)",
-                    boxShadow: "var(--shadow-card)",
-                  }}
-                >
-                  <h2
-                    className="text-2xl font-bold mb-2"
+              {s.showFields.form && (
+                <div className="lg:col-span-2">
+                  <div
+                    className="p-8 sm:p-10 rounded-2xl"
                     style={{
-                      fontFamily: "var(--font-heading)",
-                      color: "var(--color-stone-800)",
+                      background: "white",
+                      border: "1px solid var(--color-stone-200)",
+                      boxShadow: "var(--shadow-card)",
                     }}
                   >
-                    Send Us a Message
-                  </h2>
-                  <p
-                    className="text-sm mb-8"
-                    style={{ color: "var(--color-stone-400)" }}
-                  >
-                    Fill out the form and we&apos;ll get back to you within 24 hours.
-                  </p>
-                  <ContactForm />
+                    <h2
+                      className="text-2xl font-bold mb-2"
+                      style={{
+                        fontFamily: "var(--font-heading)",
+                        color: "var(--color-stone-800)",
+                      }}
+                    >
+                      {s.form.title}
+                    </h2>
+                    <p
+                      className="text-sm mb-8"
+                      style={{ color: "var(--color-stone-400)" }}
+                    >
+                      {s.form.subtitle}
+                    </p>
+                    <ContactForm subjects={s.subjects} buttonLabel={s.form.buttonLabel} />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </section>

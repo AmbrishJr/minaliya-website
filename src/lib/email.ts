@@ -3,6 +3,9 @@ const EMAIL_USERID = process.env.EMAIL_OTP_USERID || "";
 const EMAIL_PASSWORD = process.env.EMAIL_OTP_PASSWORD || "";
 const EMAIL_FROM_NAME = process.env.EMAIL_OTP_FROM_NAME || "Minaliya";
 
+import prisma from "./prisma";
+import type { Prisma } from "@prisma/client";
+
 const EMAIL_CONFIG_OK = !!(EMAIL_API_URL && EMAIL_USERID && EMAIL_PASSWORD);
 
 if (!EMAIL_CONFIG_OK) {
@@ -198,9 +201,28 @@ function getHsnCode(productName: string): string {
   return '';
 }
 
+type OrderLike = {
+  id: string;
+  shippingAddress?: Prisma.JsonValue;
+  invoiceNumber?: string | null;
+  invoiceDate?: Date | string | null;
+  createdAt: Date | string;
+  paymentStatus?: string | null;
+  totalAmount: { toString: () => string } | number;
+  awbNumber?: string | null;
+};
+
+type InvoiceItemLike = {
+  product?: { name?: string } | null;
+  productName?: string;
+  quantity?: number;
+  price?: number | { toString: () => string };
+};
+
 export async function sendInvoiceEmail(
-  order: any,
-  orderItems?: any[],
+  order: OrderLike,
+  orderItems?: InvoiceItemLike[],
+  invoiceUrl?: string,
 ): Promise<{ success: boolean; messageId?: string }> {
   try {
     const shippingAddress = order.shippingAddress as Record<string, string>;
@@ -217,26 +239,28 @@ export async function sendInvoiceEmail(
 
     const subject = `Tax Invoice - ${invoiceNumber} - Minaliya Goods And Services`;
 
-    const items = (orderItems || []).map((item: any, index: number) => {
+    const items = (orderItems || []).map((item, index) => {
       const rawName = item.product?.name || item.productName || 'Product';
       const base = rawName.replace(/^Cold Pressed /i, '');
       const productName = `Minaliya Wooden Cold Pressed ${base}`;
+      const quantity = item.quantity || 0;
+      const pricePerUnit = Number(item.price || 0);
       return {
         sno: index + 1,
         productName,
-        quantity: item.quantity,
+        quantity,
         unit: 'NOS',
-        pricePerUnit: Number(item.price),
+        pricePerUnit,
         hsnSac: getHsnCode(rawName),
         discount: 0,
         gstPercent: 5,
-        totalPrice: Number(item.price) * item.quantity,
+        totalPrice: pricePerUnit * quantity,
       };
     });
 
     const subtotal = Number(order.totalAmount);
     const gstRate = 5;
-    const gstTotal = items.reduce((sum: number, item: any) => {
+    const gstTotal = items.reduce((sum, item) => {
       return sum + Math.round((item.totalPrice * gstRate) / 100 * 100) / 100;
     }, 0);
     const cgst = gstTotal / 2;
@@ -286,6 +310,7 @@ export async function sendInvoiceEmail(
       grandTotal: subtotal,
       amountPaid: order.paymentStatus === 'PAID' ? subtotal : 0,
       balance: order.paymentStatus === 'PAID' ? 0 : subtotal,
+      invoiceUrl,
     });
 
     const result = await sendEmail(recipientEmail, subject, content);
@@ -297,7 +322,7 @@ export async function sendInvoiceEmail(
 }
 
 
-export async function sendShipmentEmail(order: any): Promise<boolean> {
+export async function sendShipmentEmail(order: OrderLike): Promise<boolean> {
   try {
     const shippingAddress = order.shippingAddress as Record<string, string>;
     const recipientEmail = shippingAddress?.email;
@@ -385,5 +410,289 @@ export async function sendShipmentEmail(order: any): Promise<boolean> {
   } catch (error) {
     console.error("[Email Shipment] Failed to send email:", error);
     return false;
+  }
+}
+
+function formatINR(amount: number): string {
+  return (
+    "\u20B9" +
+    amount.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}
+
+/**
+ * Sends a new-order confirmation / fulfillment email to the admin (mailme@minaliya.in)
+ * immediately after a payment is successfully verified.
+ *
+ * Uses the order's adminNotified flag as an atomic claim to avoid duplicate
+ * emails when both the verify-payment route and the Razorpay webhook fire.
+ */
+export async function sendAdminOrderConfirmationEmail(
+  orderId: string
+): Promise<{ success: boolean; skipped?: boolean }> {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: { include: { product: true } },
+      },
+    });
+
+    if (!order) {
+      console.error(`[Admin Order Email] Order not found: ${orderId}`);
+      return { success: false };
+    }
+
+    // Atomic claim — prevents duplicate sends from concurrent webhook + verify-payment
+    const claim = await prisma.order.updateMany({
+      where: { id: orderId, adminNotified: false },
+      data: { adminNotified: true },
+    });
+    if (claim.count === 0) {
+      console.log(`[Admin Order Email] Already notified for order ${orderId}, skipping`);
+      return { success: true, skipped: true };
+    }
+
+    const adminEmail = process.env.ADMIN_EMAIL || "mailme@minaliya.in";
+    const shippingAddress = (order.shippingAddress as Record<string, string>) || {};
+    const customerName = shippingAddress?.name || "Customer";
+
+    const orderIdShort = order.id.slice(-8).toUpperCase();
+    const orderDate = order.createdAt.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Kolkata",
+    });
+    const orderTime = order.createdAt.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    });
+
+    const items = order.items.map((item, index) => {
+      const size = item.product.slug.includes("500ml") ? "500ml" : "1 Ltr";
+      return {
+        sno: index + 1,
+        productName: item.product.name,
+        size,
+        quantity: item.quantity,
+        unitPrice: Number(item.price),
+        lineTotal: Number(item.price) * item.quantity,
+      };
+    });
+
+    const raw = (order.priceDetails as Record<string, number>) || {};
+    const inclSubtotal = items.reduce((sum, it) => sum + it.lineTotal, 0);
+    const derivedGst = inclSubtotal - inclSubtotal / 1.05;
+    const price = {
+      subtotal: typeof raw.subtotal === "number" ? raw.subtotal : Math.round((inclSubtotal / 1.05) * 100) / 100,
+      gst: typeof raw.gst === "number" ? raw.gst : Math.round(derivedGst * 100) / 100,
+      cgst: typeof raw.cgst === "number" ? raw.cgst : Math.round((derivedGst / 2) * 100) / 100,
+      sgst: typeof raw.sgst === "number" ? raw.sgst : Math.round((derivedGst / 2) * 100) / 100,
+      discount: typeof raw.discount === "number" ? raw.discount : 0,
+      shipping: typeof raw.shipping === "number" ? raw.shipping : 0,
+      roundOff: typeof raw.roundOff === "number" ? raw.roundOff : 0,
+      total: typeof raw.total === "number" ? raw.total : Math.round(Number(order.totalAmount)),
+    };
+
+    const paymentMethodLabel =
+      (order.paymentMethod || "RAZORPAY").charAt(0) +
+      (order.paymentMethod || "RAZORPAY").slice(1).toLowerCase();
+
+    const itemsRows = items
+      .map(
+        (item) => `
+      <tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e4e0;font-size:13px;color:#4b5563;text-align:center;">${item.sno}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e4e0;font-size:13px;color:#2d3e2f;font-weight:600;">${item.productName}<br/><span style="font-size:11px;color:#6b7280;font-weight:400;">Size: ${item.size}</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e4e0;font-size:13px;color:#4b5563;text-align:center;">${item.quantity}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e4e0;font-size:13px;color:#4b5563;text-align:right;">${formatINR(item.unitPrice)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e4e0;font-size:13px;color:#2d3e2f;font-weight:600;text-align:right;">${formatINR(item.lineTotal)}</td>
+      </tr>`
+      )
+      .join("");
+
+    const shippingLines = [
+      shippingAddress?.address,
+      [shippingAddress?.city, shippingAddress?.state].filter(Boolean).join(", "),
+      shippingAddress?.pinCode ? `PIN / ZIP: ${shippingAddress.pinCode}` : "",
+      "India",
+    ]
+      .filter(Boolean)
+      .join("<br/>");
+
+    const content = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background-color:#f4f3ef;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f3ef;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="680" cellpadding="0" cellspacing="0" style="max-width:680px;width:100%;">
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#2d3e2f;border-radius:8px;padding:10px 28px;">
+                    <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">MINALIYA</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff;border-radius:16px;padding:36px 32px;text-align:left;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef8e7;border-left:4px solid #eab308;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+                <tr>
+                  <td>
+                    <p style="margin:0;font-size:14px;color:#92400e;font-weight:700;">New Order Received - Action Required</p>
+                    <p style="margin:4px 0 0 0;font-size:13px;color:#92400e;line-height:1.6;">A new order has been placed and paid for. Please review the details below and begin fulfillment.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="padding:8px 0;font-size:13px;color:#6b7280;">Order ID</td>
+                  <td style="padding:8px 0;font-size:13px;color:#2d3e2f;font-weight:700;text-align:right;">#${orderIdShort}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-size:13px;color:#6b7280;">Order Date</td>
+                  <td style="padding:8px 0;font-size:13px;color:#2d3e2f;font-weight:600;text-align:right;">${orderDate}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-size:13px;color:#6b7280;">Order Time</td>
+                  <td style="padding:8px 0;font-size:13px;color:#2d3e2f;font-weight:600;text-align:right;">${orderTime} IST</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-size:13px;color:#6b7280;">Payment Method</td>
+                  <td style="padding:8px 0;font-size:13px;color:#2d3e2f;font-weight:600;text-align:right;">${paymentMethodLabel}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-size:13px;color:#6b7280;">Payment Status</td>
+                  <td style="padding:8px 0;font-size:13px;color:#15803d;font-weight:700;text-align:right;">${order.paymentStatus || "PENDING"}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-size:13px;color:#6b7280;">Razorpay Payment ID</td>
+                  <td style="padding:8px 0;font-size:13px;color:#2d3e2f;text-align:right;font-family:monospace;">${order.razorpayPaymentId || "\u2014"}</td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td width="50%" valign="top" style="padding-right:12px;">
+                    <p style="margin:0 0 8px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Customer Details</p>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;border-radius:12px;padding:16px 18px;">
+                      <tr><td style="padding:3px 0;font-size:13px;color:#2d3e2f;font-weight:700;">${customerName}</td></tr>
+                      <tr><td style="padding:3px 0;font-size:13px;color:#4b5563;">${shippingAddress?.email || "\u2014"}</td></tr>
+                      <tr><td style="padding:3px 0;font-size:13px;color:#4b5563;">${shippingAddress?.phone || "\u2014"}</td></tr>
+                    </table>
+                  </td>
+                  <td width="50%" valign="top" style="padding-left:12px;">
+                    <p style="margin:0 0 8px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Shipping Address</p>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;border-radius:12px;padding:16px 18px;">
+                      <tr><td style="padding:3px 0;font-size:13px;color:#2d3e2f;font-weight:700;line-height:1.5;">${shippingLines}</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 8px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Ordered Products</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #e5e4e0;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+                <tr style="background:#f0efe9;">
+                  <td style="padding:10px 12px;font-size:11px;color:#6b7280;font-weight:600;text-align:center;text-transform:uppercase;">#</td>
+                  <td style="padding:10px 12px;font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;">Product</td>
+                  <td style="padding:10px 12px;font-size:11px;color:#6b7280;font-weight:600;text-align:center;text-transform:uppercase;">Qty</td>
+                  <td style="padding:10px 12px;font-size:11px;color:#6b7280;font-weight:600;text-align:right;text-transform:uppercase;">Unit Price</td>
+                  <td style="padding:10px 12px;font-size:11px;color:#6b7280;font-weight:600;text-align:right;text-transform:uppercase;">Amount</td>
+                </tr>
+                ${itemsRows}
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#6b7280;">Subtotal</td>
+                  <td style="padding:6px 0;font-size:13px;color:#2d3e2f;text-align:right;font-weight:600;">${formatINR(price.subtotal)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#6b7280;">Discount</td>
+                  <td style="padding:6px 0;font-size:13px;color:#2d3e2f;text-align:right;font-weight:600;">-${formatINR(price.discount)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#6b7280;">CGST @ 2.5%</td>
+                  <td style="padding:6px 0;font-size:13px;color:#2d3e2f;text-align:right;font-weight:600;">${formatINR(price.cgst)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#6b7280;">SGST @ 2.5%</td>
+                  <td style="padding:6px 0;font-size:13px;color:#2d3e2f;text-align:right;font-weight:600;">${formatINR(price.sgst)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#6b7280;">Shipping Charges</td>
+                  <td style="padding:6px 0;font-size:13px;color:#2d3e2f;text-align:right;font-weight:600;">${price.shipping === 0 ? "FREE" : formatINR(price.shipping)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#6b7280;">Round Off</td>
+                  <td style="padding:6px 0;font-size:13px;color:#2d3e2f;text-align:right;font-weight:600;">${formatINR(price.roundOff)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-top:2px solid #2d3e2f;font-size:14px;color:#2d3e2f;font-weight:700;">Total Amount Paid</td>
+                  <td style="padding:10px 0;border-top:2px solid #2d3e2f;font-size:16px;color:#2d3e2f;font-weight:700;text-align:right;">${formatINR(price.total)}</td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7f4;border-radius:12px;padding:16px 18px;margin-bottom:8px;">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Customer Notes / Delivery Instructions</p>
+                    <p style="margin:0;font-size:13px;color:#2d3e2f;line-height:1.6;">${shippingAddress?.notes || "\u2014"}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-top:20px;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;text-align:center;">
+                This is an automated fulfillment notification sent by Minaliya Goods And Services.
+                Please do not reply to this message.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const subject = `New Order #${orderIdShort} - ${customerName} - ${formatINR(price.total)}`;
+
+    const result = await sendEmail(adminEmail, subject, content);
+
+    if (!result.success) {
+      // Roll back the claim so a later retry can attempt the send again
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { adminNotified: false },
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[Admin Order Email] Failed to send email:", error);
+    try {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { adminNotified: false },
+      });
+    } catch {
+      /* ignore secondary error */
+    }
+    return { success: false };
   }
 }

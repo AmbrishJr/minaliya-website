@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Shop Pure Cold Pressed Oils",
   description:
-    "Browse our collection of 100% pure wooden cold pressed oils. Groundnut, coconut, and sesame oils — traditionally extracted using Mara Chekku methods. Free shipping above ₹499.",
+    "Browse our collection of 100% pure wooden cold pressed oils. Groundnut, coconut, and sesame oils — traditionally extracted using Mara Chekku methods. Free shipping on all orders.",
   alternates: {
     canonical: "/shop",
   },
@@ -34,7 +34,7 @@ export default async function ShopPage() {
   });
 
   // Map database entries to match the frontend Product interface structure
-  let products = dbProducts.map((p) => {
+  const products = dbProducts.map((p) => {
     // Standardized ratings & reviews count for visual premium experience
     let rating = 4.9;
     let reviews = 234;

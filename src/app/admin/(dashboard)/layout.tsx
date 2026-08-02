@@ -1,6 +1,7 @@
 import { verifyAdminSession } from "@/actions/admin";
 import { redirect } from "next/navigation";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
+import { getSiteSettings } from "@/lib/site-data";
 
 export const metadata = {
   title: "Admin Dashboard | Minaliya",
@@ -22,5 +23,7 @@ export default async function AdminDashboardLayout({
     redirect("/admin/login");
   }
 
-  return <AdminLayoutClient>{children}</AdminLayoutClient>;
+  const settings = await getSiteSettings();
+
+  return <AdminLayoutClient storeMode={settings.storeMode}>{children}</AdminLayoutClient>;
 }

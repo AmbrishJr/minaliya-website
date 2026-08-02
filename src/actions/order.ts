@@ -2,11 +2,23 @@
 
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { getSiteSettings } from "@/lib/site-data";
 
 export interface OrderItemInput {
   productSlug: string;
   quantity: number;
   price: number;
+}
+
+export interface OrderPriceDetails {
+  subtotal: number;
+  gst: number;
+  cgst: number;
+  sgst: number;
+  discount: number;
+  shipping: number;
+  roundOff: number;
+  total: number;
 }
 
 export interface OrderInput {
@@ -20,13 +32,23 @@ export interface OrderInput {
     city: string;
     state: string;
     pinCode: string;
+    notes?: string;
   };
   paymentMethod: string;
   items: OrderItemInput[];
+  priceDetails?: OrderPriceDetails;
 }
 
 export async function createOrder(data: OrderInput & { paymentStatus?: string }) {
   try {
+    const siteSettings = await getSiteSettings();
+    if (siteSettings.storeMode === "OFFLINE") {
+      return {
+        success: false,
+        error: "We're currently offline and not accepting orders. Please check back soon.",
+      };
+    }
+
     if (!data.items || data.items.length === 0) {
       return { success: false, error: "No products in order items." };
     }
@@ -76,6 +98,9 @@ export async function createOrder(data: OrderInput & { paymentStatus?: string })
           paymentMethod: data.paymentMethod.toUpperCase(),
           paymentStatus: data.paymentStatus || "PAID",
           status: "PENDING",
+          priceDetails: data.priceDetails
+            ? (data.priceDetails as unknown as Prisma.JsonObject)
+            : undefined,
           items: {
             create: itemsToCreate,
           },

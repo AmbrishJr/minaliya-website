@@ -345,7 +345,7 @@ export default function ProductDetail({
                 className="grid grid-cols-3 gap-2 sm:gap-3 pt-4"
               >
                 {[
-                  { icon: <Truck size={18} />, label: "Free Shipping", sub: "Above ₹499" },
+                  { icon: <Truck size={18} />, label: "Free Shipping", sub: "On all orders" },
                   { icon: <Shield size={18} />, label: "100% Pure", sub: "Lab Tested" },
                   { icon: <RotateCcw size={18} />, label: "Easy Returns", sub: "7-day policy" },
                 ].map((badge) => (

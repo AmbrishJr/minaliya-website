@@ -7,8 +7,10 @@ import { usePathname } from "next/navigation";
 
 export default function AdminLayoutClient({
   children,
+  storeMode,
 }: {
   children: React.ReactNode;
+  storeMode: "LIVE" | "OFFLINE";
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -22,6 +24,7 @@ export default function AdminLayoutClient({
     if (path.startsWith("/admin/products")) return "Product Inventory";
     if (path.startsWith("/admin/blog")) return "Blog Management";
     if (path.startsWith("/admin/hero-slides")) return "Hero Slides";
+    if (path.startsWith("/admin/contact")) return "Contact Page Settings";
     if (path.startsWith("/admin/inquiries")) return "Bulk Inquiries";
     if (path.startsWith("/admin/footer")) return "Footer Settings";
     return "Admin Panel";
@@ -37,7 +40,7 @@ export default function AdminLayoutClient({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
         {/* Header Bar */}
-        <AdminHeader onMenuToggle={() => setSidebarOpen(!sidebarOpen)} title={title} />
+        <AdminHeader onMenuToggle={() => setSidebarOpen(!sidebarOpen)} title={title} storeMode={storeMode} />
 
         {/* Content Wrapper */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">

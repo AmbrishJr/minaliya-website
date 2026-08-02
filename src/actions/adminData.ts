@@ -136,6 +136,19 @@ export async function getAllOrders() {
     customerName: (order.shippingAddress as Record<string, string>)?.name || "N/A",
     customerEmail: (order.shippingAddress as Record<string, string>)?.email || "N/A",
     customerPhone: (order.shippingAddress as Record<string, string>)?.phone || "N/A",
+    priceDetails: order.priceDetails as
+      | {
+          subtotal: number;
+          gst: number;
+          cgst: number;
+          sgst: number;
+          discount: number;
+          shipping: number;
+          roundOff: number;
+          total: number;
+        }
+      | null
+      | undefined,
     items: order.items.map((item) => ({
       id: item.id,
       productName: item.product.name,
@@ -1058,5 +1071,87 @@ export async function reorderHeroSlides(ids: string[]) {
   } catch (error: unknown) {
     console.error("Error reordering hero slides:", error);
     return { success: false as const, error: "Failed to reorder hero slides." };
+  }
+}
+
+// ─── CONTACT SETTINGS ────────────────────────────────────
+
+export type ContactCardIcon = "map" | "phone" | "mail" | "clock";
+
+export type ContactCard = {
+  icon: ContactCardIcon;
+  title: string;
+  lines: string[];
+  href: string;
+};
+
+export type ContactSettingsData = {
+  metaTitle: string;
+  metaDescription: string;
+  heroTitle: string;
+  heroHighlight: string;
+  heroSubtitle: string;
+  cards: ContactCard[];
+  whatsapp: {
+    label: string;
+    number: string;
+    message: string;
+    enabled: boolean;
+  };
+  mapEmbedUrl: string;
+  form: {
+    title: string;
+    subtitle: string;
+    buttonLabel: string;
+  };
+  subjects: string[];
+  showFields: {
+    cards: boolean;
+    whatsapp: boolean;
+    map: boolean;
+    form: boolean;
+  };
+};
+
+export async function updateContactSettings(data: ContactSettingsData) {
+  await requireAdmin();
+
+  try {
+    await prisma.contactSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default", data },
+      update: { data },
+    });
+    revalidatePath("/contact");
+    return { success: true as const };
+  } catch (error) {
+    console.error("Error updating contact settings:", error);
+    return { success: false as const, error: "Failed to update contact settings." };
+  }
+}
+
+// ─── SITE SETTINGS (LIVE / OFFLINE MODE) ─────────────────
+
+export type StoreMode = "LIVE" | "OFFLINE";
+
+export type SiteSettingsData = {
+  storeMode: StoreMode;
+};
+
+export async function updateSiteSettings(data: SiteSettingsData) {
+  await requireAdmin();
+
+  try {
+    await prisma.siteSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default", data },
+      update: { data },
+    });
+    revalidatePath("/");
+    revalidatePath("/checkout");
+    return { success: true as const };
+  } catch (error) {
+    console.error("Error updating site settings:", error);
+    return { success: false as const, error: "Failed to update site settings." };
   }
 }

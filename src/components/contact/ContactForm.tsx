@@ -3,16 +3,12 @@
 import { useState } from "react";
 import { Send, CheckCircle } from "lucide-react";
 
-const subjects = [
-  "General Enquiry",
-  "Order Related",
-  "Bulk Order / Wholesale",
-  "Product Feedback",
-  "Shipping Query",
-  "Other",
-];
+interface ContactFormProps {
+  subjects: string[];
+  buttonLabel: string;
+}
 
-export default function ContactForm() {
+export default function ContactForm({ subjects, buttonLabel }: ContactFormProps) {
   const [submitted, setSubmitted] = useState(false);
 
   if (submitted) {
@@ -170,7 +166,7 @@ export default function ContactForm() {
 
       <button type="submit" className="btn-primary w-full sm:w-auto justify-center py-3 sm:py-4 px-10 text-base">
         <Send size={18} />
-        Send Message
+        {buttonLabel || "Send Message"}
       </button>
     </form>
   );

@@ -24,12 +24,8 @@ export async function GET(
 
     const invoiceNumber = order.invoiceNumber || `INV-${id.slice(-8).toUpperCase()}`;
 
-    // If invoice already exists on Cloudinary, redirect there
-    if (order.invoiceGenerated && order.invoiceUrl) {
-      return NextResponse.redirect(order.invoiceUrl, 302);
-    }
-
-    // Generate the PDF on-the-fly
+    // Always serve through our endpoint with proper PDF headers
+    // generateInvoicePDF handles fetching from Cloudinary if already generated
     const pdfResult = await generateInvoicePDF(id);
     if (!pdfResult.success || !pdfResult.buffer) {
       return NextResponse.json({ error: pdfResult.error || "Failed to generate invoice PDF" }, { status: 500 });
@@ -38,7 +34,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(pdfResult.buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Invoice-${invoiceNumber}.pdf"`,
+        "Content-Disposition": `inline; filename="Invoice-${invoiceNumber}.pdf"`,
       },
     });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { processInvoice } from "@/lib/invoiceService";
+import { sendAdminOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,6 +46,10 @@ export async function POST(req: NextRequest) {
       // Fire-and-forget: Vercel keeps the function alive for the grace period
       processInvoice(orderId).catch((err) =>
         console.error(`Background invoice processing failed for order ${orderId}:`, err)
+      );
+      // Notify the admin for fulfillment/shipping immediately after payment succeeds
+      sendAdminOrderConfirmationEmail(orderId).catch((err) =>
+        console.error(`Admin order confirmation email failed for order ${orderId}:`, err)
       );
     }
 

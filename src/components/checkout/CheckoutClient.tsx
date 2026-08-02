@@ -24,12 +24,6 @@ function normalizeState(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, "");
 }
 
-function isFreeShippingState(state: string): boolean {
-  if (!state) return false;
-  const norm = normalizeState(state);
-  return FREE_SHIPPING_STATES.some((s) => normalizeState(s) === norm);
-}
-
 function matchFreeShippingState(state: string): string {
   if (!state) return "Other";
   const norm = normalizeState(state);
@@ -85,7 +79,11 @@ const AVAILABLE_COUPONS: Coupon[] = [
   },
 ];
 
-export default function CheckoutClient() {
+interface CheckoutClientProps {
+  storeMode?: "LIVE" | "OFFLINE";
+}
+
+export default function CheckoutClient({ storeMode = "LIVE" }: CheckoutClientProps) {
   const router = useRouter();
   const { items, totalPrice, clearCart } = useCart();
   const { orders, addOrder } = useOrders();
@@ -125,6 +123,7 @@ export default function CheckoutClient() {
   const [shippingState, setShippingState] = useState("");
   const [isLookingUpPincode, setIsLookingUpPincode] = useState(false);
   const [formError, setFormError] = useState("");
+  const [orderNotes, setOrderNotes] = useState("");
 
 
   // Saved address state
@@ -206,18 +205,14 @@ export default function CheckoutClient() {
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
 
-  const hasSubscription = items.some((item) => item.slug.startsWith("subscription-"));
-
   // Calculate discount
   let discountAmount = 0;
   if (appliedCoupon && appliedCoupon.type === "percentage") {
     discountAmount = Math.round((totalPrice * appliedCoupon.value) / 100);
   }
 
-  // Shipping cost: free if subscription, or order total >= 499, FREESHIP coupon,
-  // or shipping to Tamil Nadu, Kerala, Karnataka, Telangana, or Andhra Pradesh
-  const isFreeShipCoupon = appliedCoupon?.type === "freeship";
-  const shippingCost = (totalPrice >= 499 || hasSubscription || isFreeShipCoupon || isFreeShippingState(shippingState)) ? 0 : 50;
+  // Shipping is free on all orders
+  const shippingCost = 0;
 
   const finalTotal = Math.max(0, totalPrice - discountAmount + shippingCost);
 
@@ -267,6 +262,12 @@ export default function CheckoutClient() {
     setRazorpayError("");
 
     try {
+      const totalInclGst = totalPrice;
+      const totalExGst = items.reduce((acc, item) => acc + ((item.price * item.quantity) / 1.05), 0);
+      const totalGst = totalInclGst - totalExGst;
+      const roundedTotal = Math.round(finalTotal);
+      const roundOff = roundedTotal - finalTotal;
+
       const orderPayload = {
         totalAmount: finalTotal,
         shippingAddress: {
@@ -277,6 +278,7 @@ export default function CheckoutClient() {
           city: city.trim(),
           state: shippingState || "Tamil Nadu",
           pinCode: postalCode.trim(),
+          notes: orderNotes.trim(),
         },
         paymentMethod: "RAZORPAY",
         paymentStatus: "PENDING",
@@ -285,6 +287,16 @@ export default function CheckoutClient() {
           quantity: item.quantity,
           price: item.price,
         })),
+        priceDetails: {
+          subtotal: Math.round(totalExGst * 100) / 100,
+          gst: Math.round(totalGst * 100) / 100,
+          cgst: Math.round((totalGst / 2) * 100) / 100,
+          sgst: Math.round((totalGst / 2) * 100) / 100,
+          discount: Math.round(discountAmount * 100) / 100,
+          shipping: shippingCost,
+          roundOff: Math.round(roundOff * 100) / 100,
+          total: roundedTotal,
+        },
       };
 
       const orderRes = await createOrder(orderPayload);
@@ -370,9 +382,46 @@ export default function CheckoutClient() {
     } finally {
       isProcessingRef.current = false;
     }
-  }, [finalTotal, firstName, lastName, email, phone, shippingState, address, city, postalCode, items, addOrder, clearCart, router]);
+  }, [finalTotal, firstName, lastName, email, phone, shippingState, address, city, postalCode, items, orderNotes, addOrder, clearCart, router]);
 
 
+
+  if (storeMode === "OFFLINE") {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        <div
+          className="rounded-2xl border p-8 sm:p-12 text-center"
+          style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
+        >
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: "var(--color-amber-100)", color: "var(--color-amber-700)" }}
+          >
+            <Shield size={36} />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-heading)", color: "var(--color-stone-900)" }}>
+            Orders are paused right now
+          </h2>
+          <p className="text-lg mb-4 max-w-lg mx-auto" style={{ color: "var(--color-stone-500)" }}>
+            Our store is temporarily offline — you can still browse our oils, but we&apos;re not
+            accepting new orders at the moment. Please check back soon.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/shop" className="btn-primary">
+              Browse Our Oils
+            </Link>
+            <Link
+              href="/contact"
+              className="px-6 py-3 rounded-xl text-sm font-semibold transition-colors"
+              style={{ color: "var(--color-forest-700)", background: "var(--color-forest-50)" }}
+            >
+              Contact Us
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -452,7 +501,7 @@ export default function CheckoutClient() {
                   <MapPin size={20} className="text-forest-600" /> Contact &amp; Shipping Information
                 </h2>
                 <p className="text-xs font-medium px-3 py-2 rounded-lg" style={{ background: "var(--color-forest-50)", color: "var(--color-forest-700)" }}>
-                  Free shipping is available in Tamil Nadu, Kerala, Karnataka, Telangana &amp; Andhra Pradesh
+                  Free shipping on all orders
                 </p>
 
                 {/* Email – always shown and editable */}
@@ -626,7 +675,6 @@ export default function CheckoutClient() {
                         {FREE_SHIPPING_STATES.map((s) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
-                        <option value="Other">Other</option>
                       </select>
                     </div>
 
@@ -644,6 +692,21 @@ export default function CheckoutClient() {
                     </div>
                   </div>
                 )}
+
+                {/* Order Notes / Delivery Instructions */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--color-stone-700)" }}>
+                    Order Notes / Delivery Instructions <span className="font-normal" style={{ color: "var(--color-stone-400)" }}>(optional)</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Any special delivery instructions, landmark, preferred delivery time, etc."
+                    value={orderNotes}
+                    onChange={(e) => setOrderNotes(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-forest-200 outline-none transition-all resize-none"
+                    style={{ background: "white", borderColor: "var(--color-stone-200)" }}
+                  />
+                </div>
 
                 <div className="pt-4 flex justify-end">
                   <button
@@ -961,9 +1024,7 @@ export default function CheckoutClient() {
 
                     <div className="flex justify-between text-sm text-stone-500">
                       <span>Shipping</span>
-                      <span className="font-medium text-stone-800">
-                        {shippingCost === 0 ? "₹0.00" : `₹${shippingCost.toFixed(2)}`}
-                      </span>
+                      <span className="font-medium text-stone-800">₹0.00</span>
                     </div>
 
                     <div className="flex justify-between text-sm text-stone-500">

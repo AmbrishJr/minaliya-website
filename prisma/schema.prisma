@@ -79,10 +79,12 @@ model Order {
   invoiceEmailStatus     String?   @default("PENDING")
   invoiceEmailSentAt     DateTime?
   invoiceEmailMessageId  String?
-  invoiceDate      DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  items           OrderItem[]
+  invoiceDate            DateTime?
+  priceDetails           Json?     // Checkout breakdown: subtotal, gst, cgst, sgst, discount, shipping, roundOff, total
+  adminNotified          Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  items                  OrderItem[]
 }
 
 enum OrderStatus {
@@ -193,6 +195,18 @@ model FooterSettings {
 }
 
 model HeaderSettings {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model ContactSettings {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
   id        String   @id @default("default")
   data      Json
   updatedAt DateTime @updatedAt

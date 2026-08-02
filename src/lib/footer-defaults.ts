@@ -48,11 +48,12 @@ export function getDefaultFooterSettings(): FooterSettingsData {
       whatsapp: { url: "", enabled: false },
     },
     googleMaps: {
-      embedUrl: "",
+      embedUrl:
+        "https://maps.google.com/maps?q=Old%20No%2087%2C%20New%20No%2078%2C%20Shop%20No%203%2C%20Kodambakkam%20Road%2C%20Mettupalayam%2C%20West%20Mambalam%2C%20Chennai%20-%20600033&t=m&z=15&output=embed",
       businessUrl: "",
       lat: "",
       lng: "",
-      enabled: false,
+      enabled: true,
     },
     paymentMethods: ["UPI", "Visa", "MC"],
     showFields: {
@@ -66,7 +67,7 @@ export function getDefaultFooterSettings(): FooterSettingsData {
       legalLinks: true,
       socialMedia: true,
       newsletter: true,
-      googleMaps: false,
+      googleMaps: true,
       paymentMethods: true,
     },
   };

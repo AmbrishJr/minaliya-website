@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getRazorpay } from "@/lib/razorpay";
+import { getSiteSettings } from "@/lib/site-data";
 
 // Simple in-memory rate limiter (per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -21,6 +22,14 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    const siteSettings = await getSiteSettings();
+    if (siteSettings.storeMode === "OFFLINE") {
+      return NextResponse.json(
+        { error: "We're currently offline and not accepting orders." },
+        { status: 503 }
+      );
+    }
+
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
     if (!checkRateLimit(ip)) {
       return NextResponse.json(

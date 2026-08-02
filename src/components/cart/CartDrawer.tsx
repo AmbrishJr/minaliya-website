@@ -265,27 +265,15 @@ export default function CartDrawer() {
             })()}
 
             {/* Free shipping note */}
-            {totalPrice >= 499 ? (
-              <p
-                className="text-xs font-medium text-center px-3 py-2 rounded-lg"
-                style={{
-                  background: "var(--color-forest-50)",
-                  color: "var(--color-forest-600)",
-                }}
-              >
-                ✓ You qualify for free shipping!
-              </p>
-            ) : (
-              <p
-                className="text-xs font-medium text-center px-3 py-2 rounded-lg"
-                style={{
-                  background: "var(--color-amber-50)",
-                  color: "var(--color-amber-700)",
-                }}
-              >
-                Add ₹{499 - totalPrice} more for free shipping
-              </p>
-            )}
+            <p
+              className="text-xs font-medium text-center px-3 py-2 rounded-lg"
+              style={{
+                background: "var(--color-forest-50)",
+                color: "var(--color-forest-600)",
+              }}
+            >
+              ✓ Free shipping on all orders
+            </p>
 
             {/* Checkout Button */}
             <button
