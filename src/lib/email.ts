@@ -271,8 +271,8 @@ export async function sendInvoiceEmail(
 
     const orderDate = (order.invoiceDate || order.createdAt)
       ? new Date(order.invoiceDate || order.createdAt).toLocaleDateString('en-IN', {
-          day: '2-digit', month: 'short', year: 'numeric',
-        })
+        day: '2-digit', month: 'short', year: 'numeric',
+      })
       : new Date().toLocaleDateString('en-IN');
 
     const invoiceTime = (order.invoiceDate || order.createdAt)
@@ -456,10 +456,7 @@ export async function sendAdminOrderConfirmationEmail(
       return { success: true, skipped: true };
     }
 
-    const adminEmail = [
-      process.env.ADMIN_EMAIL || "mailme@minaliya.in",
-      "codeimmani@gmail.com",
-    ].join(",");
+    const adminEmail = process.env.ADMIN_EMAIL || "mailme@minaliya.in";
     const shippingAddress = (order.shippingAddress as Record<string, string>) || {};
     const customerName = shippingAddress?.name || "Customer";
 
