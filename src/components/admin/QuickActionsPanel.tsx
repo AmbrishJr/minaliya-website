@@ -7,16 +7,9 @@ import {
   Plus,
   MessageSquare,
   ExternalLink,
-  Package,
   ArrowRight,
   BarChart3,
 } from "lucide-react";
-
-interface QuickActionsPanelProps {
-  pendingOrders: number;
-  stockPercent: number;
-  totalProducts: number;
-}
 
 const actions = [
   {
@@ -57,11 +50,7 @@ const actions = [
   },
 ];
 
-export default function QuickActionsPanel({
-  pendingOrders,
-  stockPercent,
-  totalProducts,
-}: QuickActionsPanelProps) {
+export default function QuickActionsPanel() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -76,32 +65,6 @@ export default function QuickActionsPanel({
     >
       <h3 className="font-bold text-stone-900 text-base mb-1">Quick Actions</h3>
       <p className="text-xs text-stone-500 mb-5">Jump to common admin tasks</p>
-
-      {/* Real stock metric */}
-      <div className="mb-5 p-4 rounded-xl border border-stone-100 bg-stone-50/50">
-        <div className="flex items-center gap-2 mb-2">
-          <Package size={14} className="text-forest-600" />
-          <span className="text-xs font-semibold text-stone-600">Inventory Health</span>
-        </div>
-        <div className="flex justify-between text-xs font-semibold mb-1.5">
-          <span className="text-stone-500">{stockPercent}% in stock</span>
-          <span className="text-stone-800">{totalProducts} products</span>
-        </div>
-        <div className="h-2 w-full bg-stone-200 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: "var(--color-forest-600)" }}
-            initial={{ width: 0 }}
-            animate={{ width: `${stockPercent}%` }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          />
-        </div>
-        {pendingOrders > 0 && (
-          <p className="text-[11px] text-amber-700 font-semibold mt-2">
-            {pendingOrders} order{pendingOrders !== 1 ? "s" : ""} need attention
-          </p>
-        )}
-      </div>
 
       <div className="space-y-2 flex-1">
         {actions.map((action) => {

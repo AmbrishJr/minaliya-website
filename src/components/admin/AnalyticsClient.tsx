@@ -26,7 +26,6 @@ interface AnalyticsData {
   categoryBreakdown: Array<{ name: string; revenue: number; sharePercent: number }>;
   topProducts: Array<{ name: string; unitsSold: number; revenue: number }>;
   statusBreakdown: Array<{ status: string; count: number }>;
-  inventoryAlerts: Array<{ name: string; stock: number; slug: string }>;
   inquiryHighlights: Array<{ product: string; totalQuantity: number; count: number }>;
   recommendations: Array<{
     id: string;
@@ -290,7 +289,7 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
         <h3 className="font-bold text-base mb-4" style={{ color: "var(--color-stone-900)" }}>
           Operational Snapshot
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Order Status Breakdown */}
           <div>
             <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--color-stone-700)" }}>
@@ -306,34 +305,6 @@ export default function AnalyticsClient({ initialData }: AnalyticsClientProps) {
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Inventory Alerts */}
-          <div>
-            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--color-stone-700)" }}>
-              Inventory Alerts
-            </h4>
-            {data.inventoryAlerts.length > 0 ? (
-              <div className="space-y-2">
-                {data.inventoryAlerts.slice(0, 5).map((alert) => (
-                  <div key={alert.slug} className="flex justify-between text-sm">
-                    <span className="truncate" style={{ color: "var(--color-stone-600)" }}>
-                      {alert.name}
-                    </span>
-                    <span
-                      className="font-semibold"
-                      style={{
-                        color: alert.stock === 0 ? "var(--color-amber-600)" : "var(--color-stone-900)",
-                      }}
-                    >
-                      {alert.stock} left
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm" style={{ color: "var(--color-stone-400)" }}>No inventory alerts</p>
-            )}
           </div>
 
           {/* Bulk Inquiry Highlights */}

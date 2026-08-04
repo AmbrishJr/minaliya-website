@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { processInvoice } from "@/lib/invoiceService";
@@ -39,21 +39,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Return response immediately — invoice email is sent asynchronously
-    const response = NextResponse.json({ success: true });
-
+    // Schedule background work that survives after the response is sent.
+    // `after()` guarantees the runtime keeps the function alive until completion,
+    // unlike fire-and-forget promises which get killed on serverless platforms.
     if (orderId) {
-      // Fire-and-forget: Vercel keeps the function alive for the grace period
-      processInvoice(orderId).catch((err) =>
-        console.error(`Background invoice processing failed for order ${orderId}:`, err)
-      );
-      // Notify the admin for fulfillment/shipping immediately after payment succeeds
-      sendAdminOrderConfirmationEmail(orderId).catch((err) =>
-        console.error(`Admin order confirmation email failed for order ${orderId}:`, err)
-      );
+      after(async () => {
+        try {
+          await sendAdminOrderConfirmationEmail(orderId);
+        } catch (err) {
+          console.error(`Admin order confirmation email failed for order ${orderId}:`, err);
+        }
+        try {
+          await processInvoice(orderId);
+        } catch (err) {
+          console.error(`Background invoice processing failed for order ${orderId}:`, err);
+        }
+      });
     }
 
-    return response;
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error verifying payment:", error);
     return NextResponse.json(

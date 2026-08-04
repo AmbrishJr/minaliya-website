@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { processInvoice } from "@/lib/invoiceService";
@@ -46,14 +46,20 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Process invoices asynchronously — webhook returns 200 immediately
+        // Schedule background work that survives after the response is sent
         for (const order of updatedOrders) {
-          processInvoice(order.id).catch((err) =>
-            console.error(`Background invoice processing failed for order ${order.id}:`, err)
-          );
-          sendAdminOrderConfirmationEmail(order.id).catch((err) =>
-            console.error(`Admin order confirmation email failed for order ${order.id}:`, err)
-          );
+          after(async () => {
+            try {
+              await sendAdminOrderConfirmationEmail(order.id);
+            } catch (err) {
+              console.error(`Admin order confirmation email failed for order ${order.id}:`, err);
+            }
+            try {
+              await processInvoice(order.id);
+            } catch (err) {
+              console.error(`Background invoice processing failed for order ${order.id}:`, err);
+            }
+          });
         }
         break;
       }
@@ -79,3 +85,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   }
 }
+

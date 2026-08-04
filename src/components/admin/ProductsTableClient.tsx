@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ProductName } from "@/components/shared/ProductName";
-import { AlertTriangle, CheckCircle, ChevronUp, ChevronDown, Edit, Trash2, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronUp, ChevronDown, Edit, Trash2, Loader2 } from "lucide-react";
 import AddProductModal, { CategoryOption } from "./AddProductModal";
 import { deleteProduct, reorderProducts } from "@/actions/adminData";
 
@@ -14,7 +14,6 @@ interface ProductItem {
   slug: string;
   price: number;
   discountPrice: number | null;
-  stock: number;
   isFeatured: boolean;
   sortOrder: number;
   categoryName: string;
@@ -36,34 +35,6 @@ export default function ProductsTableClient({ products: initialProducts, categor
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [products, setProducts] = useState(initialProducts);
   const [reorderPending, setReorderPending] = useState(false);
-
-  const getStockStatus = (stock: number) => {
-    if (stock === 0) {
-      return {
-        label: "Out of Stock",
-        color: "#fff1f2",
-        text: "#be123c",
-        border: "#fecdd3",
-        icon: AlertTriangle,
-      };
-    }
-    if (stock <= 10) {
-      return {
-        label: "Low Stock",
-        color: "#fffbeb",
-        text: "#b45309",
-        border: "#fde68a",
-        icon: AlertTriangle,
-      };
-    }
-    return {
-      label: "In Stock",
-      color: "var(--color-forest-50)",
-      text: "var(--color-forest-700)",
-      border: "var(--color-forest-200)",
-      icon: CheckCircle,
-    };
-  };
 
   const handleDelete = (id: string) => {
     setDeleteError(null);
@@ -113,9 +84,6 @@ export default function ProductsTableClient({ products: initialProducts, categor
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {products.map((product, idx) => {
-              const status = getStockStatus(product.stock);
-              const StatusIcon = status.icon;
-
               return (
                 <div
                   key={product.id}
@@ -191,21 +159,9 @@ export default function ProductsTableClient({ products: initialProducts, categor
                         </span>
                       )}
                     </div>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
-                      style={{
-                        backgroundColor: status.color,
-                        color: status.text,
-                        borderColor: status.border,
-                      }}
-                    >
-                      <StatusIcon size={10} />
-                      {status.label}
-                    </span>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--color-stone-100)" }}>
-                    <span className="text-xs text-stone-500">{product.stock} units</span>
                     <div className="flex items-center gap-2">
                       <AddProductModal
                         categories={categories}
@@ -255,16 +211,11 @@ export default function ProductsTableClient({ products: initialProducts, categor
                   <th className="p-4 text-xs uppercase tracking-wider">Slug</th>
                   <th className="p-4 text-xs uppercase tracking-wider">Category</th>
                   <th className="p-4 text-xs uppercase tracking-wider">Price</th>
-                  <th className="p-4 text-xs uppercase tracking-wider">Stock Level</th>
-                  <th className="p-4 text-xs uppercase tracking-wider">Status</th>
                   <th className="p-4 pr-6 text-xs uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y" style={{ borderColor: "var(--color-stone-100)" }}>
                 {products.map((product, idx) => {
-                  const status = getStockStatus(product.stock);
-                  const StatusIcon = status.icon;
-
                   return (
                     <tr
                       key={product.id}
@@ -337,20 +288,6 @@ export default function ProductsTableClient({ products: initialProducts, categor
                             Sale: ₹{product.discountPrice}
                           </div>
                         )}
-                      </td>
-                      <td className="p-4 font-semibold text-stone-900">{product.stock} units</td>
-                      <td className="p-4">
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border"
-                          style={{
-                            backgroundColor: status.color,
-                            color: status.text,
-                            borderColor: status.border,
-                          }}
-                        >
-                          <StatusIcon size={12} />
-                          {status.label}
-                        </span>
                       </td>
                       <td className="p-4 pr-6 text-right">
                         <div className="flex items-center justify-end gap-2">

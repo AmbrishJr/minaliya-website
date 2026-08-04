@@ -47,7 +47,6 @@ model Product {
   description     String
   price           Decimal  @db.Decimal(10, 2)
   discountPrice   Decimal? @db.Decimal(10, 2)
-  stock           Int      @default(0)
   images          String[]
   imagePublicIds  String[]  // Cloudinary public_ids, parallel to images[]
   isFeatured      Boolean  @default(false)

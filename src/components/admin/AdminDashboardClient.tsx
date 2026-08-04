@@ -17,7 +17,6 @@ export interface DashboardStats {
   totalInquiries: number;
   totalRevenue: number;
   pendingOrders: number;
-  stockPercent: number;
   ordersTrend: number | null;
   revenueTrend: number | null;
 }
@@ -110,11 +109,7 @@ export default function AdminDashboardClient({
       {/* Recent orders + quick actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         <DashboardRecentOrders orders={recentOrders} />
-        <QuickActionsPanel
-          pendingOrders={stats.pendingOrders}
-          stockPercent={stats.stockPercent}
-          totalProducts={stats.totalProducts}
-        />
+        <QuickActionsPanel />
       </div>
     </div>
   );

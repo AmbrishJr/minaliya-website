@@ -23,7 +23,6 @@ interface AddProductModalProps {
     price: number;
     discountPrice: number | null;
     isFeatured: boolean;
-    stock: number;
     images: string[];
     imagePublicIds: (string | undefined)[];
   };
@@ -217,7 +216,6 @@ export default function AddProductModal({ categories, product, triggerButton, on
         categoryId,
         price: parseFloat(price),
         discountPrice: discountPrice ? parseFloat(discountPrice) : null,
-        stock: product?.stock ?? 100,
         images: finalImages,
         imagePublicIds: finalPublicIds,
         isFeatured,

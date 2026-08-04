@@ -49,7 +49,7 @@ export function getDefaultFooterSettings(): FooterSettingsData {
     },
     googleMaps: {
       embedUrl:
-        "https://maps.google.com/maps?q=Old%20No%2087%2C%20New%20No%2078%2C%20Shop%20No%203%2C%20Kodambakkam%20Road%2C%20Mettupalayam%2C%20West%20Mambalam%2C%20Chennai%20-%20600033&t=m&z=15&output=embed",
+        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4651.377481697591!2d80.21720617575617!3d13.028402013629016!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a5267bd843cc565%3A0xc6643dfa200839ed!2sMinaliya%20Wooden%20Cold%20Pressed%20Oils%20-%20Best%20Marachekku%20Oil%20Manufacturer%20in%20Chennai!5e1!3m2!1sen!2sin!4v1785736652587!5m2!1sen!2sin",
       businessUrl: "",
       lat: "",
       lng: "",

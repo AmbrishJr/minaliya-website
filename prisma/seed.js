@@ -36,7 +36,6 @@ const productsData = [
     description: "Traditional Mara Chekku extracted groundnut oil, rich in Vitamin E and healthy fats.",
     price: 449.00,
     discountPrice: 349.00,
-    stock: 150,
     images: [
       "/products/Groundnut Oil 1 Ltr.jpg",
       "/products/Groundnut Oil 500 ml.jpg",
@@ -57,7 +56,6 @@ const productsData = [
     description: "Pure virgin coconut oil for cooking, skin care, and hair care.",
     price: 499.00,
     discountPrice: 399.00,
-    stock: 120,
     images: [
       "/products/Coconut Oil 1 Ltr.jpg",
       "/products/Coconut Oil 500 ml.jpg",
@@ -78,7 +76,6 @@ const productsData = [
     description: "Authentic gingelly oil perfect for South Indian cooking and Ayurvedic wellness.",
     price: 479.00,
     discountPrice: 379.00,
-    stock: 100,
     images: [
       "/products/Sesame Oil 1 Ltr.jpg",
       "/products/Sesame Oil 500 ml.jpg",
@@ -99,7 +96,6 @@ const productsData = [
     description: "Compact 500ml bottle of our bestselling groundnut oil for smaller households.",
     price: 259.00,
     discountPrice: 199.00,
-    stock: 200,
     images: [
       "/products/Groundnut Oil 500 ml.jpg",
       "/products/groundnut-bg-removed.png"
@@ -119,7 +115,6 @@ const productsData = [
     description: "Trial-sized virgin coconut oil. Perfect to experience the Minaliya difference.",
     price: 299.00,
     discountPrice: 229.00,
-    stock: 180,
     images: [
       "/products/Coconut Oil 500 ml.jpg",
       "/products/coconut-bg-removed.png"
@@ -139,7 +134,6 @@ const productsData = [
     description: "Compact pack of our pure gingelly oil. Great for regular cooking use.",
     price: 269.00,
     discountPrice: 209.00,
-    stock: 150,
     images: [
       "/products/Sesame Oil 500 ml.jpg",
       "/products/sesame-bg-removed.png"
@@ -192,7 +186,6 @@ async function main() {
         description: prod.description,
         price: prod.price,
         discountPrice: prod.discountPrice,
-        stock: prod.stock,
         images: prod.images,
         isFeatured: prod.isFeatured,
         categoryId: categoryId,
@@ -204,7 +197,6 @@ async function main() {
         description: prod.description,
         price: prod.price,
         discountPrice: prod.discountPrice,
-        stock: prod.stock,
         images: prod.images,
         isFeatured: prod.isFeatured,
         categoryId: categoryId,

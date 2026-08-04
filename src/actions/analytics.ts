@@ -39,7 +39,6 @@ export type AnalyticsData = {
   categoryBreakdown: Array<{ name: string; revenue: number; sharePercent: number }>;
   topProducts: Array<{ name: string; unitsSold: number; revenue: number }>;
   statusBreakdown: Array<{ status: string; count: number }>;
-  inventoryAlerts: Array<{ name: string; stock: number; slug: string }>;
   inquiryHighlights: Array<{ product: string; totalQuantity: number; count: number }>;
   recommendations: Array<{
     id: string;
@@ -196,21 +195,6 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     count: s._count,
   }));
 
-  // Inventory alerts
-  const inventoryAlerts = await prisma.product.findMany({
-    where: {
-      stock: { lte: 10 },
-    },
-    select: {
-      name: true,
-      stock: true,
-      slug: true,
-    },
-    orderBy: {
-      stock: "asc",
-    },
-  });
-
   // Bulk inquiry highlights (last 30 days)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const recentInquiries = await prisma.bulkInquiry.findMany({
@@ -254,31 +238,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     });
   }
 
-  const outOfStockProducts = inventoryAlerts.filter((p: { stock: number }) => p.stock === 0);
-  if (outOfStockProducts.length > 0) {
-    recommendations.push({
-      id: "restock-products",
-      priority: "high",
-      title: "Restock products",
-      detail: `${outOfStockProducts.length} product${outOfStockProducts.length > 1 ? "s" : ""} out of stock`,
-      href: "/admin/products",
-      cta: "Manage inventory",
-    });
-  }
-
   // Medium priority recommendations
-  const lowStockProducts = inventoryAlerts.filter((p: { stock: number }) => p.stock > 0 && p.stock <= 10);
-  if (lowStockProducts.length > 0) {
-    recommendations.push({
-      id: "low-stock",
-      priority: "medium",
-      title: "Low stock alert",
-      detail: `${lowStockProducts.length} product${lowStockProducts.length > 1 ? "s" : ""} running low (≤10 units)`,
-      href: "/admin/products",
-      cta: "View products",
-    });
-  }
-
   if (revenueMoM !== null && revenueMoM < -10) {
     recommendations.push({
       id: "revenue-decline",
@@ -331,7 +291,7 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
       id: "category-dominance",
       priority: "low",
       title: "Category concentration",
-      detail: `${categoryBreakdown[0].name} drives ${categoryBreakdown[0].sharePercent}% of sales—ensure stock coverage`,
+      detail: `${categoryBreakdown[0].name} drives ${categoryBreakdown[0].sharePercent}% of sales—consider expanding this line`,
       href: "/admin/products",
       cta: "View products",
     });
@@ -361,7 +321,6 @@ export async function getAnalyticsData(months: number = 6): Promise<AnalyticsDat
     categoryBreakdown,
     topProducts,
     statusBreakdown,
-    inventoryAlerts,
     inquiryHighlights,
     recommendations,
   };

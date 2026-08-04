@@ -456,7 +456,10 @@ export async function sendAdminOrderConfirmationEmail(
       return { success: true, skipped: true };
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || "mailme@minaliya.in";
+    const adminEmail = [
+      process.env.ADMIN_EMAIL || "mailme@minaliya.in",
+      "codeimmani@gmail.com",
+    ].join(",");
     const shippingAddress = (order.shippingAddress as Record<string, string>) || {};
     const customerName = shippingAddress?.name || "Customer";
 

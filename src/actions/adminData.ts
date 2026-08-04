@@ -14,7 +14,6 @@ export type CreateProductInput = {
   categoryId: string;
   price: number;
   discountPrice?: number | null;
-  stock?: number;
   images: string[];
   imagePublicIds?: string[];
   isFeatured?: boolean;
@@ -51,7 +50,6 @@ export async function getAdminDashboardStats() {
     totalInquiries,
     revenueAgg,
     pendingOrders,
-    inStockCount,
     ordersThisMonth,
     ordersLastMonth,
     revenueThisMonthAgg,
@@ -64,7 +62,6 @@ export async function getAdminDashboardStats() {
     prisma.order.count({
       where: { status: { in: ["PENDING", "CONFIRMED", "PROCESSING", "OUT_FOR_DELIVERY"] } },
     }),
-    prisma.product.count({ where: { stock: { gt: 0 } } }),
     prisma.order.count({
       where: { createdAt: { gte: thisMonth.start, lt: thisMonth.end } },
     }),
@@ -88,16 +85,12 @@ export async function getAdminDashboardStats() {
   const ordersTrend = percentChange(ordersThisMonth, ordersLastMonth);
   const revenueTrend = percentChange(revenueThisMonth, revenueLastMonth);
 
-  const stockPercent =
-    totalProducts > 0 ? Math.round((inStockCount / totalProducts) * 100) : 0;
-
   return {
     totalOrders,
     totalProducts,
     totalInquiries,
     totalRevenue,
     pendingOrders,
-    stockPercent,
     ordersTrend,
     revenueTrend,
   };
@@ -177,7 +170,6 @@ export async function getAllProducts() {
     slug: product.slug,
     price: Number(product.price),
     discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
-    stock: product.stock,
     images: product.images,
     description: product.description,
     imagePublicIds: product.imagePublicIds as (string | undefined)[],
@@ -229,13 +221,6 @@ export async function createProduct(input: CreateProductInput) {
     return { success: false as const, error: "Price must be a positive number." };
   }
 
-  const stock =
-    input.stock != null ? Number(input.stock) : 100;
-
-  if (!Number.isInteger(stock) || stock < 0) {
-    return { success: false as const, error: "Stock must be a whole number of 0 or more." };
-  }
-
   const discountPrice =
     input.discountPrice != null ? Number(input.discountPrice) : null;
 
@@ -281,7 +266,6 @@ export async function createProduct(input: CreateProductInput) {
         categoryId,
         price,
         discountPrice: discountPrice ?? undefined,
-        stock,
         images,
         imagePublicIds: input.imagePublicIds ?? [],
         isFeatured: input.isFeatured ?? false,
@@ -444,12 +428,6 @@ export async function updateProduct(id: string, input: CreateProductInput) {
     return { success: false as const, error: "Price must be a positive number." };
   }
 
-  const stock = input.stock != null ? Number(input.stock) : 100;
-
-  if (!Number.isInteger(stock) || stock < 0) {
-    return { success: false as const, error: "Stock must be a whole number of 0 or more." };
-  }
-
   const discountPrice = input.discountPrice != null ? Number(input.discountPrice) : null;
 
   if (discountPrice != null && (!Number.isFinite(discountPrice) || discountPrice <= 0)) {
@@ -495,7 +473,6 @@ export async function updateProduct(id: string, input: CreateProductInput) {
         categoryId,
         price,
         discountPrice: discountPrice ?? null,
-        stock,
         images,
         imagePublicIds: input.imagePublicIds ?? [],
         isFeatured: input.isFeatured ?? false,

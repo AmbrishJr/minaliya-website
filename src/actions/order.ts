@@ -56,11 +56,11 @@ export async function createOrder(data: OrderInput & { paymentStatus?: string })
       return { success: false, error: "Invalid shipping details." };
     }
 
-    // Wrap in a transaction to guarantee stock adjustment and order integrity
+    // Wrap in a transaction to guarantee order integrity
     const result = await prisma.$transaction(async (tx) => {
       const itemsToCreate = [];
 
-      // 1. Verify products & stock levels
+      // 1. Verify products
       for (const item of data.items) {
         const product = await tx.product.findUnique({
           where: { slug: item.productSlug },
@@ -70,18 +70,6 @@ export async function createOrder(data: OrderInput & { paymentStatus?: string })
           throw new Error(`Product not found: "${item.productSlug}"`);
         }
 
-        if (product.stock < item.quantity) {
-          throw new Error(`Insufficient stock for product: "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`);
-        }
-
-        // 2. Decrement stock
-        await tx.product.update({
-          where: { id: product.id },
-          data: {
-            stock: product.stock - item.quantity,
-          },
-        });
-
         itemsToCreate.push({
           productId: product.id,
           quantity: item.quantity,
@@ -89,7 +77,7 @@ export async function createOrder(data: OrderInput & { paymentStatus?: string })
         });
       }
 
-      // 3. Create the Order
+      // 2. Create the Order
       const order = await tx.order.create({
         data: {
           userId: data.userId || null,
