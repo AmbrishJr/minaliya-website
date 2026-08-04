@@ -58,6 +58,15 @@ interface DisplayOrder {
   }[];
 }
 
+// States where Minaliyaa provides delivery
+const DELIVERY_STATES = [
+  "Tamil Nadu",
+  "Kerala",
+  "Karnataka",
+  "Telangana",
+  "Andhra Pradesh",
+];
+
 // Preset Premium Avatars matching Minaliyaa wood-pressed oil brand aesthetic (warm gold, amber, herbal forest green gradients)
 const AVATAR_PRESETS = [
   "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", // Amber Cold-pressed
@@ -1042,15 +1051,18 @@ export default function AccountDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1 text-stone-700">State</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Maharashtra"
+                  <select
                     value={addressState}
                     onChange={(e) => setAddressState(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
                     style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                     required
-                  />
+                  >
+                    <option value="">Select state</option>
+                    {DELIVERY_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -1151,14 +1163,18 @@ export default function AccountDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1 text-stone-700">State</label>
-                  <input
-                    type="text"
+                  <select
                     value={addressState}
                     onChange={(e) => setAddressState(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all"
                     style={{ background: "var(--color-cream-50)", borderColor: "var(--color-stone-200)" }}
                     required
-                  />
+                  >
+                    <option value="">Select state</option>
+                    {DELIVERY_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
