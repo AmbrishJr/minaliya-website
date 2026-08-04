@@ -34,10 +34,11 @@ const menuItems = [
   { name: "Header Settings", href: "/admin/header-settings", icon: PanelTop },
   { name: "Contact Page", href: "/admin/contact", icon: MessageSquare },
   { name: "Inquiries", href: "/admin/inquiries", icon: MessageSquare },
+  { name: "Messages", href: "/admin/messages", icon: MessageSquare },
   { name: "Footer", href: "/admin/footer", icon: FileText },
 ];
 
-const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/blog", "/admin/hero-slides", "/admin/header-settings", "/admin/contact", "/admin/inquiries", "/admin/footer"];
+const ADMIN_ROUTES = ["/admin", "/admin/analytics", "/admin/orders", "/admin/products", "/admin/blog", "/admin/hero-slides", "/admin/header-settings", "/admin/contact", "/admin/inquiries", "/admin/messages", "/admin/footer"];
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();

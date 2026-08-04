@@ -119,6 +119,16 @@ model BulkInquiry {
   createdAt DateTime @default(now())
 }
 
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
 model Subscription {
   id             String           @id @default(cuid())
   userId         String?

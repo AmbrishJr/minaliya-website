@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { submitContactMessage } from "@/actions/contactMessage";
 
 interface ContactFormProps {
   subjects: string[];
@@ -10,6 +11,14 @@ interface ContactFormProps {
 
 export default function ContactForm({ subjects, buttonLabel }: ContactFormProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
 
   if (submitted) {
     return (
@@ -43,9 +52,17 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
 
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        setSubmitted(true);
+        setError(null);
+        setIsSubmitting(true);
+        const result = await submitContactMessage({ name, phone, email, subject, message });
+        setIsSubmitting(false);
+        if (result.success) {
+          setSubmitted(true);
+        } else {
+          setError(result.error || "Failed to submit message.");
+        }
       }}
       className="space-y-6"
     >
@@ -63,6 +80,8 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
             type="text"
             required
             placeholder="Your full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
             style={{
               background: "var(--color-cream-50)",
@@ -83,6 +102,8 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
             id="contact-phone"
             type="tel"
             placeholder="+91 XXXXX XXXXX"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
             style={{
               background: "var(--color-cream-50)",
@@ -106,6 +127,8 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
           type="email"
           required
           placeholder="your@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
           style={{
             background: "var(--color-cream-50)",
@@ -126,6 +149,8 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
         <select
           id="contact-subject"
           required
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none cursor-pointer"
           style={{
             background: "var(--color-cream-50)",
@@ -155,6 +180,8 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
           required
           rows={5}
           placeholder="Tell us how we can help you..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none transition-all"
           style={{
             background: "var(--color-cream-50)",
@@ -164,9 +191,23 @@ export default function ContactForm({ subjects, buttonLabel }: ContactFormProps)
         />
       </div>
 
-      <button type="submit" className="btn-primary w-full sm:w-auto justify-center py-3 sm:py-4 px-10 text-base">
-        <Send size={18} />
-        {buttonLabel || "Send Message"}
+      {error && (
+        <div
+          className="flex items-center gap-2 text-sm px-4 py-3 rounded-xl"
+          style={{
+            background: "var(--color-terra-50)",
+            border: "1px solid var(--color-terra-200)",
+            color: "var(--color-terra-500)",
+          }}
+        >
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
+      <button type="submit" disabled={isSubmitting} className="btn-primary w-full sm:w-auto justify-center py-3 sm:py-4 px-10 text-base disabled:opacity-60 disabled:cursor-not-allowed">
+        {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+        {isSubmitting ? "Sending..." : (buttonLabel || "Send Message")}
       </button>
     </form>
   );
